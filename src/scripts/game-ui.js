@@ -268,6 +268,11 @@ function handleAnswer(picked, choices, choiceEls) {
 
   container.querySelector('.container').insertAdjacentHTML('beforeend', feedbackHTML);
 
+  // Scroll the feedback card into view on mobile
+  setTimeout(() => {
+    container.querySelector('#next-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+
   // Reaction button handlers
   container.querySelectorAll('.reaction-btn').forEach(btn => {
     btn.addEventListener('click', () => {
