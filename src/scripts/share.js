@@ -27,7 +27,7 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
     `${correctCount}/10 · Streak: ${bestStreak} · ${setName}`,
     flavor,
     '',
-    'whatsthatbug.app',
+    'whats-that-bug.vercel.app',
   ].join('\n');
 }
 
