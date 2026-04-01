@@ -7,6 +7,44 @@ import { SessionState } from './game-engine.js';
 import { generateShareText, copyToClipboard, openTweetIntent } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback } from './feedback.js';
 
+/**
+ * Get a beginner-friendly display name for Bugs 101 mode.
+ * Uses family-level distinction for ambiguous orders (e.g., Hymenoptera → Bee/Ant/Wasp).
+ */
+const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
+const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
+
+function getBugs101Name(taxon) {
+  // Hymenoptera needs family-level distinction
+  if (taxon.order === 'Hymenoptera') {
+    if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
+    if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
+    return 'Wasp';
+  }
+  // Curated names for other orders
+  const names = {
+    'Coleoptera': 'Beetle',
+    'Hemiptera': 'True Bug',
+    'Lepidoptera': 'Butterfly or Moth',
+    'Ixodida': 'Tick',
+    'Araneae': 'Spider',
+    'Scorpiones': 'Scorpion',
+    'Opiliones': 'Harvestman',
+    'Orthoptera': 'Grasshopper',
+    'Odonata': 'Dragonfly',
+    'Mantodea': 'Mantis',
+    'Diptera': 'Fly',
+    'Phasmida': 'Stick Insect',
+    'Neuroptera': 'Lacewing',
+    'Blattodea': 'Cockroach',
+    'Dermaptera': 'Earwig',
+    'Ephemeroptera': 'Mayfly',
+    'Trichoptera': 'Caddisfly',
+    'Siphonaptera': 'Flea',
+  };
+  return names[taxon.order] || taxon.order_common || taxon.order;
+}
+
 let session = null;
 let currentRound = null;
 let roundStartTime = null;
@@ -82,10 +120,8 @@ function renderRound() {
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
           const isBugs101 = session.setDef.scoring === 'binary';
-          const orderName = (choice.taxon.order_common || choice.taxon.order)
-            .split(/,| and /)[0].trim();
           const displayName = isBugs101
-            ? orderName
+            ? getBugs101Name(choice.taxon)
             : choice.taxon.common_name;
           const displayLatin = isBugs101
             ? choice.taxon.order
@@ -166,7 +202,12 @@ function handleAnswer(picked, choices, choiceEls) {
     } else if (score >= 25) {
       breadcrumb = `Same order (${correct.taxon.order}) — right group, wrong family.`;
     } else {
-      breadcrumb = `You guessed ${picked.taxon.order}, but this is ${correct.taxon.order}.`;
+      const isBugs101Mode = session.setDef.scoring === 'binary';
+      if (isBugs101Mode) {
+        breadcrumb = `You guessed ${getBugs101Name(picked.taxon)}, but this is a ${getBugs101Name(correct.taxon)}.`;
+      } else {
+        breadcrumb = `You guessed ${picked.taxon.order}, but this is ${correct.taxon.order}.`;
+      }
     }
   }
 
