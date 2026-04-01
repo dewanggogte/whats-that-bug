@@ -225,8 +225,17 @@ function handleAnswer(picked, choices, choiceEls) {
     }
   }
 
-  // Species blurb
-  const blurb = correct.wikipedia_summary || '';
+  // Species blurb — trim to last sentence boundary to avoid mid-word cutoff
+  let blurb = correct.wikipedia_summary || '';
+  if (blurb && !blurb.match(/[.!?]$/)) {
+    const lastSentence = blurb.lastIndexOf('. ');
+    if (lastSentence > 40) {
+      blurb = blurb.slice(0, lastSentence + 1);
+    } else {
+      const lastSpace = blurb.lastIndexOf(' ');
+      blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
+    }
+  }
 
   // Badge text
   const badgeClass = score === 100 ? 'badge-success' : score >= 50 ? 'badge-warning' : 'badge-error';

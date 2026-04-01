@@ -3,14 +3,22 @@ import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 
-// Get a representative photo for each set
+// Emoji icons for each set — distinctive and instant recognition
+const SET_ICONS: Record<string, string> = {
+  bugs_101: '🔰',
+  all_bugs: '🌍',
+  backyard_basics: '🏡',
+  beetles: '🪲',
+  butterflies_moths: '🦋',
+  spiders: '🕷️',
+  tiny_terrors: '😱',
+};
+
 const setEntries = Object.entries(setsData).map(([key, set]) => {
-  const firstObsIndex = set.observation_ids[0];
-  const representative = observations[firstObsIndex];
   return {
     key,
     ...set,
-    photo_url: representative?.photo_url || '',
+    icon: SET_ICONS[key] || '🐛',
     species_count: new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size,
   };
 });
@@ -34,8 +42,8 @@ const setEntries = Object.entries(setsData).map(([key, set]) => {
     <div class="set-grid">
       {setEntries.map(set => (
         <a href={`/play?set=${set.key}`} class="set-card">
-          <div class="set-card-image">
-            {set.photo_url && <img src={set.photo_url} alt={set.name} loading="lazy">}
+          <div class="set-card-image" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
+            {set.icon}
           </div>
           <div class="set-card-body">
             <h3>{set.name}</h3>

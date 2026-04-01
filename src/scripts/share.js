@@ -12,13 +12,22 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
   const correctCount = history.filter(h => h.score === 100).length;
 
+  // Pick a flavor line based on performance
+  let flavor;
+  if (correctCount === 10) flavor = 'Perfect score! 🏆';
+  else if (correctCount >= 8) flavor = 'Bug expert! 🔬';
+  else if (correctCount >= 5) flavor = 'Not bad! Can you beat me?';
+  else flavor = "Bugs are tricky! Give it a shot 👀";
+
   return [
     `🪲 What's That Bug? — ${totalScore}/1000`,
     '',
     emojiGrid,
     '',
-    `${correctCount}/10 correct · Streak: ${bestStreak} · Set: ${setName}`,
-    'Play at whatsthatbug.app',
+    `${correctCount}/10 · Streak: ${bestStreak} · ${setName}`,
+    flavor,
+    '',
+    'whatsthatbug.app',
   ].join('\n');
 }
 

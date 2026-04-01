@@ -44,12 +44,23 @@ describe('generateShareText', () => {
 
   it('includes correct count and streak', () => {
     const text = generateShareText(700, history, 'Beetles', 4);
-    expect(text).toContain('6/10 correct');
+    expect(text).toContain('6/10');
     expect(text).toContain('Streak: 4');
   });
 
   it('includes the set name', () => {
     const text = generateShareText(700, history, 'Beetles', 4);
-    expect(text).toContain('Set: Beetles');
+    expect(text).toContain('Beetles');
+  });
+
+  it('includes a flavor line based on performance', () => {
+    const text = generateShareText(700, history, 'Beetles', 4);
+    expect(text).toContain('Not bad');
+  });
+
+  it('shows expert flavor for 8+ correct', () => {
+    const goodHistory = Array(8).fill({ score: 100 }).concat([{ score: 0 }, { score: 0 }]);
+    const text = generateShareText(800, goodHistory, 'Beetles', 8);
+    expect(text).toContain('Bug expert');
   });
 });
