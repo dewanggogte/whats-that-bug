@@ -82,8 +82,10 @@ function renderRound() {
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
           const isBugs101 = session.setDef.scoring === 'binary';
+          const orderName = (choice.taxon.order_common || choice.taxon.order)
+            .split(/,| and /)[0].trim();
           const displayName = isBugs101
-            ? (choice.taxon.order_common || choice.taxon.order)
+            ? orderName
             : choice.taxon.common_name;
           const displayLatin = isBugs101
             ? choice.taxon.order
