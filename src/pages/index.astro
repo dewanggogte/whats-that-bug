@@ -1,12 +1,66 @@
 ---
 import Base from '../layouts/Base.astro';
+import setsData from '../../public/data/sets.json';
+import observations from '../../public/data/observations.json';
+
+// Get a representative photo for each set
+const setEntries = Object.entries(setsData).map(([key, set]) => {
+  const firstObsIndex = set.observation_ids[0];
+  const representative = observations[firstObsIndex];
+  return {
+    key,
+    ...set,
+    photo_url: representative?.photo_url || '',
+    species_count: new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size,
+  };
+});
 ---
-<Base title="What's That Bug?">
+<Base title="What's That Bug? — Insect Identification Game">
   <div class="container">
-    <h1>What's That Bug?</h1>
-    <p class="subtitle">Can you identify insects from their photos?</p>
-    <p style="margin-top: 24px; color: var(--text-secondary);">
-      Game coming soon. Setup verified.
-    </p>
+    <div style="text-align: center; padding: 24px 0 8px;">
+      <h1>🪲 What's That Bug?</h1>
+      <p class="subtitle">Can you identify insects from their photos? Pick a set and find out.</p>
+    </div>
+
+    <div style="margin-top: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border);">
+      <h2 style="font-size: 16px; margin-bottom: 4px;">How to play</h2>
+      <p style="font-size: 14px; color: var(--text-secondary);">
+        Each round shows a real bug photo from iNaturalist. Pick the correct species from 4 choices.
+        Closer guesses earn more points — even getting the right family scores partial credit.
+        10 rounds per session, 1,000 points max.
+      </p>
+    </div>
+
+    <div class="set-grid">
+      {setEntries.map(set => (
+        <a href={`/play?set=${set.key}`} class="set-card">
+          <div class="set-card-image">
+            {set.photo_url && <img src={set.photo_url} alt={set.name} loading="lazy">}
+          </div>
+          <div class="set-card-body">
+            <h3>{set.name}</h3>
+            <p>{set.description}</p>
+            <div class="set-card-meta">
+              <span>{set.species_count} species</span>
+              <span id={`best-${set.key}`}></span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
   </div>
+
+  <script>
+    // Show best scores from localStorage
+    document.querySelectorAll('[id^="best-"]').forEach(el => {
+      const setKey = el.id.replace('best-', '');
+      const storageKey = `best_${setKey}`;
+      const best = localStorage.getItem(storageKey);
+      if (best) {
+        el.textContent = `Best: ${best}`;
+        el.style.color = 'var(--accent)';
+        el.style.fontWeight = '600';
+      }
+    });
+  </script>
 </Base>
