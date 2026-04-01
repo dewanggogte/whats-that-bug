@@ -70,3 +70,68 @@ export function generateDistractors(correct, taxonomy, observations) {
 
   return distractors;
 }
+
+const ROUNDS_PER_SESSION = 10;
+
+export class SessionState {
+  constructor(observations, taxonomy, setDef) {
+    this.observations = observations;
+    this.taxonomy = taxonomy;
+    this.setDef = setDef;
+    this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
+    this.currentRound = 0;
+    this.totalScore = 0;
+    this.history = [];
+    this._usedObservationIds = new Set();
+    this._currentCorrect = null;
+    this._pool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
+  }
+
+  get isComplete() {
+    return this.currentRound >= ROUNDS_PER_SESSION;
+  }
+
+  get bestStreak() {
+    let best = 0;
+    let current = 0;
+    for (const entry of this.history) {
+      if (entry.score === 100) {
+        current++;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    }
+    return best;
+  }
+
+  nextRound() {
+    if (this.isComplete) return null;
+    const available = this._pool.filter(obs => !this._usedObservationIds.has(obs.id));
+    if (available.length === 0) return null;
+    const correct = pickRandom(available);
+    this._usedObservationIds.add(correct.id);
+    this._currentCorrect = correct;
+    this.currentRound++;
+    const distractors = generateDistractors(correct, this.taxonomy, this.observations);
+    const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
+    return { correct, choices };
+  }
+
+  submitAnswer(pickedTaxon) {
+    const correct = this._currentCorrect;
+    const isBinary = this.setDef.scoring === 'binary';
+    const score = isBinary
+      ? (pickedTaxon.order === correct.taxon.order ? 100 : 0)
+      : calculateScore(pickedTaxon, correct.taxon);
+    this.totalScore += score;
+    this.history.push({
+      round: this.currentRound,
+      observation_id: correct.id,
+      correct_taxon: correct.taxon,
+      picked_taxon: pickedTaxon,
+      score,
+    });
+    return { score, correct };
+  }
+}
