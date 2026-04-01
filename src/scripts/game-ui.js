@@ -118,8 +118,8 @@ function renderRound() {
   container.innerHTML = `
     <div class="container">
       <div class="top-bar">
-        <span>Round ${session.currentRound} of 10</span>
-        <span>Score: ${session.totalScore}</span>
+        <a href="/" style="text-decoration:none;color:var(--accent);">← Sets</a>
+        <span>Round ${session.currentRound} of 10 · ${session.totalScore} pts</span>
         <span>${session.setDef.name}</span>
       </div>
 
