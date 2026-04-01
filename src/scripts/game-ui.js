@@ -16,8 +16,7 @@ import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, log
 const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
 const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
 const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
-const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae'];
-const KATYDID_FAMILIES = ['Tettigoniidae'];
+const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
 const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
 
 function getBugs101Name(taxon) {
@@ -33,7 +32,6 @@ function getBugs101Name(taxon) {
   }
   // Orthoptera: grasshoppers, crickets, katydids
   if (taxon.order === 'Orthoptera') {
-    if (KATYDID_FAMILIES.includes(taxon.family)) return 'Katydid';
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
     return 'Grasshopper';
   }
