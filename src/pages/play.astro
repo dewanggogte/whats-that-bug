@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Play — What's That Bug?">
+  <div id="game-container">
+    <div class="container" style="text-align: center; padding-top: 80px;">
+      <p class="subtitle">Loading bugs...</p>
+    </div>
+  </div>
+  <script>
+    import { initGame } from '../scripts/game-ui.js';
+    initGame();
+  </script>
+</Base>
