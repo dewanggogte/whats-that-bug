@@ -33,6 +33,32 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
     </div>
   </div>
 
+  <script>
+    import { logGeneralFeedback } from '../scripts/feedback.js';
+
+    const toggle = document.getElementById('feedback-toggle');
+    const panel = document.getElementById('feedback-panel');
+
+    toggle?.addEventListener('click', () => {
+      panel?.classList.toggle('open');
+    });
+
+    const submitBtn = document.getElementById('feedback-submit');
+    submitBtn?.addEventListener('click', () => {
+      const category = document.getElementById('feedback-category')?.value || 'other';
+      const text = document.getElementById('feedback-text')?.value || '';
+      if (!text.trim()) return;
+
+      logGeneralFeedback(category, text);
+      document.getElementById('feedback-text').value = '';
+      submitBtn.textContent = '✓ Sent!';
+      setTimeout(() => {
+        submitBtn.textContent = 'Send';
+        panel?.classList.remove('open');
+      }, 1500);
+    });
+  </script>
+
   {goatCounterId && (
     <script
       data-goatcounter={`https://${goatCounterId}.goatcounter.com/count`}
