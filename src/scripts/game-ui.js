@@ -106,10 +106,12 @@ function startRound() {
   currentRound = session.nextRound();
   if (!currentRound) {
     renderSummary();
+    window.scrollTo({ top: 0 });
     return;
   }
   roundStartTime = Date.now();
   renderRound();
+  window.scrollTo({ top: 0 });
 }
 
 function renderRound() {
