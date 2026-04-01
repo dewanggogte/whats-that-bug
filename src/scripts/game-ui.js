@@ -80,12 +80,20 @@ function renderRound() {
       <p class="subtitle">Found in ${correct.location}</p>
 
       <div class="choices" id="choices">
-        ${choices.map((choice, i) => `
+        ${choices.map((choice, i) => {
+          const isBugs101 = session.setDef.scoring === 'binary';
+          const displayName = isBugs101
+            ? (choice.taxon.order_common || choice.taxon.order)
+            : choice.taxon.common_name;
+          const displayLatin = isBugs101
+            ? choice.taxon.order
+            : choice.taxon.species;
+          return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">
-            <div class="choice-name">${choice.taxon.common_name}</div>
-            <div class="choice-latin">${choice.taxon.species}</div>
+            <div class="choice-name">${displayName}</div>
+            <div class="choice-latin">${displayLatin}</div>
           </div>
-        `).join('')}
+        `}).join('')}
       </div>
     </div>
   `;
@@ -108,13 +116,23 @@ function handleAnswer(picked, choices, choiceEls) {
   });
 
   // Highlight choices
+  const isBugs101 = session.setDef.scoring === 'binary';
   choices.forEach((choice, i) => {
     const el = choiceEls[i];
-    if (choice.taxon.species === correct.taxon.species) {
-      el.classList.add('correct');
-    } else if (choice.taxon.species === picked.taxon.species) {
-      if (score >= 50) el.classList.add('close');
-      else el.classList.add('miss');
+    if (isBugs101) {
+      // Bugs 101: match by order
+      if (choice.taxon.order === correct.taxon.order) {
+        el.classList.add('correct');
+      } else if (choice.taxon.order === picked.taxon.order) {
+        el.classList.add('miss');
+      }
+    } else {
+      if (choice.taxon.species === correct.taxon.species) {
+        el.classList.add('correct');
+      } else if (choice.taxon.species === picked.taxon.species) {
+        if (score >= 50) el.classList.add('close');
+        else el.classList.add('miss');
+      }
     }
   });
 

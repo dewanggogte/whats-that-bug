@@ -15,6 +15,12 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   <title>{title}</title>
 </head>
 <body>
+  <div style="position:fixed;top:12px;right:12px;z-index:200;">
+    <button id="theme-toggle" aria-label="Toggle dark/light mode"
+      style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:18px;line-height:1;">
+      🌙
+    </button>
+  </div>
   <slot />
 
   <div class="feedback-tab">
@@ -32,6 +38,29 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
       <button class="btn btn-primary" id="feedback-submit" style="width:100%">Send</button>
     </div>
   </div>
+
+  <script is:inline>
+    // Theme toggle — runs immediately to prevent flash
+    (function() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('theme-toggle');
+        if (!btn) return;
+        btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+        btn.addEventListener('click', () => {
+          const current = document.documentElement.getAttribute('data-theme');
+          const next = current === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          btn.textContent = next === 'dark' ? '☀️' : '🌙';
+        });
+      });
+    })();
+  </script>
 
   <script>
     import { logGeneralFeedback } from '../scripts/feedback.js';

@@ -24,9 +24,9 @@
   --photo-bg: #1a1a2e;
 }
 
-/* Dark Mode */
+/* Dark Mode — via system preference OR manual toggle */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1a1917;
     --surface: #222120;
     --text: #e0ddd8;
@@ -48,6 +48,29 @@
 
     --photo-bg: #0d0d15;
   }
+}
+/* Dark Mode — forced via toggle */
+:root[data-theme="dark"] {
+  --bg: #1a1917;
+  --surface: #222120;
+  --text: #e0ddd8;
+  --text-secondary: #9a9590;
+  --accent: #d4794e;
+  --border: #2e2c28;
+
+  --success: #5bc49a;
+  --success-bg: #0f2418;
+  --success-border: #1a5c33;
+
+  --warning: #d4794e;
+  --warning-bg: #2e2610;
+  --warning-border: #7c5a1e;
+
+  --error: #e05d50;
+  --error-bg: #2e1a18;
+  --error-border: #7c2d2a;
+
+  --photo-bg: #0d0d15;
 }
 
 /* =============================================
@@ -204,6 +227,7 @@ h2 {
   align-items: center;
   justify-content: center;
   margin-bottom: 24px;
+  position: relative;
 }
 
 .photo-hero img {
@@ -211,6 +235,20 @@ h2 {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+.photo-hero .photo-credit {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.65);
+  color: rgba(255,255,255,0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* =============================================

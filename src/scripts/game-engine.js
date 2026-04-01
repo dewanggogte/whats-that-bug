@@ -26,6 +26,31 @@ function pickRandomN(arr, n) {
   return shuffled.slice(0, n);
 }
 
+/**
+ * Generate 3 distractors for Bugs 101 mode — from DIFFERENT orders.
+ */
+export function generateBugs101Distractors(correct, taxonomy, observations) {
+  const correctOrder = correct.taxon.order;
+  const distractors = [];
+  const usedOrders = new Set([correctOrder]);
+
+  const allOrders = Object.keys(taxonomy.order);
+  const shuffledOrders = allOrders.sort(() => Math.random() - 0.5);
+
+  for (const order of shuffledOrders) {
+    if (usedOrders.has(order)) continue;
+    if (distractors.length >= 3) break;
+    const candidates = taxonomy.order[order];
+    if (!candidates || candidates.length === 0) continue;
+    const pick = observations[candidates[Math.floor(Math.random() * candidates.length)]];
+    if (pick) {
+      distractors.push(pick);
+      usedOrders.add(order);
+    }
+  }
+  return distractors;
+}
+
 export function generateDistractors(correct, taxonomy, observations) {
   const correctSpecies = correct.taxon.species;
   const distractors = [];
@@ -113,7 +138,10 @@ export class SessionState {
     this._usedObservationIds.add(correct.id);
     this._currentCorrect = correct;
     this.currentRound++;
-    const distractors = generateDistractors(correct, this.taxonomy, this.observations);
+    const isBugs101 = this.setDef.scoring === 'binary';
+    const distractors = isBugs101
+      ? generateBugs101Distractors(correct, this.taxonomy, this.observations)
+      : generateDistractors(correct, this.taxonomy, this.observations);
     const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
     return { correct, choices };
   }
