@@ -9,29 +9,46 @@ import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, log
 
 /**
  * Get a beginner-friendly display name for Bugs 101 mode.
- * Uses family-level distinction for ambiguous orders (e.g., Hymenoptera → Bee/Ant/Wasp).
+ * Uses family-level distinction for ambiguous orders where one order
+ * contains visually/conceptually different groups (bees vs ants,
+ * butterflies vs moths, dragonflies vs damselflies, etc.)
  */
 const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
 const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
+const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
+const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae'];
+const KATYDID_FAMILIES = ['Tettigoniidae'];
+const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
 
 function getBugs101Name(taxon) {
-  // Hymenoptera needs family-level distinction
+  // Hymenoptera: bees, ants, wasps
   if (taxon.order === 'Hymenoptera') {
     if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
     if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
     return 'Wasp';
   }
-  // Curated names for other orders
+  // Lepidoptera: butterflies vs moths
+  if (taxon.order === 'Lepidoptera') {
+    return BUTTERFLY_FAMILIES.includes(taxon.family) ? 'Butterfly' : 'Moth';
+  }
+  // Orthoptera: grasshoppers, crickets, katydids
+  if (taxon.order === 'Orthoptera') {
+    if (KATYDID_FAMILIES.includes(taxon.family)) return 'Katydid';
+    if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
+    return 'Grasshopper';
+  }
+  // Odonata: dragonflies vs damselflies
+  if (taxon.order === 'Odonata') {
+    return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
+  }
+  // Simple orders — one name fits all
   const names = {
     'Coleoptera': 'Beetle',
     'Hemiptera': 'True Bug',
-    'Lepidoptera': 'Butterfly or Moth',
     'Ixodida': 'Tick',
     'Araneae': 'Spider',
     'Scorpiones': 'Scorpion',
     'Opiliones': 'Harvestman',
-    'Orthoptera': 'Grasshopper',
-    'Odonata': 'Dragonfly',
     'Mantodea': 'Mantis',
     'Diptera': 'Fly',
     'Phasmida': 'Stick Insect',
@@ -40,7 +57,6 @@ function getBugs101Name(taxon) {
     'Dermaptera': 'Earwig',
     'Ephemeroptera': 'Mayfly',
     'Trichoptera': 'Caddisfly',
-    'Siphonaptera': 'Flea',
   };
   return names[taxon.order] || taxon.order_common || taxon.order;
 }
