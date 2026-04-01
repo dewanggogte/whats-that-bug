@@ -416,14 +416,14 @@ h2 {
 }
 
 /* =============================================
-   Session Summary
+   Summary
    ============================================= */
-.session-summary {
+.summary {
   text-align: center;
   padding: 32px 0;
 }
 
-.session-score {
+.summary-score {
   font-size: 3rem;
   font-weight: 700;
   color: var(--accent);
@@ -431,18 +431,31 @@ h2 {
   margin-bottom: 8px;
 }
 
-.session-label {
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-  margin-bottom: 24px;
-}
-
-.session-breakdown {
+.summary-breakdown {
   display: flex;
   gap: 16px;
   justify-content: center;
   margin-bottom: 24px;
   flex-wrap: wrap;
+}
+
+/* =============================================
+   Emoji Grid
+   ============================================= */
+.emoji-grid {
+  font-size: 24px;
+  letter-spacing: 4px;
+  margin: 16px 0;
+}
+
+/* =============================================
+   Share Buttons
+   ============================================= */
+.share-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 16px 0;
 }
 
 /* =============================================
