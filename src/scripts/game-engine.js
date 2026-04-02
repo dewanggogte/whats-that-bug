@@ -145,8 +145,14 @@ export class SessionState {
     const fullPool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
     const recentIds = getRecentlyUsedIds(setKey);
     const freshPool = fullPool.filter(obs => !recentIds.has(obs.id));
-    // Fall back to full pool if too few fresh observations for a full session
-    this._pool = freshPool.length >= ROUNDS_PER_SESSION ? freshPool : fullPool;
+    // Prioritize fresh observations, but backfill from recent if needed
+    if (freshPool.length >= ROUNDS_PER_SESSION) {
+      this._pool = freshPool;
+    } else {
+      // Put fresh first so they're picked before recent repeats
+      const recentPool = fullPool.filter(obs => recentIds.has(obs.id));
+      this._pool = [...freshPool, ...shuffle(recentPool)];
+    }
   }
 
   get isComplete() {
