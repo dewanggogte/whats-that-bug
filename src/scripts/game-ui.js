@@ -27,6 +27,11 @@ const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
 const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
 const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
 const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
+const CICADA_FAMILIES = ['Cicadidae'];
+const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
+const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
+const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
+const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
 
 function getBugs101Name(taxon) {
   // Hymenoptera: bees, ants, wasps
@@ -48,10 +53,18 @@ function getBugs101Name(taxon) {
   if (taxon.order === 'Odonata') {
     return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
   }
+  // Hemiptera: cicadas, stink bugs, planthoppers, aphids, water bugs, etc.
+  if (taxon.order === 'Hemiptera') {
+    if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
+    if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
+    if (PLANTHOPPER_FAMILIES.includes(taxon.family)) return 'Planthopper';
+    if (APHID_FAMILIES.includes(taxon.family)) return 'Aphid';
+    if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
+    return 'True Bug';
+  }
   // Simple orders — one name fits all
   const names = {
     'Coleoptera': 'Beetle',
-    'Hemiptera': 'True Bug',
     'Ixodida': 'Tick',
     'Araneae': 'Spider',
     'Scorpiones': 'Scorpion',
