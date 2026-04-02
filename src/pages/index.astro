@@ -14,12 +14,27 @@ const SET_ICONS: Record<string, string> = {
   tiny_terrors: '😱',
 };
 
+const DIFFICULTY_LABELS: Record<string, { label: string; class: string }> = {
+  beginner: { label: 'Beginner', class: 'diff-beginner' },
+  intermediate: { label: 'Intermediate', class: 'diff-intermediate' },
+  themed: { label: 'Themed', class: 'diff-themed' },
+  expert: { label: 'Expert', class: 'diff-expert' },
+};
+
 const setEntries = Object.entries(setsData).map(([key, set]) => {
+  const isBinary = set.scoring === 'binary';
+  const uniqueCount = isBinary
+    ? new Set(set.observation_ids.map(i => observations[i]?.taxon?.order)).size
+    : new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size;
+  const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
+  const diff = DIFFICULTY_LABELS[set.difficulty] || null;
+
   return {
     key,
     ...set,
     icon: SET_ICONS[key] || '🐛',
-    species_count: new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size,
+    countLabel,
+    diff,
   };
 });
 ---
@@ -33,7 +48,7 @@ const setEntries = Object.entries(setsData).map(([key, set]) => {
     <div style="margin-top: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border);">
       <h2 style="font-size: 16px; margin-bottom: 4px;">How to play</h2>
       <p style="font-size: 14px; color: var(--text-secondary);">
-        Each round shows a real bug photo. Pick the correct species from 4 choices.
+        Each round shows a real bug photo. Pick the correct answer from 4 choices.
         Closer guesses earn more points — even getting the right family scores partial credit.
         10 rounds, 1,000 points max.
       </p>
@@ -42,14 +57,17 @@ const setEntries = Object.entries(setsData).map(([key, set]) => {
     <div class="set-grid">
       {setEntries.map(set => (
         <a href={`/play?set=${set.key}`} class="set-card">
-          <div class="set-card-image" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
+          <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
             {set.icon}
           </div>
           <div class="set-card-body">
-            <h3>{set.name}</h3>
+            <h3>
+              {set.name}
+              {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
+            </h3>
             <p>{set.description}</p>
             <div class="set-card-meta">
-              <span>{set.species_count} species</span>
+              <span>{set.countLabel}</span>
               <span id={`best-${set.key}`}></span>
             </div>
           </div>

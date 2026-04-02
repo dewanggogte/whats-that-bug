@@ -16,15 +16,19 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   <title>{title}</title>
 </head>
 <body>
-  <div style="position:fixed;top:12px;right:12px;z-index:200;">
-    <button id="theme-toggle" aria-label="Toggle dark/light mode"
-      style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:18px;line-height:1;">
-      🌙
-    </button>
-  </div>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="/" class="site-logo">🪲 What's That Bug?</a>
+      <nav class="site-nav">
+        <a href="/">Home</a>
+        <a href="/about">About</a>
+        <button id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
+      </nav>
+    </div>
+  </header>
   <slot />
 
-  <footer style="text-align:center;padding:40px 16px 24px;color:var(--text-secondary);font-size:13px;border-top:1px solid var(--border);margin-top:48px;"> <style>footer a { color: var(--accent) !important; }</style>
+  <footer style="text-align:center;padding:40px 16px 24px;color:var(--text-secondary);font-size:13px;border-top:1px solid var(--border);margin-top:48px;">
     <p>Made with 💚 for bug lovers everywhere</p>
     <p style="margin-top:8px;">
       All photos and species data from
@@ -105,7 +109,7 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   {goatCounterId && (
     <script
       data-goatcounter={`https://${goatCounterId}.goatcounter.com/count`}
-      src="//gc.zgo.at/count.js"
+      src="https://gc.zgo.at/count.js"
       async
       is:inline
     />

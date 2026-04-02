@@ -5,7 +5,16 @@
 
 import { SessionState } from './game-engine.js';
 import { generateShareText, copyToClipboard, openTweetIntent } from './share.js';
-import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback } from './feedback.js';
+import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
+
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 /**
  * Get a beginner-friendly display name for Bugs 101 mode.
@@ -62,8 +71,22 @@ function getBugs101Name(taxon) {
 let session = null;
 let currentRound = null;
 let roundStartTime = null;
-let shareWasClicked = false;
 let currentSetKey = 'all_bugs';
+let sessionEndSent = false;
+let shared = false;
+
+function sendSessionEnd() {
+  if (sessionEndSent || !session) return;
+  sessionEndSent = true;
+  logSessionEnd(
+    session.sessionId,
+    session.totalScore,
+    session.currentRound,
+    session.setDef.name,
+    session.isComplete,
+    shared
+  );
+}
 
 // DOM references (set in initGame)
 let container = null;
@@ -73,17 +96,28 @@ let container = null;
  */
 export async function initGame() {
   container = document.getElementById('game-container');
+  container.setAttribute('aria-live', 'polite');
 
   // Load data files
-  const [obsRes, taxRes, setsRes] = await Promise.all([
-    fetch('/data/observations.json'),
-    fetch('/data/taxonomy.json'),
-    fetch('/data/sets.json'),
-  ]);
+  let observations, taxonomy, sets;
+  try {
+    const [obsRes, taxRes, setsRes] = await Promise.all([
+      fetch('/data/observations.json'),
+      fetch('/data/taxonomy.json'),
+      fetch('/data/sets.json'),
+    ]);
 
-  const observations = await obsRes.json();
-  const taxonomy = await taxRes.json();
-  const sets = await setsRes.json();
+    if (!obsRes.ok || !taxRes.ok || !setsRes.ok) {
+      throw new Error('One or more data files failed to load');
+    }
+
+    observations = await obsRes.json();
+    taxonomy = await taxRes.json();
+    sets = await setsRes.json();
+  } catch (err) {
+    container.innerHTML = `<div class="container"><p>Failed to load game data. Please refresh the page to try again.</p><p style="color:var(--text-secondary);font-size:13px;">${escapeHTML(err.message)}</p></div>`;
+    return;
+  }
 
   // Get set from URL params
   const params = new URLSearchParams(window.location.search);
@@ -91,13 +125,17 @@ export async function initGame() {
   const setDef = sets[currentSetKey];
 
   if (!setDef) {
-    container.innerHTML = `<div class="container"><p>Set "${currentSetKey}" not found. <a href="/">Back to sets</a></p></div>`;
+    container.innerHTML = `<div class="container"><p>Set "${escapeHTML(currentSetKey)}" not found. <a href="/">Back to sets</a></p></div>`;
     return;
   }
 
   // Start session
-  session = new SessionState(observations, taxonomy, setDef);
+  session = new SessionState(observations, taxonomy, setDef, currentSetKey);
   logSessionStart(session.sessionId, setDef.name);
+  sessionEndSent = false;
+  shared = false;
+  window.addEventListener('pagehide', sendSessionEnd);
+  window.addEventListener('beforeunload', sendSessionEnd);
 
   startRound();
 }
@@ -126,12 +164,13 @@ function renderRound() {
       </div>
 
       <div class="photo-hero">
-        <img src="${correct.photo_url}" alt="Mystery bug" loading="eager">
-        <span class="photo-credit">${correct.attribution}</span>
+        <img src="${escapeHTML(correct.photo_url)}" alt="Mystery bug" loading="eager">
+        <span class="photo-credit">${escapeHTML(correct.attribution)}</span>
+        <button class="report-photo-btn" id="report-photo" title="Report bad photo">&#9873;</button>
       </div>
 
       <h2 style="margin-top: 16px;">What's this bug?</h2>
-      <p class="subtitle">Found in ${correct.location}</p>
+      <p class="subtitle">Found in ${escapeHTML(correct.location)}</p>
 
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
@@ -144,18 +183,33 @@ function renderRound() {
             : choice.taxon.species;
           return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">
-            <div class="choice-name">${displayName}</div>
-            <div class="choice-latin">${displayLatin}</div>
+            <div class="choice-name">${escapeHTML(displayName)}</div>
+            <div class="choice-latin">${escapeHTML(displayLatin)}</div>
           </div>
         `}).join('')}
       </div>
     </div>
   `;
 
-  // Attach click handlers
+  // Attach click and keyboard handlers
   const choiceEls = container.querySelectorAll('.choice');
   choiceEls.forEach((el, i) => {
-    el.addEventListener('click', () => handleAnswer(choices[i], choices, choiceEls));
+    const handler = () => handleAnswer(choices[i], choices, choiceEls);
+    el.addEventListener('click', handler);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handler();
+      }
+    });
+  });
+
+  // Report bad photo
+  container.querySelector('#report-photo')?.addEventListener('click', () => {
+    logBadPhoto(session.sessionId, correct.id, correct.taxon.species, session.setDef.name);
+    const btn = container.querySelector('#report-photo');
+    btn.textContent = '\u2713';
+    btn.disabled = true;
   });
 }
 
@@ -212,17 +266,17 @@ function handleAnswer(picked, choices, choiceEls) {
   let breadcrumb = '';
   if (score < 100) {
     if (score >= 75) {
-      breadcrumb = `Same genus (${correct.taxon.genus}) — look for subtle differences.`;
+      breadcrumb = `Same genus (${escapeHTML(correct.taxon.genus)}) — look for subtle differences.`;
     } else if (score >= 50) {
-      breadcrumb = `Same family (${correct.taxon.family}) — you're in the right ballpark!`;
+      breadcrumb = `Same family (${escapeHTML(correct.taxon.family)}) — you're in the right ballpark!`;
     } else if (score >= 25) {
-      breadcrumb = `Same order (${correct.taxon.order}) — right group, wrong family.`;
+      breadcrumb = `Same order (${escapeHTML(correct.taxon.order)}) — right group, wrong family.`;
     } else {
       const isBugs101Mode = session.setDef.scoring === 'binary';
       if (isBugs101Mode) {
-        breadcrumb = `You guessed ${getBugs101Name(picked.taxon)}, but this is a ${getBugs101Name(correct.taxon)}.`;
+        breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
       } else {
-        breadcrumb = `You guessed ${picked.taxon.order}, but this is ${correct.taxon.order}.`;
+        breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
       }
     }
   }
@@ -247,13 +301,13 @@ function handleAnswer(picked, choices, choiceEls) {
     <div class="feedback-card ${feedbackClass}" style="margin-top: 16px;">
       <div class="feedback-title">${feedbackTitle}</div>
       <div class="feedback-body">
-        <strong>${correct.taxon.common_name}</strong> (<em>${correct.taxon.species}</em>)
-        ${blurb ? `<br>${blurb}` : ''}
+        <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
+        ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
         ${breadcrumb ? `<br><br>${breadcrumb}` : ''}
       </div>
       <div style="margin-top: 8px;">
         <span class="badge ${badgeClass}">+${score} pts</span>
-        <a href="${correct.inat_url}" target="_blank" rel="noopener" style="margin-left: 12px; font-size: 13px;">Learn more →</a>
+        <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="margin-left: 12px; font-size: 13px;">Learn more →</a>
       </div>
       <div class="reactions" id="reactions">
         <button class="reaction-btn" data-difficulty="too_easy">Too Easy</button>
@@ -333,7 +387,7 @@ function renderSummary() {
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
           <button class="btn btn-primary" id="play-again-btn">Play Again</button>
-          <a href="/" class="btn btn-outline">Change Set</a>
+          <a href="/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
       </div>
 
@@ -349,7 +403,7 @@ function renderSummary() {
         <select id="interesting-round">
           <option value="">Skip</option>
           ${session.history.map((h, i) => `
-            <option value="${i + 1}">Round ${i + 1}: ${h.correct_taxon.common_name}</option>
+            <option value="${i + 1}">Round ${i + 1}: ${escapeHTML(h.correct_taxon.common_name)}</option>
           `).join('')}
         </select>
 
@@ -369,7 +423,6 @@ function renderSummary() {
   `;
 
   // Share handlers
-  let shared = false;
   container.querySelector('#copy-btn').addEventListener('click', async () => {
     const ok = await copyToClipboard(shareText);
     const btn = container.querySelector('#copy-btn');
@@ -385,9 +438,13 @@ function renderSummary() {
 
   // Play again
   container.querySelector('#play-again-btn').addEventListener('click', () => {
-    logSessionEnd(session.sessionId, session.totalScore, 10, session.setDef.name, true, shared);
-    // Reload with same set
+    sendSessionEnd();
     window.location.reload();
+  });
+
+  // Change set — ensure session_end fires before navigation
+  container.querySelector('#change-set-btn').addEventListener('click', () => {
+    sendSessionEnd();
   });
 
   // Session feedback form
@@ -414,7 +471,4 @@ function renderSummary() {
     btn.textContent = '✓ Thanks!';
     btn.disabled = true;
   });
-
-  // Log session end (without share info — updated on play-again click)
-  logSessionEnd(session.sessionId, session.totalScore, 10, session.setDef.name, true, false);
 }

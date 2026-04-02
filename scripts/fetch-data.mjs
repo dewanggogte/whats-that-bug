@@ -28,6 +28,41 @@ const TINY_TERRORS_TAXA = [
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Pick the best photo from an observation's photo array.
+ * Prefers landscape/square aspect ratios (better for the game's 16:9 display)
+ * and larger original dimensions (correlates with intentional photography).
+ * Falls back to the first photo if no dimension data is available.
+ */
+function pickBestPhoto(photos) {
+  if (photos.length === 1) return photos[0];
+
+  let best = photos[0];
+  let bestScore = -1;
+
+  for (const photo of photos) {
+    let score = 0;
+    const w = photo.original_dimensions?.width || 0;
+    const h = photo.original_dimensions?.height || 0;
+
+    if (w > 0 && h > 0) {
+      const ratio = w / h;
+      // Landscape (ratio > 1) or square (ratio ~1) scores higher than portrait
+      if (ratio >= 1) score += 2;
+      else if (ratio >= 0.75) score += 1;
+      // Larger photos score higher (normalized to 0-3 range)
+      score += Math.min(3, (w * h) / (1000 * 1000));
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      best = photo;
+    }
+  }
+
+  return best;
+}
+
 async function apiFetch(endpoint, params = {}) {
   const url = new URL(`${API_BASE}${endpoint}`);
   for (const [key, val] of Object.entries(params)) {
@@ -65,7 +100,8 @@ async function fetchObservations(taxonId, placeId, count) {
         if (!obs.taxon?.rank || obs.taxon.rank !== 'species') continue;
         if ((obs.num_identification_agreements || 0) < 3) continue;
         if (!obs.photos?.[0]) continue;
-        const photo = obs.photos[0];
+        // Pick the best photo: prefer landscape/square, larger dimensions
+        const photo = pickBestPhoto(obs.photos);
         const photoUrl = photo.url?.replace('square', 'medium');
         if (!photoUrl) continue;
         observations.push({
@@ -208,54 +244,84 @@ function buildSets(observations, taxa) {
     .map((obs, i) => fn(obs) ? i : -1)
     .filter(i => i !== -1);
 
-  const bugs101Orders = new Map();
+  const BUGS_101_PER_ORDER = 10;
+  const bugs101ByOrder = new Map();
   for (let i = 0; i < observations.length; i++) {
     const order = observations[i].taxon.order;
-    if (!bugs101Orders.has(order)) bugs101Orders.set(order, i);
+    if (!bugs101ByOrder.has(order)) bugs101ByOrder.set(order, []);
+    const arr = bugs101ByOrder.get(order);
+    if (arr.length < BUGS_101_PER_ORDER) arr.push(i);
   }
   sets.bugs_101 = {
     name: 'Bugs 101',
-    description: "Can you tell a beetle from a butterfly? Start here.",
+    description: "Identify bugs by type — beetle, spider, butterfly, and more.",
+    difficulty: 'beginner',
     scoring: 'binary',
-    observation_ids: [...bugs101Orders.values()],
+    observation_ids: [...bugs101ByOrder.values()].flat(),
   };
 
   sets.all_bugs = {
     name: 'All Bugs',
-    description: "Random bugs from around the world. Full species ID.",
+    description: "Name the exact species. Partial credit for close guesses.",
+    difficulty: 'expert',
     scoring: 'taxonomic',
     observation_ids: observations.map((_, i) => i),
   };
 
+  // Top ~100 most common species, with up to 3 observations each for photo variety
+  const BACKYARD_SPECIES_COUNT = 100;
+  const BACKYARD_OBS_PER_SPECIES = 3;
   const withCounts = observations.map((obs, i) => ({
     index: i,
+    species: obs.taxon.species,
     count: taxa.get(obs.taxon.id)?.observations_count || 0,
   }));
   withCounts.sort((a, b) => b.count - a.count);
+  const backyardSpeciesSeen = new Set();
+  const backyardTopSpecies = [];
+  for (const entry of withCounts) {
+    if (backyardSpeciesSeen.has(entry.species)) continue;
+    backyardSpeciesSeen.add(entry.species);
+    backyardTopSpecies.push(entry.species);
+    if (backyardTopSpecies.length >= BACKYARD_SPECIES_COUNT) break;
+  }
+  const backyardSpeciesSet = new Set(backyardTopSpecies);
+  const backyardPerSpecies = new Map();
+  for (const entry of withCounts) {
+    if (!backyardSpeciesSet.has(entry.species)) continue;
+    const arr = backyardPerSpecies.get(entry.species) || [];
+    if (arr.length >= BACKYARD_OBS_PER_SPECIES) continue;
+    arr.push(entry.index);
+    backyardPerSpecies.set(entry.species, arr);
+  }
   sets.backyard_basics = {
     name: 'Backyard Basics',
-    description: "The 200 most commonly observed species worldwide.",
+    description: "The 100 most common species. A good step up from Bugs 101.",
+    difficulty: 'intermediate',
     scoring: 'taxonomic',
-    observation_ids: withCounts.slice(0, 200).map(w => w.index),
+    observation_ids: [...backyardPerSpecies.values()].flat(),
   };
 
   sets.beetles = {
     name: 'Beetles',
-    description: "The most species-rich insect order. 400,000+ species exist.",
+    description: "All Coleoptera — tell a ladybug from a longhorn.",
+    difficulty: 'themed',
     scoring: 'taxonomic',
     observation_ids: indicesWhere(o => o.taxon.order === 'Coleoptera'),
   };
 
   sets.butterflies_moths = {
     name: 'Butterflies & Moths',
-    description: "Lepidoptera — from tiny moths to giant swallowtails.",
+    description: "All Lepidoptera — moths, skippers, and swallowtails.",
+    difficulty: 'themed',
     scoring: 'taxonomic',
     observation_ids: indicesWhere(o => o.taxon.order === 'Lepidoptera'),
   };
 
   sets.spiders = {
     name: 'Spiders & Friends',
-    description: "Arachnids — spiders, scorpions, ticks, and mites.",
+    description: "All Arachnida — spiders, scorpions, and their relatives.",
+    difficulty: 'themed',
     scoring: 'taxonomic',
     observation_ids: indicesWhere(o => o.taxon.class === 'Arachnida'),
   };
@@ -263,7 +329,8 @@ function buildSets(observations, taxa) {
   const terrorTaxonIds = new Set(TINY_TERRORS_TAXA);
   sets.tiny_terrors = {
     name: 'Tiny Terrors',
-    description: "Household bugs people worry about. Learn what's actually in your home.",
+    description: "Bugs you find at home — roaches, ticks, bed bugs, and more.",
+    difficulty: 'themed',
     scoring: 'taxonomic',
     observation_ids: indicesWhere(o => {
       return terrorTaxonIds.has(o.taxon.id) ||
@@ -316,7 +383,12 @@ async function main() {
   const sets = buildSets(validated, taxa);
 
   console.log('\nWriting output files...');
-  writeFileSync(join(DATA_DIR, 'observations.json'), JSON.stringify(validated, null, 2));
+  // Strip ancestor_ids from client output — only needed during build for set generation
+  const clientObservations = validated.map(obs => {
+    const { ancestor_ids, ...taxonRest } = obs.taxon;
+    return { ...obs, taxon: taxonRest };
+  });
+  writeFileSync(join(DATA_DIR, 'observations.json'), JSON.stringify(clientObservations, null, 2));
   console.log(`  observations.json: ${validated.length} records`);
   writeFileSync(join(DATA_DIR, 'taxonomy.json'), JSON.stringify(finalIndex, null, 2));
   console.log(`  taxonomy.json: ${Object.keys(finalIndex.order).length} orders, ${Object.keys(finalIndex.family).length} families`);

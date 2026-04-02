@@ -21,9 +21,17 @@ function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function pickRandomN(arr, n) {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  return shuffle(arr).slice(0, n);
 }
 
 /**
@@ -35,7 +43,7 @@ export function generateBugs101Distractors(correct, taxonomy, observations) {
   const usedOrders = new Set([correctOrder]);
 
   const allOrders = Object.keys(taxonomy.order);
-  const shuffledOrders = allOrders.sort(() => Math.random() - 0.5);
+  const shuffledOrders = shuffle(allOrders);
 
   for (const order of shuffledOrders) {
     if (usedOrders.has(order)) continue;
@@ -97,19 +105,48 @@ export function generateDistractors(correct, taxonomy, observations) {
 }
 
 const ROUNDS_PER_SESSION = 10;
+const RECENT_SESSIONS_TO_TRACK = 3;
+
+function getRecentlyUsedIds(setKey) {
+  try {
+    const raw = localStorage.getItem(`recent_${setKey}`);
+    if (!raw) return new Set();
+    const sessions = JSON.parse(raw);
+    return new Set(sessions.flat());
+  } catch {
+    return new Set();
+  }
+}
+
+function saveUsedIds(setKey, ids) {
+  try {
+    const raw = localStorage.getItem(`recent_${setKey}`);
+    const sessions = raw ? JSON.parse(raw) : [];
+    sessions.unshift([...ids]);
+    // Keep only the last N sessions
+    while (sessions.length > RECENT_SESSIONS_TO_TRACK) sessions.pop();
+    localStorage.setItem(`recent_${setKey}`, JSON.stringify(sessions));
+  } catch { /* localStorage unavailable */ }
+}
 
 export class SessionState {
-  constructor(observations, taxonomy, setDef) {
+  constructor(observations, taxonomy, setDef, setKey) {
     this.observations = observations;
     this.taxonomy = taxonomy;
     this.setDef = setDef;
+    this.setKey = setKey;
     this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     this.currentRound = 0;
     this.totalScore = 0;
     this.history = [];
     this._usedObservationIds = new Set();
     this._currentCorrect = null;
-    this._pool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
+
+    const fullPool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
+    const recentIds = getRecentlyUsedIds(setKey);
+    const freshPool = fullPool.filter(obs => !recentIds.has(obs.id));
+    // Fall back to full pool if too few fresh observations for a full session
+    this._pool = freshPool.length >= ROUNDS_PER_SESSION ? freshPool : fullPool;
   }
 
   get isComplete() {
@@ -142,7 +179,7 @@ export class SessionState {
     const distractors = isBugs101
       ? generateBugs101Distractors(correct, this.taxonomy, this.observations)
       : generateDistractors(correct, this.taxonomy, this.observations);
-    const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
+    const choices = shuffle([correct, ...distractors]);
     return { correct, choices };
   }
 
@@ -160,6 +197,10 @@ export class SessionState {
       picked_taxon: pickedTaxon,
       score,
     });
+    // Save used IDs after last round so next session avoids repeats
+    if (this.isComplete) {
+      saveUsedIds(this.setKey, this._usedObservationIds);
+    }
     return { score, correct };
   }
 }

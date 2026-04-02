@@ -95,6 +95,64 @@ body {
 }
 
 /* =============================================
+   Site Header
+   ============================================= */
+.site-header {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-logo:hover {
+  color: var(--accent);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.site-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.site-nav a:hover {
+  color: var(--accent);
+}
+
+.site-nav #theme-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* =============================================
    Container
    ============================================= */
 .container {
@@ -124,22 +182,6 @@ h2 {
 .subtitle {
   color: var(--text-secondary);
   font-size: 1.05rem;
-}
-
-.latin {
-  font-style: italic;
-  color: var(--text-secondary);
-  font-size: 0.9em;
-}
-
-/* =============================================
-   Cards
-   ============================================= */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
 }
 
 /* =============================================
@@ -233,8 +275,30 @@ h2 {
 .photo-hero img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+}
+.photo-hero .report-photo-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.5);
+  color: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.photo-hero .report-photo-btn:hover {
+  opacity: 1;
+}
+.photo-hero .report-photo-btn:disabled {
+  cursor: default;
+  opacity: 0.8;
 }
 .photo-hero .photo-credit {
   position: absolute;
@@ -389,20 +453,8 @@ h2 {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
-.top-bar-title {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.top-bar-progress {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
 
 /* =============================================
    Set Grid (browse page)
@@ -454,6 +506,34 @@ h2 {
   font-size: 0.8rem;
   color: var(--text-secondary);
   margin-top: 2px;
+}
+
+.diff-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 8px;
+  vertical-align: middle;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.diff-beginner {
+  background: rgba(5, 150, 105, 0.15);
+  color: var(--success);
+}
+.diff-intermediate {
+  background: rgba(184, 90, 59, 0.15);
+  color: var(--accent);
+}
+.diff-themed {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+}
+.diff-expert {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--error);
 }
 
 /* =============================================
@@ -612,6 +692,13 @@ h2 {
 }
 
 /* =============================================
+   Links
+   ============================================= */
+a {
+  color: var(--accent);
+}
+
+/* =============================================
    Responsive — 768px: stack choices to 1col
    ============================================= */
 @media (max-width: 768px) {
@@ -621,6 +708,15 @@ h2 {
 
   h1 {
     font-size: 1.6rem;
+  }
+}
+
+/* =============================================
+   Responsive — 768px: set-grid to 2col
+   ============================================= */
+@media (max-width: 768px) {
+  .set-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
