@@ -14,6 +14,24 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   <meta name="description" content="A GeoGuessr-style insect identification game. Can you tell a beetle from a butterfly?">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>{title}</title>
+  <script is:inline>
+    // Detect base path for subpath deployments (e.g. /games/bugs/)
+    // At root, __BASE is empty string so all paths work unchanged.
+    (function() {
+      var path = window.location.pathname.replace(/\/+$/, '') || '/';
+      var base = path.replace(/\/(play|about)$/, '');
+      window.__BASE = (base === '/' || base === '') ? '' : base;
+
+      // Rewrite internal links once DOM is ready
+      if (window.__BASE) {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('a[href^="/"]:not([href^="//"])').forEach(function(a) {
+            a.setAttribute('href', window.__BASE + a.getAttribute('href'));
+          });
+        });
+      }
+    })();
+  </script>
 </head>
 <body>
   <header class="site-header">

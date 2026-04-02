@@ -81,6 +81,8 @@ function getBugs101Name(taxon) {
   return names[taxon.order] || taxon.order_common || taxon.order;
 }
 
+const base = window.__BASE || '';
+
 let session = null;
 let currentRound = null;
 let roundStartTime = null;
@@ -115,9 +117,9 @@ export async function initGame() {
   let observations, taxonomy, sets;
   try {
     const [obsRes, taxRes, setsRes] = await Promise.all([
-      fetch('/data/observations.json'),
-      fetch('/data/taxonomy.json'),
-      fetch('/data/sets.json'),
+      fetch(`${base}/data/observations.json`),
+      fetch(`${base}/data/taxonomy.json`),
+      fetch(`${base}/data/sets.json`),
     ]);
 
     if (!obsRes.ok || !taxRes.ok || !setsRes.ok) {
@@ -138,7 +140,7 @@ export async function initGame() {
   const setDef = sets[currentSetKey];
 
   if (!setDef) {
-    container.innerHTML = `<div class="container"><p>Set "${escapeHTML(currentSetKey)}" not found. <a href="/">Back to sets</a></p></div>`;
+    container.innerHTML = `<div class="container"><p>Set "${escapeHTML(currentSetKey)}" not found. <a href="${base}/">Back to sets</a></p></div>`;
     return;
   }
 
@@ -171,7 +173,7 @@ function renderRound() {
   container.innerHTML = `
     <div class="container">
       <div class="top-bar">
-        <a href="/" style="text-decoration:none;color:var(--accent);">← Sets</a>
+        <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
         <span>Round ${session.currentRound} of 10 · ${session.totalScore} pts</span>
         <span>${session.setDef.name}</span>
       </div>
@@ -400,7 +402,7 @@ function renderSummary() {
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
           <button class="btn btn-primary" id="play-again-btn">Play Again</button>
-          <a href="/" class="btn btn-outline" id="change-set-btn">Change Set</a>
+          <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
       </div>
 
