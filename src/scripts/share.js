@@ -86,6 +86,15 @@ export async function copyToClipboard(text) {
   }
 }
 
+export function openWhatsApp(text) {
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank', 'noopener');
+}
+
+export function openIMessage(text) {
+  window.location.href = `sms:&body=${encodeURIComponent(text)}`;
+}
+
 export function openTweetIntent(text) {
   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');

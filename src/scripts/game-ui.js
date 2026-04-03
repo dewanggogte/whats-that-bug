@@ -4,7 +4,7 @@
  */
 
 import { SessionState, calculateTimedScore } from './game-engine.js';
-import { generateShareText, generateTimeTrialShareText, generateStreakShareText, copyToClipboard, openTweetIntent } from './share.js';
+import { generateShareText, generateTimeTrialShareText, generateStreakShareText, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 
 function escapeHTML(str) {
@@ -643,8 +643,10 @@ function renderClassicSummary() {
         <p class="subtitle">Best streak: ${session.bestStreak} · Set: ${session.setDef.name}</p>
 
         <div class="share-buttons">
-          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
+          <button class="btn btn-outline" id="whatsapp-btn">WhatsApp</button>
+          <button class="btn btn-outline" id="imessage-btn">iMessage</button>
           <button class="btn btn-outline" id="tweet-btn">𝕏 Post</button>
+          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
         </div>
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
@@ -742,8 +744,10 @@ function renderTimeTrialSummary() {
         </div>
 
         <div class="share-buttons">
-          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
+          <button class="btn btn-outline" id="whatsapp-btn">WhatsApp</button>
+          <button class="btn btn-outline" id="imessage-btn">iMessage</button>
           <button class="btn btn-outline" id="tweet-btn">𝕏 Post</button>
+          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
         </div>
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
@@ -831,8 +835,10 @@ function renderStreakGameOver(picked, correct) {
         <div class="emoji-grid">${emojiGrid}</div>
 
         <div class="share-buttons">
-          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
+          <button class="btn btn-outline" id="whatsapp-btn">WhatsApp</button>
+          <button class="btn btn-outline" id="imessage-btn">iMessage</button>
           <button class="btn btn-outline" id="tweet-btn">𝕏 Post</button>
+          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
         </div>
       </div>
 
@@ -870,17 +876,27 @@ function renderStreakSummary() {
 // ===== SHARED UI HELPERS =====
 
 function attachShareHandlers(shareText) {
+  container.querySelector('#whatsapp-btn')?.addEventListener('click', () => {
+    openWhatsApp(shareText);
+    shared = true;
+  });
+
+  container.querySelector('#imessage-btn')?.addEventListener('click', () => {
+    openIMessage(shareText);
+    shared = true;
+  });
+
+  container.querySelector('#tweet-btn')?.addEventListener('click', () => {
+    openTweetIntent(shareText);
+    shared = true;
+  });
+
   container.querySelector('#copy-btn')?.addEventListener('click', async () => {
     const ok = await copyToClipboard(shareText);
     const btn = container.querySelector('#copy-btn');
     btn.textContent = ok ? '✓ Copied!' : 'Failed';
     shared = true;
     setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
-  });
-
-  container.querySelector('#tweet-btn')?.addEventListener('click', () => {
-    openTweetIntent(shareText);
-    shared = true;
   });
 }
 
