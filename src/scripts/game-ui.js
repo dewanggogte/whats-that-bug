@@ -183,36 +183,38 @@ export async function initGame() {
 
 function getRulesContent() {
   const mode = session.mode;
+  const isBinary = session.setDef.scoring === 'binary';
+  const setName = session.setDef.name;
+  const task = isBinary ? 'Pick the bug type' : 'Name the exact species';
 
   if (mode === 'time_trial') {
     return {
-      title: '⏱️ Time Trial',
+      title: `⏱️ ${setName}`,
       items: [
         ['⏱️', '60 seconds on the clock'],
-        ['✅', 'Faster answers = more points'],
-        ['❌', 'Wrong answers = 0 points'],
+        ['🖼️', task],
+        ['✅', 'Faster = more points · Wrong = 0'],
       ],
     };
   }
 
   if (mode === 'streak') {
     return {
-      title: '🎯 Streaks',
+      title: `🎯 ${setName}`,
       items: [
-        ['🎯', 'Get as many right in a row'],
+        ['🎯', `${task} — don't miss`],
         ['⏳', 'No time pressure'],
         ['💀', 'One wrong = game over'],
       ],
     };
   }
 
-  const isBinary = session.setDef.scoring === 'binary';
-
+  // Classic modes
   if (isBinary) {
     return {
-      title: '🔰 Bugs 101',
+      title: `🔰 ${setName}`,
       items: [
-        ['🖼️', 'See a bug photo, pick the type'],
+        ['🖼️', task],
         ['🔢', '10 rounds · 1,000 pts max'],
         ['✅', 'Right = 100 pts · Wrong = 0'],
       ],
@@ -220,9 +222,9 @@ function getRulesContent() {
   }
 
   return {
-    title: '🌍 All Bugs',
+    title: `${setName}`,
     items: [
-      ['🖼️', 'See a bug photo, name the species'],
+      ['🖼️', task],
       ['🔢', '10 rounds · 1,000 pts max'],
       ['🎯', 'Closer guess = more points'],
     ],
