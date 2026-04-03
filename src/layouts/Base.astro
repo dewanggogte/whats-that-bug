@@ -30,7 +30,7 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
     // At root, __BASE is empty string so all paths work unchanged.
     (function() {
       var path = window.location.pathname.replace(/\/+$/, '') || '/';
-      var base = path.replace(/\/(play|about)$/, '');
+      var base = path.replace(/\/play$/, '');
       window.__BASE = (base === '/' || base === '') ? '' : base;
 
       // Rewrite internal links once DOM is ready
@@ -49,8 +49,6 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
     <div class="site-header-inner">
       <a href="/" class="site-logo">🪲 What's That Bug?</a>
       <nav class="site-nav">
-        <a href="/">Home</a>
-        <a href="/about">About</a>
         <button id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
       </nav>
     </div>
