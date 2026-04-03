@@ -55,6 +55,36 @@ const TINY_TERRORS_TAXA = [
 ];
 const TINY_TERRORS_PER_TAXON = 30;
 
+// Order-level balancing: no single order should dominate the dataset,
+// and every order should have enough observations for variety.
+const MAX_ORDER_SHARE = 0.15; // default cap: 15% of total
+const MIN_ORDER_SHARE = 0.03; // boost under-represented orders to at least 3%
+// Per-order overrides for groups that are unpleasant in large doses
+const ORDER_CAP_OVERRIDES = {
+  'Blattodea': 0.01,         // cockroaches — visceral disgust
+  'Ixodida': 0.02,           // ticks — engorged close-ups are unsettling
+  'Araneae': 0.06,           // spiders — arachnophobia, but still a draw
+  'Scolopendromorpha': 0.02, // centipedes — many-legged nightmares
+};
+const ORDER_TAXON_IDS = {
+  'Lepidoptera': 47157,
+  'Hymenoptera': 47201,
+  'Odonata': 47792,
+  'Coleoptera': 47208,
+  'Hemiptera': 47744,
+  'Araneae': 47118,
+  'Orthoptera': 47651,
+  'Diptera': 47822,
+  'Mantodea': 48112,
+  'Scorpiones': 48894,
+  'Ixodida': 51672,
+  'Isopoda': 48147,
+  'Scolopendromorpha': 53763,
+  'Opiliones': 47367,
+  'Blattodea': 81769,
+  'Dermaptera': 47793,
+};
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
@@ -247,6 +277,73 @@ function buildTaxonomyIndex(observations) {
   return index;
 }
 
+/**
+ * Balance observations so no single order dominates and all orders
+ * have enough representation for interesting gameplay.
+ * Returns: { balanced, boostList } where boostList has orders needing more.
+ */
+function balanceByOrder(observations) {
+  console.log('\nBalancing observations by order...');
+
+  // Group by order
+  const byOrder = new Map();
+  for (const obs of observations) {
+    const order = obs.taxon.order;
+    if (!byOrder.has(order)) byOrder.set(order, []);
+    byOrder.get(order).push(obs);
+  }
+
+  const total = observations.length;
+  const defaultMax = Math.floor(total * MAX_ORDER_SHARE);
+
+  // Cap over-represented orders by random sampling
+  const balanced = [];
+  for (const [order, orderObs] of byOrder) {
+    const cap = ORDER_CAP_OVERRIDES[order]
+      ? Math.floor(total * ORDER_CAP_OVERRIDES[order])
+      : defaultMax;
+    if (orderObs.length > cap) {
+      // Shuffle and take maxPerOrder
+      for (let i = orderObs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [orderObs[i], orderObs[j]] = [orderObs[j], orderObs[i]];
+      }
+      balanced.push(...orderObs.slice(0, cap));
+      console.log(`  Capped ${order}: ${orderObs.length} → ${cap}${ORDER_CAP_OVERRIDES[order] ? ` (override ${(ORDER_CAP_OVERRIDES[order]*100)}%)` : ''}`);
+    } else {
+      balanced.push(...orderObs);
+    }
+  }
+
+  // Calculate min threshold based on new total
+  const newTotal = balanced.length;
+  const minPerOrder = Math.ceil(newTotal * MIN_ORDER_SHARE);
+
+  // Find under-represented orders
+  const newCounts = new Map();
+  for (const obs of balanced) {
+    const order = obs.taxon.order;
+    newCounts.set(order, (newCounts.get(order) || 0) + 1);
+  }
+
+  const boostList = [];
+  for (const [order, count] of newCounts) {
+    if (count < minPerOrder) {
+      const taxonId = ORDER_TAXON_IDS[order];
+      if (taxonId) {
+        const needed = minPerOrder - count;
+        boostList.push({ order, taxonId, needed });
+        console.log(`  Boost ${order}: have ${count}, need ${needed} more (target ${minPerOrder})`);
+      } else {
+        console.warn(`  Warning: no taxon ID mapped for ${order}, skipping boost`);
+      }
+    }
+  }
+
+  console.log(`  Balanced total: ${newTotal} (was ${total})`);
+  return { balanced, boostList };
+}
+
 function validateDistractors(observations, index) {
   const valid = [];
   let dropped = 0;
@@ -413,8 +510,39 @@ async function main() {
   const taxa = await fetchTaxonomy(taxonIds);
   console.log(`Fetched taxonomy for ${taxa.size} taxa`);
 
-  const enriched = enrichObservations(allObservations, taxa);
+  let enriched = enrichObservations(allObservations, taxa);
   console.log(`Enriched observations: ${enriched.length}`);
+
+  // Balance: cap over-represented orders, boost under-represented ones
+  const { balanced, boostList } = balanceByOrder(enriched);
+
+  if (boostList.length > 0) {
+    console.log(`\nFetching boost observations for ${boostList.length} under-represented orders...`);
+    let boostObs = [];
+    for (const { order, taxonId, needed } of boostList) {
+      const fetched = await fetchObservations(taxonId, null, needed);
+      console.log(`  ${order} (${taxonId}): got ${fetched.length}/${needed}`);
+      boostObs = boostObs.concat(fetched);
+    }
+
+    // Dedup boost against existing
+    const existingIds = new Set(balanced.map(o => o.id));
+    boostObs = boostObs.filter(o => !existingIds.has(o.id));
+
+    if (boostObs.length > 0) {
+      // Enrich new observations
+      const boostTaxonIds = [...new Set(boostObs.map(o => o.taxon.id))];
+      const boostTaxa = await fetchTaxonomy(boostTaxonIds);
+      for (const [id, t] of boostTaxa) taxa.set(id, t);
+      const boostEnriched = enrichObservations(boostObs, taxa);
+      console.log(`  Added ${boostEnriched.length} boost observations`);
+      enriched = [...balanced, ...boostEnriched];
+    } else {
+      enriched = balanced;
+    }
+  } else {
+    enriched = balanced;
+  }
 
   let taxonomyIndex = buildTaxonomyIndex(enriched);
   const validated = validateDistractors(enriched, taxonomyIndex);

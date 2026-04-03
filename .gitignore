@@ -5,4 +5,7 @@ dist/
 .env
 .cache/
 .vercel
+.superpowers/
+research/
 SUMMARY.md
+What's That Bug*.csv
