@@ -22,9 +22,38 @@ const REGIONS = [
   { name: 'Africa',        place_id: 97393, target: 350 },
 ];
 
+// Household and backyard pests — taxon IDs verified against iNaturalist API.
+// The set filter matches any observation whose ancestor_ids include these,
+// so family/order-level IDs pull in all species within that group.
 const TINY_TERRORS_TAXA = [
-  47424, 122283, 41191, 49627, 83723, 47157, 49556, 48311, 81746, 52775,
+  81769,  // Cockroaches & Termites (Blattodea, order)
+  52134,  // Mosquitoes (Culicidae, family)
+  51672,  // Ticks (Ixodida, order)
+  53667,  // Bed Bugs (Cimicidae, family)
+  70144,  // House Flies (Muscidae, family)
+  61860,  // Blow Flies (Calliphoridae, family)
+  83204,  // Fleas (Siphonaptera, order)
+  47336,  // Ants (Formicidae, family)
+  48301,  // Silverfish (Zygentoma, order)
+  47793,  // Earwigs (Dermaptera, order)
+  81951,  // Carpet Beetles (Dermestidae, family)
+  52747,  // Wasps & Hornets (Vespidae, family)
+  49556,  // Centipedes (Chilopoda, class)
+  47735,  // Millipedes (Diplopoda, class)
+  47742,  // Stink Bugs (Pentatomidae, family)
+  52381,  // Aphids (Aphididae, family)
+  67742,  // Fruit Flies (Drosophilidae, family)
+  84718,  // Sowbugs & Pillbugs (Oniscidea, suborder)
+  52884,  // Crickets (Gryllidae, family)
+  47370,  // Widow Spiders (Latrodectus, genus)
+  48894,  // Scorpions (Scorpiones, order)
+  48736,  // Weevils (Curculionidae, family)
+  47424,  // Tarantulas (Theraphosidae, family)
+  48140,  // Brown Recluse & kin (Sicariidae, family)
+  124262, // Clothes Moths (Tineidae, family)
+  51225,  // Crane Flies (Tipulidae, family)
 ];
+const TINY_TERRORS_PER_TAXON = 30;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -79,21 +108,23 @@ async function fetchObservations(taxonId, placeId, count) {
   const observations = [];
   let fetched = 0;
   let page = 1;
+  const maxPages = Math.max(10, Math.ceil(count / 10)); // safety: stop after N pages with diminishing returns
 
-  while (fetched < count) {
+  while (fetched < count && page <= maxPages) {
     const perPage = Math.min(200, count - fetched);
     console.log(`  Fetching page ${page} (${fetched}/${count})...`);
     try {
-      const data = await apiFetch('/observations', {
+      const params = {
         taxon_id: taxonId,
-        place_id: placeId,
         quality_grade: 'research',
         photo_license: 'cc-by',
         photos: 'true',
         per_page: perPage,
         page: page,
         order_by: 'random',
-      });
+      };
+      if (placeId) params.place_id = placeId;
+      const data = await apiFetch('/observations', params);
       if (!data.results || data.results.length === 0) break;
       for (const obs of data.results) {
         if (!obs.taxon?.preferred_common_name) continue;
@@ -358,6 +389,16 @@ async function main() {
     const arachnids = await fetchObservations(ARACHNIDA_TAXON_ID, region.place_id, arachnidTarget);
     console.log(`  Got ${arachnids.length} arachnid observations`);
     allObservations = allObservations.concat(insects, arachnids);
+  }
+
+  // Targeted fetch for household pest taxa — many don't appear in random
+  // Insecta/Arachnida sampling (e.g. cockroaches, bed bugs, centipedes).
+  // Fetches globally (no region filter) to maximise variety.
+  console.log(`\nFetching targeted pest observations (${TINY_TERRORS_TAXA.length} taxa)...`);
+  for (const taxonId of TINY_TERRORS_TAXA) {
+    const pestObs = await fetchObservations(taxonId, null, TINY_TERRORS_PER_TAXON);
+    console.log(`  Taxon ${taxonId}: got ${pestObs.length} observations`);
+    allObservations = allObservations.concat(pestObs);
   }
 
   const seen = new Set();
