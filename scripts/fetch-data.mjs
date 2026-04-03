@@ -561,6 +561,28 @@ async function main() {
   console.log(`  observations.json: ${validated.length} records`);
   writeFileSync(join(DATA_DIR, 'taxonomy.json'), JSON.stringify(finalIndex, null, 2));
   console.log(`  taxonomy.json: ${Object.keys(finalIndex.order).length} orders, ${Object.keys(finalIndex.family).length} families`);
+  // Add game mode variants (Time Trial + Streaks for Bugs 101 and All Bugs)
+  sets.time_trial = {
+    name: 'Time Trial', description: '60 seconds. How many can you identify?',
+    mode: 'time_trial', scoring: 'taxonomic', difficulty: 'expert',
+    observation_ids: sets.all_bugs.observation_ids,
+  };
+  sets.streak = {
+    name: 'Streaks', description: 'How many in a row? One wrong and it is over.',
+    mode: 'streak', scoring: 'taxonomic', difficulty: 'expert',
+    observation_ids: sets.all_bugs.observation_ids,
+  };
+  sets.bugs_101_time_trial = {
+    name: 'Time Trial', description: '60 seconds. How many bug types can you identify?',
+    mode: 'time_trial', scoring: 'binary', difficulty: 'beginner',
+    observation_ids: sets.bugs_101.observation_ids,
+  };
+  sets.bugs_101_streak = {
+    name: 'Streaks', description: 'How many bug types in a row? One wrong and it is over.',
+    mode: 'streak', scoring: 'binary', difficulty: 'beginner',
+    observation_ids: sets.bugs_101.observation_ids,
+  };
+
   writeFileSync(join(DATA_DIR, 'sets.json'), JSON.stringify(sets, null, 2));
   console.log(`  sets.json: ${Object.keys(sets).length} sets`);
   console.log('\nDone!');
