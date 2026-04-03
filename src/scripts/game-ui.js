@@ -202,122 +202,31 @@ function getRulesContent() {
   const mode = session.mode;
 
   if (mode === 'time_trial') {
-    return {
-      diagramHTML: `
-        <div class="diagram-row">
-          <span class="diagram-label">⏱ Timer</span>
-          <span class="diagram-value">60s countdown</span>
-        </div>
-        <div class="diagram-row">
-          <span class="diagram-label">Score</span>
-          <span class="diagram-value">Points for speed</span>
-        </div>
-        <div class="diagram-photo-placeholder">📷</div>
-        <div class="diagram-choices">
-          <div class="diagram-choice">Choice A</div>
-          <div class="diagram-choice">Choice B</div>
-          <div class="diagram-choice">Choice C</div>
-          <div class="diagram-choice">Choice D</div>
-        </div>
-      `,
-      textHTML: `
-        <strong>Faster = more points</strong>
-        <table class="speed-brackets">
-          <tr><td>&lt; 3s</td><td>100 pts</td></tr>
-          <tr><td>3–5s</td><td>75 pts</td></tr>
-          <tr><td>5–8s</td><td>50 pts</td></tr>
-          <tr><td>8–12s</td><td>25 pts</td></tr>
-          <tr><td>12s+</td><td>10 pts</td></tr>
-        </table>
-        <p style="margin-top:8px;">Wrong = 0 points</p>
-      `,
-    };
+    return `<strong>60 seconds on the clock.</strong> Identify as many bugs as you can. Faster correct answers earn more points. Wrong answers score 0.`;
   }
 
   if (mode === 'streak') {
-    return {
-      diagramHTML: `
-        <div class="diagram-row">
-          <span class="diagram-label">🔥 Streak</span>
-          <span class="diagram-value">Count goes up</span>
-        </div>
-        <div class="diagram-photo-placeholder">📷</div>
-        <div class="diagram-choices">
-          <div class="diagram-choice">Choice A</div>
-          <div class="diagram-choice">Choice B</div>
-          <div class="diagram-choice">Choice C</div>
-          <div class="diagram-choice">Choice D</div>
-        </div>
-      `,
-      textHTML: `
-        <p><strong>One wrong answer = game over.</strong></p>
-        <p>No time pressure. Just don't miss.</p>
-      `,
-    };
+    return `<strong>How many can you get right in a row?</strong> No time pressure — but one wrong answer and it's over.`;
   }
 
-  // Classic modes
   const isBinary = session.setDef.scoring === 'binary';
 
   if (isBinary) {
-    return {
-      diagramHTML: `
-        <div class="diagram-row">
-          <span class="diagram-label">Score</span>
-          <span class="diagram-value">Right = 100, Wrong = 0</span>
-        </div>
-        <div class="diagram-row">
-          <span class="diagram-label">Rounds</span>
-          <span class="diagram-value">10</span>
-        </div>
-        <div class="diagram-photo-placeholder">📷</div>
-        <div class="diagram-choices">
-          <div class="diagram-choice">Choice A</div>
-          <div class="diagram-choice">Choice B</div>
-          <div class="diagram-choice">Choice C</div>
-          <div class="diagram-choice">Choice D</div>
-        </div>
-      `,
-      textHTML: `<p><strong>Identify the bug type.</strong> 10 rounds, 1000 points max.</p>`,
-    };
+    return `<strong>Identify the bug type.</strong> 10 rounds, right = 100 points, wrong = 0. 1,000 points max.`;
   }
 
-  // Classic taxonomic
-  return {
-    diagramHTML: `
-      <div class="diagram-row">
-        <span class="diagram-label">Score</span>
-        <span class="diagram-value">Closer = more pts</span>
-      </div>
-      <div class="diagram-row">
-        <span class="diagram-label">Rounds</span>
-        <span class="diagram-value">10</span>
-      </div>
-      <div class="diagram-photo-placeholder">📷</div>
-      <div class="diagram-choices">
-        <div class="diagram-choice">Choice A</div>
-        <div class="diagram-choice">Choice B</div>
-        <div class="diagram-choice">Choice C</div>
-        <div class="diagram-choice">Choice D</div>
-      </div>
-    `,
-    textHTML: `
-      <p><strong>Closer guess = more points</strong></p>
-      <p style="font-size:0.8rem;margin-top:4px;">Exact species: 100 · Same genus: 75 · Same family: 50 · Same order: 25</p>
-    `,
-  };
+  return `<strong>Closer guess = more points.</strong> Exact species: 100 · Same genus: 75 · Same family: 50 · Same order: 25. 10 rounds, 1,000 points max.`;
 }
 
 function showRulesPopup(onDismiss) {
-  const { diagramHTML, textHTML } = getRulesContent();
+  const rulesText = getRulesContent();
 
   const overlay = document.createElement('div');
   overlay.className = 'rules-overlay';
   overlay.innerHTML = `
     <div class="rules-card">
       <button class="rules-close" aria-label="Close">&times;</button>
-      <div class="rules-diagram">${diagramHTML}</div>
-      <div class="rules-text">${textHTML}</div>
+      <div class="rules-text">${rulesText}</div>
     </div>
   `;
 
@@ -335,7 +244,6 @@ function showRulesPopup(onDismiss) {
     if (e.target === overlay) dismiss();
   });
 
-  // Auto-dismiss after 5 seconds
   setTimeout(dismiss, 5000);
 }
 
@@ -414,7 +322,7 @@ function renderRound() {
       <div class="streak-bar">
         <a href="${base}/" style="text-decoration:none;color:var(--accent);position:absolute;left:16px;">← Sets</a>
         <span class="streak-count">${session.currentStreak}</span>
-        <span class="streak-label">streak</span>
+        <span class="streak-label">streaks</span>
       </div>
     `;
   } else {
@@ -442,7 +350,7 @@ function renderRound() {
 
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
-          const isBugs101 = session.setDef.scoring === 'binary';
+          const isBugs101 = session.setDef.scoring === 'binary' && session.mode === 'classic';
           const displayName = isBugs101 ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
           const displayLatin = isBugs101 ? choice.taxon.order : choice.taxon.species;
           return `
@@ -478,6 +386,9 @@ function renderRound() {
 }
 
 function handleAnswer(picked, choices, choiceEls) {
+  // Ensure _currentCorrect matches the displayed round (preloading may have overwritten it)
+  session._currentCorrect = currentRound.correct;
+
   const timeTaken = Date.now() - roundStartTime;
   const mode = session.mode;
 
@@ -486,7 +397,7 @@ function handleAnswer(picked, choices, choiceEls) {
   if (mode === 'time_trial') {
     // Submit to get correct answer reference, then calculate timed score
     result = session.submitAnswer(picked.taxon);
-    const isCorrect = picked.taxon.order === result.correct.taxon.order;
+    const isCorrect = picked.taxon.species === result.correct.taxon.species;
     const timedScore = isCorrect ? calculateTimedScore(timeTaken) : 0;
     // Adjust: undo the binary 100 and apply timed score instead
     session.totalScore = session.totalScore - result.score + timedScore;
@@ -508,13 +419,15 @@ function handleAnswer(picked, choices, choiceEls) {
   const isBugs101 = session.setDef.scoring === 'binary';
   choices.forEach((choice, i) => {
     const el = choiceEls[i];
-    if (isBugs101 || mode === 'time_trial' || mode === 'streak') {
+    if (isBugs101) {
       if (choice.taxon.order === correct.taxon.order) el.classList.add('correct');
       else if (choice.taxon.order === picked.taxon.order) el.classList.add('miss');
     } else {
-      if (choice.taxon.species === correct.taxon.species) el.classList.add('correct');
-      else if (choice.taxon.species === picked.taxon.species) {
-        if (score >= 50) el.classList.add('close');
+      if (choice.taxon.species === correct.taxon.species) {
+        el.classList.add('correct');
+      } else if (choice.taxon.species === picked.taxon.species) {
+        if (mode === 'time_trial' || mode === 'streak') el.classList.add('miss');
+        else if (score >= 50) el.classList.add('close');
         else el.classList.add('miss');
       }
     }
@@ -567,7 +480,7 @@ function handleTimeTrialPostAnswer(score, timeTaken) {
 
   // Advance immediately — flash/numbers persist briefly
   if (timeRemaining > 0) {
-    setTimeout(() => startRound(), 100);
+    setTimeout(() => startRound(), 800);
   }
 
   // Clear popup after delay
@@ -803,7 +716,7 @@ function renderStreakGameOver(picked, correct) {
   container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>🔥 Streak Over</h1>
+        <h1>🔥 Streaks Over</h1>
         <div class="summary-score">${streakCount}</div>
         <p class="subtitle" style="margin-bottom:16px;">in a row</p>
         <div class="emoji-grid">${emojiGrid}</div>

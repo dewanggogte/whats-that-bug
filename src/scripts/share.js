@@ -63,7 +63,7 @@ export function generateStreakShareText(streakCount, history) {
   else flavor = 'Give it a shot! 👀';
 
   return [
-    `🪲 What's That Bug? — Streak`,
+    `🪲 What's That Bug? — Streaks`,
     '',
     `${streakCount} in a row`,
     '',

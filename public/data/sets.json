@@ -3,7 +3,7 @@
     "name": "Time Trial",
     "description": "60 seconds. How many can you identify?",
     "mode": "time_trial",
-    "scoring": "binary",
+    "scoring": "taxonomic",
     "observation_ids": [
       0,
       1,
@@ -2391,10 +2391,10 @@
     ]
   },
   "streak": {
-    "name": "Streak",
+    "name": "Streaks",
     "description": "How many in a row? One wrong and it is over.",
     "mode": "streak",
-    "scoring": "binary",
+    "scoring": "taxonomic",
     "observation_ids": [
       0,
       1,
