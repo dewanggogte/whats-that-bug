@@ -1,10 +1,10 @@
 /**
  * Game UI — DOM rendering and event handling for the game page.
- * Imports pure logic from game-engine.js, feedback.js, and share.js.
+ * Supports three modes: classic (10 rounds), time_trial (60s), streak (until wrong).
  */
 
-import { SessionState } from './game-engine.js';
-import { generateShareText, copyToClipboard, openTweetIntent } from './share.js';
+import { SessionState, calculateTimedScore } from './game-engine.js';
+import { generateShareText, generateTimeTrialShareText, generateStreakShareText, copyToClipboard, openTweetIntent } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 
 function escapeHTML(str) {
@@ -16,12 +16,7 @@ function escapeHTML(str) {
     .replace(/'/g, '&#039;');
 }
 
-/**
- * Get a beginner-friendly display name for Bugs 101 mode.
- * Uses family-level distinction for ambiguous orders where one order
- * contains visually/conceptually different groups (bees vs ants,
- * butterflies vs moths, dragonflies vs damselflies, etc.)
- */
+// Bugs 101 display name logic
 const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
 const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
 const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
@@ -34,26 +29,21 @@ const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
 const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
 
 function getBugs101Name(taxon) {
-  // Hymenoptera: bees, ants, wasps
   if (taxon.order === 'Hymenoptera') {
     if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
     if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
     return 'Wasp';
   }
-  // Lepidoptera: butterflies vs moths
   if (taxon.order === 'Lepidoptera') {
     return BUTTERFLY_FAMILIES.includes(taxon.family) ? 'Butterfly' : 'Moth';
   }
-  // Orthoptera: grasshoppers, crickets, katydids
   if (taxon.order === 'Orthoptera') {
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
     return 'Grasshopper';
   }
-  // Odonata: dragonflies vs damselflies
   if (taxon.order === 'Odonata') {
     return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
   }
-  // Hemiptera: cicadas, stink bugs, planthoppers, aphids, water bugs, etc.
   if (taxon.order === 'Hemiptera') {
     if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
     if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
@@ -62,20 +52,11 @@ function getBugs101Name(taxon) {
     if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
     return 'True Bug';
   }
-  // Simple orders — one name fits all
   const names = {
-    'Coleoptera': 'Beetle',
-    'Ixodida': 'Tick',
-    'Araneae': 'Spider',
-    'Scorpiones': 'Scorpion',
-    'Opiliones': 'Harvestman',
-    'Mantodea': 'Mantis',
-    'Diptera': 'Fly',
-    'Phasmida': 'Stick Insect',
-    'Neuroptera': 'Lacewing',
-    'Blattodea': 'Cockroach',
-    'Dermaptera': 'Earwig',
-    'Ephemeroptera': 'Mayfly',
+    'Coleoptera': 'Beetle', 'Ixodida': 'Tick', 'Araneae': 'Spider',
+    'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman', 'Mantodea': 'Mantis',
+    'Diptera': 'Fly', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
+    'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
     'Trichoptera': 'Caddisfly',
   };
   return names[taxon.order] || taxon.order_common || taxon.order;
@@ -90,20 +71,70 @@ let currentSetKey = 'all_bugs';
 let sessionEndSent = false;
 let shared = false;
 
+// Time Trial state
+let timerInterval = null;
+let timeRemaining = 60;
+
+// Preloading state
+let preloadQueue = [];
+let preloadedImages = [];
+let displayRound = 0; // Tracks actual round shown to player (separate from session.currentRound)
+const PRELOAD_COUNT_TIME_TRIAL = 5;
+const PRELOAD_COUNT_DEFAULT = 2;
+
+function getPreloadCount() {
+  if (!session) return PRELOAD_COUNT_DEFAULT;
+  return session.mode === 'time_trial' ? PRELOAD_COUNT_TIME_TRIAL : PRELOAD_COUNT_DEFAULT;
+}
+
+function preloadNextImages() {
+  const needed = getPreloadCount() - preloadQueue.length;
+  for (let i = 0; i < needed; i++) {
+    const round = session.nextRound();
+    if (!round) break;
+    const img = new Image();
+    img.src = round.correct.photo_url;
+    preloadQueue.push(round);
+    preloadedImages.push(img);
+  }
+}
+
+function getNextPreloadedRound() {
+  let round;
+  if (preloadQueue.length > 0) {
+    preloadedImages.shift();
+    round = preloadQueue.shift();
+  } else {
+    round = session.nextRound();
+  }
+  // Fix: set _currentCorrect so submitAnswer() compares against the right answer
+  if (round) {
+    session._currentCorrect = round.correct;
+  }
+  displayRound++;
+  return round;
+}
+
 function sendSessionEnd() {
   if (sessionEndSent || !session) return;
   sessionEndSent = true;
+
+  const extraData = session.mode === 'time_trial'
+    ? { questions_answered: session.questionsAnswered, correct_count: session.correctCount }
+    : undefined;
+
   logSessionEnd(
     session.sessionId,
     session.totalScore,
     session.currentRound,
     session.setDef.name,
-    session.isComplete,
-    shared
+    session.mode === 'classic' ? session.isComplete : true,
+    shared,
+    session.mode,
+    extraData
   );
 }
 
-// DOM references (set in initGame)
 let container = null;
 
 /**
@@ -113,7 +144,6 @@ export async function initGame() {
   container = document.getElementById('game-container');
   container.setAttribute('aria-live', 'polite');
 
-  // Load data files
   let observations, taxonomy, sets;
   try {
     const [obsRes, taxRes, setsRes] = await Promise.all([
@@ -134,7 +164,6 @@ export async function initGame() {
     return;
   }
 
-  // Get set from URL params
   const params = new URLSearchParams(window.location.search);
   currentSetKey = params.get('set') || 'all_bugs';
   const setDef = sets[currentSetKey];
@@ -144,24 +173,217 @@ export async function initGame() {
     return;
   }
 
-  // Start session
   session = new SessionState(observations, taxonomy, setDef, currentSetKey);
-  logSessionStart(session.sessionId, setDef.name);
+  logSessionStart(session.sessionId, setDef.name, session.mode);
   sessionEndSent = false;
   shared = false;
   window.addEventListener('pagehide', sendSessionEnd);
   window.addEventListener('beforeunload', sendSessionEnd);
 
-  startRound();
+  // Start preloading images
+  preloadQueue = [];
+  preloadedImages = [];
+  displayRound = 0;
+  preloadNextImages();
+
+  // Show rules popup, then start game
+  showRulesPopup(() => {
+    if (session.mode === 'time_trial') {
+      startTimeTrial();
+    } else {
+      startRound();
+    }
+  });
 }
 
+// ===== RULES POPUP =====
+
+function getRulesContent() {
+  const mode = session.mode;
+
+  if (mode === 'time_trial') {
+    return {
+      diagramHTML: `
+        <div class="diagram-row">
+          <span class="diagram-label">⏱ Timer</span>
+          <span class="diagram-value">60s countdown</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-label">Score</span>
+          <span class="diagram-value">Points for speed</span>
+        </div>
+        <div class="diagram-photo-placeholder">📷</div>
+        <div class="diagram-choices">
+          <div class="diagram-choice">Choice A</div>
+          <div class="diagram-choice">Choice B</div>
+          <div class="diagram-choice">Choice C</div>
+          <div class="diagram-choice">Choice D</div>
+        </div>
+      `,
+      textHTML: `
+        <strong>Faster = more points</strong>
+        <table class="speed-brackets">
+          <tr><td>&lt; 3s</td><td>100 pts</td></tr>
+          <tr><td>3–5s</td><td>75 pts</td></tr>
+          <tr><td>5–8s</td><td>50 pts</td></tr>
+          <tr><td>8–12s</td><td>25 pts</td></tr>
+          <tr><td>12s+</td><td>10 pts</td></tr>
+        </table>
+        <p style="margin-top:8px;">Wrong = 0 points</p>
+      `,
+    };
+  }
+
+  if (mode === 'streak') {
+    return {
+      diagramHTML: `
+        <div class="diagram-row">
+          <span class="diagram-label">🔥 Streak</span>
+          <span class="diagram-value">Count goes up</span>
+        </div>
+        <div class="diagram-photo-placeholder">📷</div>
+        <div class="diagram-choices">
+          <div class="diagram-choice">Choice A</div>
+          <div class="diagram-choice">Choice B</div>
+          <div class="diagram-choice">Choice C</div>
+          <div class="diagram-choice">Choice D</div>
+        </div>
+      `,
+      textHTML: `
+        <p><strong>One wrong answer = game over.</strong></p>
+        <p>No time pressure. Just don't miss.</p>
+      `,
+    };
+  }
+
+  // Classic modes
+  const isBinary = session.setDef.scoring === 'binary';
+
+  if (isBinary) {
+    return {
+      diagramHTML: `
+        <div class="diagram-row">
+          <span class="diagram-label">Score</span>
+          <span class="diagram-value">Right = 100, Wrong = 0</span>
+        </div>
+        <div class="diagram-row">
+          <span class="diagram-label">Rounds</span>
+          <span class="diagram-value">10</span>
+        </div>
+        <div class="diagram-photo-placeholder">📷</div>
+        <div class="diagram-choices">
+          <div class="diagram-choice">Choice A</div>
+          <div class="diagram-choice">Choice B</div>
+          <div class="diagram-choice">Choice C</div>
+          <div class="diagram-choice">Choice D</div>
+        </div>
+      `,
+      textHTML: `<p><strong>Identify the bug type.</strong> 10 rounds, 1000 points max.</p>`,
+    };
+  }
+
+  // Classic taxonomic
+  return {
+    diagramHTML: `
+      <div class="diagram-row">
+        <span class="diagram-label">Score</span>
+        <span class="diagram-value">Closer = more pts</span>
+      </div>
+      <div class="diagram-row">
+        <span class="diagram-label">Rounds</span>
+        <span class="diagram-value">10</span>
+      </div>
+      <div class="diagram-photo-placeholder">📷</div>
+      <div class="diagram-choices">
+        <div class="diagram-choice">Choice A</div>
+        <div class="diagram-choice">Choice B</div>
+        <div class="diagram-choice">Choice C</div>
+        <div class="diagram-choice">Choice D</div>
+      </div>
+    `,
+    textHTML: `
+      <p><strong>Closer guess = more points</strong></p>
+      <p style="font-size:0.8rem;margin-top:4px;">Exact species: 100 · Same genus: 75 · Same family: 50 · Same order: 25</p>
+    `,
+  };
+}
+
+function showRulesPopup(onDismiss) {
+  const { diagramHTML, textHTML } = getRulesContent();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'rules-overlay';
+  overlay.innerHTML = `
+    <div class="rules-card">
+      <button class="rules-close" aria-label="Close">&times;</button>
+      <div class="rules-diagram">${diagramHTML}</div>
+      <div class="rules-text">${textHTML}</div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const dismiss = () => {
+    if (overlay.parentNode) {
+      overlay.remove();
+      onDismiss();
+    }
+  };
+
+  overlay.querySelector('.rules-close').addEventListener('click', dismiss);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) dismiss();
+  });
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(dismiss, 5000);
+}
+
+// ===== TIME TRIAL MODE =====
+
+function startTimeTrial() {
+  timeRemaining = 60;
+  startRound();
+  timerInterval = setInterval(() => {
+    timeRemaining--;
+    updateTimerDisplay();
+    if (timeRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      renderTimeTrialSummary();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const timerEl = container.querySelector('.timer-countdown');
+  if (timerEl) {
+    timerEl.textContent = `${timeRemaining}s`;
+    if (timeRemaining <= 10) {
+      timerEl.classList.add('urgent');
+    }
+  }
+}
+
+// ===== GENERIC ROUND =====
+
 function startRound() {
-  currentRound = session.nextRound();
+  currentRound = getNextPreloadedRound();
   if (!currentRound) {
-    renderSummary();
+    if (session.mode === 'time_trial') {
+      renderTimeTrialSummary();
+    } else if (session.mode === 'streak') {
+      renderStreakSummary();
+    } else {
+      renderClassicSummary();
+    }
     window.scrollTo({ top: 0 });
     return;
   }
+
+  // Preload more images in the background
+  preloadNextImages();
+
   roundStartTime = Date.now();
   renderRound();
   window.scrollTo({ top: 0 });
@@ -169,14 +391,45 @@ function startRound() {
 
 function renderRound() {
   const { correct, choices } = currentRound;
+  const mode = session.mode;
 
-  container.innerHTML = `
-    <div class="container">
+  // Top bar varies by mode
+  let topBarHTML;
+  if (mode === 'time_trial') {
+    topBarHTML = `
+      <div class="timer-bar">
+        <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
+        <span class="timer-countdown">${timeRemaining}s</span>
+        <span class="timer-score" style="position:relative;">
+          ${session.totalScore} pts
+          <span class="score-popup" id="score-popup"></span>
+        </span>
+      </div>
+      <div style="text-align:center;padding:2px 0;">
+        <span class="timer-last-time" id="last-time"></span>
+      </div>
+    `;
+  } else if (mode === 'streak') {
+    topBarHTML = `
+      <div class="streak-bar">
+        <a href="${base}/" style="text-decoration:none;color:var(--accent);position:absolute;left:16px;">← Sets</a>
+        <span class="streak-count">${session.currentStreak}</span>
+        <span class="streak-label">streak</span>
+      </div>
+    `;
+  } else {
+    topBarHTML = `
       <div class="top-bar">
         <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
-        <span>Round ${session.currentRound} of 10 · ${session.totalScore} pts</span>
+        <span>Round ${displayRound} of 10 · ${session.totalScore} pts</span>
         <span>${session.setDef.name}</span>
       </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="container" id="game-screen">
+      ${topBarHTML}
 
       <div class="photo-hero">
         <img src="${escapeHTML(correct.photo_url)}" alt="Mystery bug" loading="eager">
@@ -190,12 +443,8 @@ function renderRound() {
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
           const isBugs101 = session.setDef.scoring === 'binary';
-          const displayName = isBugs101
-            ? getBugs101Name(choice.taxon)
-            : choice.taxon.common_name;
-          const displayLatin = isBugs101
-            ? choice.taxon.order
-            : choice.taxon.species;
+          const displayName = isBugs101 ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
+          const displayLatin = isBugs101 ? choice.taxon.order : choice.taxon.species;
           return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">
             <div class="choice-name">${escapeHTML(displayName)}</div>
@@ -206,10 +455,7 @@ function renderRound() {
     </div>
   `;
 
-  // Remove any accidental focus from the freshly rendered choices
-  if (document.activeElement) document.activeElement.blur();
-
-  // Attach click and keyboard handlers
+  // Attach click handlers
   const choiceEls = container.querySelectorAll('.choice');
   choiceEls.forEach((el, i) => {
     const handler = () => handleAnswer(choices[i], choices, choiceEls);
@@ -233,54 +479,134 @@ function renderRound() {
 
 function handleAnswer(picked, choices, choiceEls) {
   const timeTaken = Date.now() - roundStartTime;
-  const result = session.submitAnswer(picked.taxon);
+  const mode = session.mode;
+
+  // For time trial, override score with timed score
+  let result;
+  if (mode === 'time_trial') {
+    // Submit to get correct answer reference, then calculate timed score
+    result = session.submitAnswer(picked.taxon);
+    const isCorrect = picked.taxon.order === result.correct.taxon.order;
+    const timedScore = isCorrect ? calculateTimedScore(timeTaken) : 0;
+    // Adjust: undo the binary 100 and apply timed score instead
+    session.totalScore = session.totalScore - result.score + timedScore;
+    session.history[session.history.length - 1].score = timedScore;
+    if (result.score === 100 && timedScore !== 100) {
+      // correctCount was incremented for binary 100, keep it (it's still correct)
+    }
+    result.score = timedScore;
+  } else {
+    result = session.submitAnswer(picked.taxon);
+  }
+
   const { score, correct } = result;
 
   // Disable all choices
-  choiceEls.forEach(el => {
-    el.style.pointerEvents = 'none';
-  });
+  choiceEls.forEach(el => { el.style.pointerEvents = 'none'; });
 
-  // Highlight choices
+  // Highlight correct/wrong
   const isBugs101 = session.setDef.scoring === 'binary';
   choices.forEach((choice, i) => {
     const el = choiceEls[i];
-    if (isBugs101) {
-      // Bugs 101: match by order
-      if (choice.taxon.order === correct.taxon.order) {
-        el.classList.add('correct');
-      } else if (choice.taxon.order === picked.taxon.order) {
-        el.classList.add('miss');
-      }
+    if (isBugs101 || mode === 'time_trial' || mode === 'streak') {
+      if (choice.taxon.order === correct.taxon.order) el.classList.add('correct');
+      else if (choice.taxon.order === picked.taxon.order) el.classList.add('miss');
     } else {
-      if (choice.taxon.species === correct.taxon.species) {
-        el.classList.add('correct');
-      } else if (choice.taxon.species === picked.taxon.species) {
+      if (choice.taxon.species === correct.taxon.species) el.classList.add('correct');
+      else if (choice.taxon.species === picked.taxon.species) {
         if (score >= 50) el.classList.add('close');
         else el.classList.add('miss');
       }
     }
   });
 
-  // Log round event
+  // Log round
   logRoundComplete(
-    session.sessionId,
-    session.currentRound,
-    correct.id,
-    picked.taxon.species,
-    correct.taxon.species,
-    score,
-    timeTaken,
-    session.setDef.name
+    session.sessionId, session.currentRound, correct.id,
+    picked.taxon.species, correct.taxon.species,
+    score, timeTaken, session.setDef.name, session.mode
   );
 
-  // Determine feedback tier
+  // MODE-SPECIFIC POST-ANSWER FLOW
+  if (mode === 'time_trial') {
+    handleTimeTrialPostAnswer(score, timeTaken);
+  } else if (mode === 'streak') {
+    handleStreakPostAnswer(score, picked, correct);
+  } else {
+    handleClassicPostAnswer(score, picked, correct, timeTaken);
+  }
+}
+
+// ===== TIME TRIAL POST-ANSWER =====
+
+function handleTimeTrialPostAnswer(score, timeTaken) {
+  const gameScreen = container.querySelector('#game-screen');
+
+  // Flash effect
+  gameScreen.classList.add(score > 0 ? 'flash-correct' : 'flash-wrong');
+
+  // Score popup
+  const popup = container.querySelector('#score-popup');
+  if (popup) {
+    popup.textContent = `+${score}`;
+    popup.className = `score-popup visible ${score === 0 ? 'miss' : ''}`;
+  }
+
+  // Update score display
+  const scoreEl = container.querySelector('.timer-score');
+  if (scoreEl) {
+    scoreEl.childNodes[0].textContent = `${session.totalScore} pts `;
+  }
+
+  // Show time taken
+  const lastTimeEl = container.querySelector('#last-time');
+  if (lastTimeEl) {
+    lastTimeEl.textContent = `${(timeTaken / 1000).toFixed(1)}s`;
+    lastTimeEl.classList.add('visible');
+  }
+
+  // Advance immediately — flash/numbers persist briefly
+  if (timeRemaining > 0) {
+    setTimeout(() => startRound(), 100);
+  }
+
+  // Clear popup after delay
+  setTimeout(() => {
+    if (popup) popup.className = 'score-popup';
+    if (lastTimeEl) lastTimeEl.classList.remove('visible');
+  }, 1000);
+}
+
+// ===== STREAK POST-ANSWER =====
+
+function handleStreakPostAnswer(score, picked, correct) {
+  const gameScreen = container.querySelector('#game-screen');
+
+  if (score === 100) {
+    // Correct — flash green, advance after delay
+    gameScreen.classList.add('flash-correct');
+
+    // Update streak display
+    const streakEl = container.querySelector('.streak-count');
+    if (streakEl) streakEl.textContent = session.currentStreak;
+
+    setTimeout(() => startRound(), 500);
+  } else {
+    // Wrong — flash red, show game over
+    gameScreen.classList.add('flash-wrong');
+    setTimeout(() => renderStreakGameOver(picked, correct), 600);
+  }
+}
+
+// ===== CLASSIC POST-ANSWER =====
+
+function handleClassicPostAnswer(score, picked, correct, timeTaken) {
+  // Same as original: show learning card
   let feedbackClass, feedbackTitle;
   if (score === 100) { feedbackClass = 'exact'; feedbackTitle = 'Nailed it!'; }
   else if (score >= 50) { feedbackClass = 'close'; feedbackTitle = 'So close!'; }
   else { feedbackClass = 'miss'; feedbackTitle = 'Not quite'; }
 
-  // Build taxonomy breadcrumb for misses
   let breadcrumb = '';
   if (score < 100) {
     if (score >= 75) {
@@ -299,22 +625,18 @@ function handleAnswer(picked, choices, choiceEls) {
     }
   }
 
-  // Species blurb — trim to last sentence boundary to avoid mid-word cutoff
   let blurb = correct.wikipedia_summary || '';
   if (blurb && !blurb.match(/[.!?]$/)) {
     const lastSentence = blurb.lastIndexOf('. ');
-    if (lastSentence > 40) {
-      blurb = blurb.slice(0, lastSentence + 1);
-    } else {
+    if (lastSentence > 40) blurb = blurb.slice(0, lastSentence + 1);
+    else {
       const lastSpace = blurb.lastIndexOf(' ');
       blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
     }
   }
 
-  // Badge text
   const badgeClass = score === 100 ? 'badge-success' : score >= 50 ? 'badge-warning' : 'badge-error';
 
-  // Render feedback card
   const feedbackHTML = `
     <div class="feedback-card ${feedbackClass}" style="margin-top: 16px;">
       <div class="feedback-title">${feedbackTitle}</div>
@@ -342,45 +664,33 @@ function handleAnswer(picked, choices, choiceEls) {
 
   container.querySelector('.container').insertAdjacentHTML('beforeend', feedbackHTML);
 
-  // Scroll the feedback card into view on mobile
   setTimeout(() => {
     container.querySelector('#next-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 300);
 
-  // Reaction button handlers
   container.querySelectorAll('.reaction-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       logRoundReaction(
-        session.sessionId,
-        session.currentRound,
-        correct.id,
-        btn.dataset.difficulty,
-        picked.taxon.species,
-        correct.taxon.species,
-        score,
-        session.setDef.name
+        session.sessionId, session.currentRound, correct.id,
+        btn.dataset.difficulty, picked.taxon.species, correct.taxon.species,
+        score, session.setDef.name
       );
     });
   });
 
-  // Next button
   container.querySelector('#next-btn').addEventListener('click', startRound);
 }
 
-function renderSummary() {
+// ===== SUMMARY SCREENS =====
+
+function renderClassicSummary() {
   const exactCount = session.history.filter(h => h.score === 100).length;
   const closeCount = session.history.filter(h => h.score >= 50 && h.score < 100).length;
   const missCount = session.history.filter(h => h.score < 50).length;
-  const shareText = generateShareText(
-    session.totalScore,
-    session.history,
-    session.setDef.name,
-    session.bestStreak
-  );
+  const shareText = generateShareText(session.totalScore, session.history, session.setDef.name, session.bestStreak);
 
-  // Save best score to localStorage (use set key, not name, for consistency with landing page)
   const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   if (session.totalScore > prevBest) {
@@ -409,39 +719,136 @@ function renderSummary() {
         </div>
       </div>
 
-      <div class="feedback-form" id="session-feedback">
-        <h3 style="margin-bottom: 12px;">How was that?</h3>
-        <label for="difficulty-rating">Overall difficulty</label>
-        <input type="range" id="difficulty-rating" min="1" max="5" value="3" style="width:100%">
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-top:-8px; margin-bottom:12px;">
-          <span>Too Easy</span><span>Just Right</span><span>Too Hard</span>
+      ${renderSessionFeedbackForm()}
+    </div>
+  `;
+
+  attachShareHandlers(shareText);
+  attachPlayAgainHandlers();
+  attachSessionFeedbackHandlers();
+}
+
+function renderTimeTrialSummary() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+  const correctCount = session.correctCount;
+  const totalQ = session.questionsAnswered;
+  const shareText = generateTimeTrialShareText(session.totalScore, session.history, correctCount, totalQ);
+
+  const storageKey = `best_time_trial`;
+  const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
+  if (session.totalScore > prevBest) {
+    localStorage.setItem(storageKey, session.totalScore.toString());
+  }
+
+  const emojiGrid = session.history.map(h => h.score > 0 ? '🟩' : '🟥').join('');
+
+  container.innerHTML = `
+    <div class="container">
+      <div class="summary">
+        <h1>⚡ Time Trial</h1>
+        <div class="summary-score">${session.totalScore} pts</div>
+        <div class="summary-breakdown">${correctCount}/${totalQ} correct in 60 seconds</div>
+        <div class="emoji-grid">${emojiGrid}</div>
+
+        <div class="share-buttons">
+          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
+          <button class="btn btn-outline" id="tweet-btn">𝕏 Post</button>
         </div>
 
-        <label for="interesting-round">Most interesting round?</label>
-        <select id="interesting-round">
-          <option value="">Skip</option>
-          ${session.history.map((h, i) => `
-            <option value="${i + 1}">Round ${i + 1}: ${escapeHTML(h.correct_taxon.common_name)}</option>
-          `).join('')}
-        </select>
-
-        <label for="free-text">Anything feel off?</label>
-        <textarea id="free-text" placeholder="Options too obvious? Names too technical? Bugs too obscure?"></textarea>
-
-        <label>Would you play again?</label>
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-          <button class="reaction-btn" data-play-again="yes">Yes</button>
-          <button class="reaction-btn" data-play-again="maybe">Maybe</button>
-          <button class="reaction-btn" data-play-again="no">No</button>
+        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+          <button class="btn btn-primary" id="play-again-btn">Play Again</button>
+          <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
-
-        <button class="btn btn-primary" id="submit-feedback" style="width:100%">Send Feedback</button>
       </div>
     </div>
   `;
 
-  // Share handlers
-  container.querySelector('#copy-btn').addEventListener('click', async () => {
+  attachShareHandlers(shareText);
+  attachPlayAgainHandlers();
+}
+
+function renderStreakGameOver(picked, correct) {
+  const streakCount = session.currentStreak;
+  const shareText = generateStreakShareText(streakCount, session.history);
+
+  const storageKey = `best_streak`;
+  const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
+  if (streakCount > prevBest) {
+    localStorage.setItem(storageKey, streakCount.toString());
+  }
+
+  // Only green emojis
+  const emojiGrid = Array(streakCount).fill('🟩').join('');
+
+  // Learning card content for the bug they got wrong
+  let breadcrumb = '';
+  const isBugs101Mode = session.setDef.scoring === 'binary';
+  if (isBugs101Mode) {
+    breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
+  } else {
+    breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
+  }
+
+  let blurb = correct.wikipedia_summary || '';
+  if (blurb && !blurb.match(/[.!?]$/)) {
+    const lastSentence = blurb.lastIndexOf('. ');
+    if (lastSentence > 40) blurb = blurb.slice(0, lastSentence + 1);
+    else {
+      const lastSpace = blurb.lastIndexOf(' ');
+      blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
+    }
+  }
+
+  container.innerHTML = `
+    <div class="container">
+      <div class="summary">
+        <h1>🔥 Streak Over</h1>
+        <div class="summary-score">${streakCount}</div>
+        <p class="subtitle" style="margin-bottom:16px;">in a row</p>
+        <div class="emoji-grid">${emojiGrid}</div>
+
+        <div class="share-buttons">
+          <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
+          <button class="btn btn-outline" id="tweet-btn">𝕏 Post</button>
+        </div>
+      </div>
+
+      <div class="feedback-card miss" style="margin-top: 16px;">
+        <div class="feedback-title">The one that got away</div>
+        <div class="feedback-body">
+          <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
+          ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
+          ${breadcrumb ? `<br><br>${breadcrumb}` : ''}
+        </div>
+        <div style="margin-top: 8px;">
+          <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="font-size: 13px;">Learn more →</a>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-primary" id="play-again-btn">Play Again</button>
+        <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
+      </div>
+    </div>
+  `;
+
+  attachShareHandlers(shareText);
+  attachPlayAgainHandlers();
+}
+
+function renderStreakSummary() {
+  // If pool exhausted without error (unlikely but possible)
+  renderStreakGameOver(
+    { taxon: { species: '', genus: '', family: '', order: '' } },
+    session._currentCorrect || { taxon: { species: '', genus: '', family: '', order: '', common_name: 'Unknown' }, wikipedia_summary: '', inat_url: '' }
+  );
+}
+
+// ===== SHARED UI HELPERS =====
+
+function attachShareHandlers(shareText) {
+  container.querySelector('#copy-btn')?.addEventListener('click', async () => {
     const ok = await copyToClipboard(shareText);
     const btn = container.querySelector('#copy-btn');
     btn.textContent = ok ? '✓ Copied!' : 'Failed';
@@ -449,23 +856,57 @@ function renderSummary() {
     setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
   });
 
-  container.querySelector('#tweet-btn').addEventListener('click', () => {
+  container.querySelector('#tweet-btn')?.addEventListener('click', () => {
     openTweetIntent(shareText);
     shared = true;
   });
+}
 
-  // Play again
-  container.querySelector('#play-again-btn').addEventListener('click', () => {
+function attachPlayAgainHandlers() {
+  container.querySelector('#play-again-btn')?.addEventListener('click', () => {
     sendSessionEnd();
     window.location.reload();
   });
 
-  // Change set — ensure session_end fires before navigation
-  container.querySelector('#change-set-btn').addEventListener('click', () => {
+  container.querySelector('#change-set-btn')?.addEventListener('click', () => {
     sendSessionEnd();
   });
+}
 
-  // Session feedback form
+function renderSessionFeedbackForm() {
+  return `
+    <div class="feedback-form" id="session-feedback">
+      <h3 style="margin-bottom: 12px;">How was that?</h3>
+      <label for="difficulty-rating">Overall difficulty</label>
+      <input type="range" id="difficulty-rating" min="1" max="5" value="3" style="width:100%">
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-top:-8px; margin-bottom:12px;">
+        <span>Too Easy</span><span>Just Right</span><span>Too Hard</span>
+      </div>
+
+      <label for="interesting-round">Most interesting round?</label>
+      <select id="interesting-round">
+        <option value="">Skip</option>
+        ${session.history.map((h, i) => `
+          <option value="${i + 1}">Round ${i + 1}: ${escapeHTML(h.correct_taxon.common_name)}</option>
+        `).join('')}
+      </select>
+
+      <label for="free-text">Anything feel off?</label>
+      <textarea id="free-text" placeholder="Options too obvious? Names too technical? Bugs too obscure?"></textarea>
+
+      <label>Would you play again?</label>
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="reaction-btn" data-play-again="yes">Yes</button>
+        <button class="reaction-btn" data-play-again="maybe">Maybe</button>
+        <button class="reaction-btn" data-play-again="no">No</button>
+      </div>
+
+      <button class="btn btn-primary" id="submit-feedback" style="width:100%">Send Feedback</button>
+    </div>
+  `;
+}
+
+function attachSessionFeedbackHandlers() {
   let playAgainValue = '';
   container.querySelectorAll('[data-play-again]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -475,11 +916,9 @@ function renderSummary() {
     });
   });
 
-  container.querySelector('#submit-feedback').addEventListener('click', () => {
+  container.querySelector('#submit-feedback')?.addEventListener('click', () => {
     logSessionFeedback(
-      session.sessionId,
-      session.totalScore,
-      session.setDef.name,
+      session.sessionId, session.totalScore, session.setDef.name,
       container.querySelector('#difficulty-rating').value,
       container.querySelector('#interesting-round').value,
       container.querySelector('#free-text').value,
