@@ -3,32 +3,20 @@ import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 
-const SET_ICONS: Record<string, string> = {
-  backyard_basics: '🏡',
-  beetles: '🪲',
-  butterflies_moths: '🦋',
-  spiders: '🕷️',
-  tiny_terrors: '😱',
-};
+const THEMED_SETS = [
+  { key: 'backyard_basics', icon: '🏡' },
+  { key: 'tiny_terrors', icon: '😱' },
+  { key: 'beetles', icon: '🪲' },
+  { key: 'butterflies_moths', icon: '🦋' },
+  { key: 'spiders', icon: '🕷️' },
+];
 
-const DIFFICULTY_LABELS: Record<string, { label: string; class: string }> = {
-  beginner: { label: 'Beginner', class: 'diff-beginner' },
-  intermediate: { label: 'Intermediate', class: 'diff-intermediate' },
-  themed: { label: 'Themed', class: 'diff-themed' },
-  expert: { label: 'Expert', class: 'diff-expert' },
-};
-
-// Themed sets
-const themedKeys = ['backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders'];
-const themedGroup = themedKeys.map(key => {
+const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   const set = setsData[key];
-  const isBinary = set.scoring === 'binary';
-  const uniqueCount = isBinary
-    ? new Set(set.observation_ids.map((i: number) => observations[i]?.taxon?.order)).size
-    : new Set(set.observation_ids.map((i: number) => observations[i]?.taxon?.species)).size;
-  const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
-  const diff = DIFFICULTY_LABELS[set.difficulty] || null;
-  return { key, ...set, icon: SET_ICONS[key] || '🐛', countLabel, diff };
+  const uniqueSpecies = new Set(
+    set.observation_ids.map((i: number) => observations[i]?.taxon?.species)
+  ).size;
+  return { key, name: set.name, icon, countLabel: `${uniqueSpecies} species` };
 });
 ---
 <Base title="What's That Bug? — Insect Identification Game">
@@ -44,7 +32,6 @@ const themedGroup = themedKeys.map(key => {
           <h2 class="mode-group-title">🔰 Bugs 101 <span class="diff-badge diff-beginner">Beginner</span></h2>
           <p class="mode-group-subtitle">Identify by type — beetle, spider, butterfly, and more</p>
         </div>
-        <span class="mode-group-meta" id="bugs101-best"></span>
       </div>
       <div class="mode-buttons">
         <a href="/play?set=bugs_101_time_trial" class="mode-btn">
@@ -71,7 +58,6 @@ const themedGroup = themedKeys.map(key => {
           <h2 class="mode-group-title">🌍 All Bugs <span class="diff-badge diff-expert">Expert</span></h2>
           <p class="mode-group-subtitle">Name the exact species from 1,000+ bugs worldwide</p>
         </div>
-        <span class="mode-group-meta" id="allbugs-best"></span>
       </div>
       <div class="mode-buttons">
         <a href="/play?set=time_trial" class="mode-btn">
@@ -92,26 +78,19 @@ const themedGroup = themedKeys.map(key => {
       </div>
     </div>
 
-    <div class="set-group">
-      <h2 class="set-group-title">Themed Sets</h2>
-      <p class="set-group-subtitle">Dive deeper into specific groups</p>
-      <div class="set-grid">
+    <div class="mode-group" style="margin-top: 20px;">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">Themed Sets</h2>
+          <p class="mode-group-subtitle">Dive deeper into specific groups</p>
+        </div>
+      </div>
+      <div class="themed-buttons">
         {themedGroup.map(set => (
-          <a href={`/play?set=${set.key}`} class="set-card">
-            <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
-              {set.icon}
-            </div>
-            <div class="set-card-body">
-              <h3>
-                {set.name}
-                {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
-              </h3>
-              <p>{set.description}</p>
-              <div class="set-card-meta">
-                <span>{set.countLabel}</span>
-                <span id={`best-${set.key}`}></span>
-              </div>
-            </div>
+          <a href={`/play?set=${set.key}`} class="themed-btn">
+            <span class="themed-btn-icon">{set.icon}</span>
+            <span class="themed-btn-label">{set.name}</span>
+            <span class="themed-btn-meta">{set.countLabel}</span>
           </a>
         ))}
       </div>
@@ -120,16 +99,22 @@ const themedGroup = themedKeys.map(key => {
 
   <script>
     // Show best scores from localStorage
-    document.querySelectorAll('[id^="best-"]').forEach(el => {
-      const setKey = el.id.replace('best-', '');
-      const storageKey = `best_${setKey}`;
-      const best = localStorage.getItem(storageKey);
+    const bestKeys = [
+      'bugs_101_time_trial', 'bugs_101_streak', 'bugs_101',
+      'time_trial', 'streak', 'all_bugs',
+      'backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders',
+    ];
+    // Best scores are shown inline on mode buttons via data attributes
+    document.querySelectorAll('.mode-btn[data-key], .themed-btn[data-key]').forEach(el => {
+      const key = el.getAttribute('data-key');
+      if (!key) return;
+      const best = localStorage.getItem(`best_${key}`);
       if (best) {
-        const isStreak = setKey.includes('streak');
-        const label = isStreak ? `Best: ${best} streak` : `Best: ${best}`;
-        el.textContent = label;
-        el.style.color = 'var(--accent)';
-        el.style.fontWeight = '600';
+        const meta = el.querySelector('.mode-btn-desc, .themed-btn-meta');
+        if (meta) {
+          meta.textContent = `Best: ${best}`;
+          meta.style.color = 'var(--accent)';
+        }
       }
     });
   </script>
