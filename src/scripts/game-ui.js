@@ -75,43 +75,28 @@ let shared = false;
 let timerInterval = null;
 let timeRemaining = 60;
 
-// Preloading state
-let preloadQueue = [];
-let preloadedImages = [];
-let displayRound = 0; // Tracks actual round shown to player (separate from session.currentRound)
-const PRELOAD_COUNT_TIME_TRIAL = 5;
-const PRELOAD_COUNT_DEFAULT = 2;
+// Preloading state — only preloads images, never calls nextRound() ahead of time
+let nextRoundCache = null; // Pre-generated next round for image preloading
+let displayRound = 0;
 
-function getPreloadCount() {
-  if (!session) return PRELOAD_COUNT_DEFAULT;
-  return session.mode === 'time_trial' ? PRELOAD_COUNT_TIME_TRIAL : PRELOAD_COUNT_DEFAULT;
+function preloadNextRound() {
+  if (nextRoundCache) return; // already have one queued
+  const round = session.nextRound();
+  if (!round) return;
+  nextRoundCache = round;
+  // Start loading the image
+  const img = new Image();
+  img.src = round.correct.photo_url;
 }
 
-function preloadNextImages() {
-  const needed = getPreloadCount() - preloadQueue.length;
-  for (let i = 0; i < needed; i++) {
-    const round = session.nextRound();
-    if (!round) break;
-    const img = new Image();
-    img.src = round.correct.photo_url;
-    preloadQueue.push(round);
-    preloadedImages.push(img);
-  }
-}
-
-function getNextPreloadedRound() {
+function getNextRound() {
   let round;
-  if (preloadQueue.length > 0) {
-    preloadedImages.shift();
-    round = preloadQueue.shift();
+  if (nextRoundCache) {
+    round = nextRoundCache;
+    nextRoundCache = null;
   } else {
     round = session.nextRound();
   }
-  // Fix: set _currentCorrect so submitAnswer() compares against the right answer
-  if (round) {
-    session._currentCorrect = round.correct;
-  }
-  displayRound++;
   return round;
 }
 
@@ -180,11 +165,10 @@ export async function initGame() {
   window.addEventListener('pagehide', sendSessionEnd);
   window.addEventListener('beforeunload', sendSessionEnd);
 
-  // Start preloading images
-  preloadQueue = [];
-  preloadedImages = [];
+  // Pre-generate first round and start loading its image
+  nextRoundCache = null;
   displayRound = 0;
-  preloadNextImages();
+  preloadNextRound();
 
   // Show rules popup, then start game
   showRulesPopup(() => {
@@ -308,7 +292,7 @@ function updateTimerDisplay() {
 // ===== GENERIC ROUND =====
 
 function startRound() {
-  currentRound = getNextPreloadedRound();
+  currentRound = getNextRound();
   if (!currentRound) {
     if (session.mode === 'time_trial') {
       renderTimeTrialSummary();
@@ -321,8 +305,10 @@ function startRound() {
     return;
   }
 
-  // Preload more images in the background
-  preloadNextImages();
+  displayRound++;
+
+  // Preload the NEXT round's image while the player looks at this one
+  preloadNextRound();
 
   roundStartTime = Date.now();
   renderRound();
@@ -420,9 +406,6 @@ function renderRound() {
 }
 
 function handleAnswer(picked, choices, choiceEls) {
-  // Ensure _currentCorrect matches the displayed round (preloading may have overwritten it)
-  session._currentCorrect = currentRound.correct;
-
   const timeTaken = Date.now() - roundStartTime;
   const mode = session.mode;
 
