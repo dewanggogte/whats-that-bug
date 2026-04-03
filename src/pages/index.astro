@@ -69,7 +69,10 @@ const themedGroup = themedKeys.map(key => makeEntry(key, setsData[key]));
               {set.icon}
             </div>
             <div class="set-card-body">
-              <h3>{set.name}</h3>
+              <h3>
+                {set.name}
+                {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
+              </h3>
               <p>{set.description}</p>
               <div class="set-card-meta">
                 <span>{set.countLabel}</span>

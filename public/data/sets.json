@@ -2388,7 +2388,8 @@
       2380,
       2381,
       2382
-    ]
+    ],
+    "difficulty": "expert"
   },
   "streak": {
     "name": "Streaks",
@@ -4779,7 +4780,8 @@
       2380,
       2381,
       2382
-    ]
+    ],
+    "difficulty": "expert"
   },
   "bugs_101": {
     "name": "Bugs 101",
@@ -10151,7 +10153,8 @@
       1004,
       1259,
       1508
-    ]
+    ],
+    "difficulty": "beginner"
   },
   "bugs_101_streak": {
     "name": "Streaks",
@@ -10279,6 +10282,7 @@
       1004,
       1259,
       1508
-    ]
+    ],
+    "difficulty": "beginner"
   }
 }
