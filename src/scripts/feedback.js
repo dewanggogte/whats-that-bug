@@ -94,7 +94,7 @@ if (typeof document !== 'undefined') {
 
 // --- Public logging functions ---
 
-export function logRoundComplete(sessionId, round, observationId, userAnswer, correctAnswer, score, timeTakenMs, setName) {
+export function logRoundComplete(sessionId, round, observationId, userAnswer, correctAnswer, score, timeTakenMs, setName, mode) {
   enqueue({
     type: 'round_complete',
     session_id: sessionId,
@@ -105,21 +105,23 @@ export function logRoundComplete(sessionId, round, observationId, userAnswer, co
     score,
     time_taken_ms: timeTakenMs,
     set: setName,
+    mode: mode || 'classic',
   });
 }
 
-export function logSessionStart(sessionId, setName) {
+export function logSessionStart(sessionId, setName, mode) {
   enqueue({
     type: 'session_start',
     session_id: sessionId,
     set: setName,
     referrer: sessionStorage.getItem('original_referrer') || document.referrer || '',
     device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    mode: mode || 'classic',
   });
   flush();
 }
 
-export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, completed, shareClicked) {
+export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, completed, shareClicked, mode, extraData) {
   enqueue({
     type: 'session_end',
     session_id: sessionId,
@@ -128,6 +130,8 @@ export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, comp
     set: setName,
     completed,
     share_clicked: shareClicked,
+    mode: mode || 'classic',
+    ...(extraData || {}),
   });
   flush();
 }

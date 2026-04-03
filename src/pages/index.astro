@@ -3,89 +3,118 @@ import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 
-// Emoji icons for each set — distinctive and instant recognition
-const SET_ICONS: Record<string, string> = {
-  bugs_101: '🔰',
-  all_bugs: '🌍',
-  backyard_basics: '🏡',
-  beetles: '🪲',
-  butterflies_moths: '🦋',
-  spiders: '🕷️',
-  tiny_terrors: '😱',
-};
+const THEMED_SETS = [
+  { key: 'backyard_basics', icon: '🏡' },
+  { key: 'tiny_terrors', icon: '😱' },
+  { key: 'beetles', icon: '🪲' },
+  { key: 'butterflies_moths', icon: '🦋' },
+  { key: 'spiders', icon: '🕷️' },
+];
 
-const DIFFICULTY_LABELS: Record<string, { label: string; class: string }> = {
-  beginner: { label: 'Beginner', class: 'diff-beginner' },
-  intermediate: { label: 'Intermediate', class: 'diff-intermediate' },
-  themed: { label: 'Themed', class: 'diff-themed' },
-  expert: { label: 'Expert', class: 'diff-expert' },
-};
-
-const setEntries = Object.entries(setsData).map(([key, set]) => {
-  const isBinary = set.scoring === 'binary';
-  const uniqueCount = isBinary
-    ? new Set(set.observation_ids.map(i => observations[i]?.taxon?.order)).size
-    : new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size;
-  const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
-  const diff = DIFFICULTY_LABELS[set.difficulty] || null;
-
-  return {
-    key,
-    ...set,
-    icon: SET_ICONS[key] || '🐛',
-    countLabel,
-    diff,
-  };
+const themedGroup = THEMED_SETS.map(({ key, icon }) => {
+  const set = setsData[key];
+  const uniqueSpecies = new Set(
+    set.observation_ids.map((i: number) => observations[i]?.taxon?.species)
+  ).size;
+  return { key, name: set.name, icon, countLabel: `${uniqueSpecies} species` };
 });
 ---
 <Base title="What's That Bug? — Insect Identification Game">
   <div class="container">
     <div style="text-align: center; padding: 24px 0 8px;">
       <h1>🪲 What's That Bug?</h1>
-      <p class="subtitle">Can you identify insects from their photos? Pick a set and find out.</p>
+      <p class="subtitle">Can you identify insects from their photos? Pick a mode and find out.</p>
     </div>
 
-    <div style="margin-top: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border);">
-      <h2 style="font-size: 16px; margin-bottom: 4px;">How to play</h2>
-      <p style="font-size: 14px; color: var(--text-secondary);">
-        Each round shows a real bug photo. Pick the correct answer from 4 choices.
-        Closer guesses earn more points — even getting the right family scores partial credit.
-        10 rounds, 1,000 points max.
-      </p>
-    </div>
-
-    <div class="set-grid">
-      {setEntries.map(set => (
-        <a href={`/play?set=${set.key}`} class="set-card">
-          <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
-            {set.icon}
-          </div>
-          <div class="set-card-body">
-            <h3>
-              {set.name}
-              {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
-            </h3>
-            <p>{set.description}</p>
-            <div class="set-card-meta">
-              <span>{set.countLabel}</span>
-              <span id={`best-${set.key}`}></span>
-            </div>
-          </div>
+    <div class="mode-group">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">🔰 Bugs 101 <span class="diff-badge diff-beginner">Beginner</span></h2>
+          <p class="mode-group-subtitle">Identify by type — beetle, spider, butterfly, and more</p>
+        </div>
+      </div>
+      <div class="mode-buttons">
+        <a href="/play?set=bugs_101_time_trial" class="mode-btn">
+          <span class="mode-btn-icon">⏱️</span>
+          <span class="mode-btn-label">Time Trial</span>
+          <span class="mode-btn-desc">60 seconds</span>
         </a>
-      ))}
+        <a href="/play?set=bugs_101_streak" class="mode-btn">
+          <span class="mode-btn-icon">🎯</span>
+          <span class="mode-btn-label">Streaks</span>
+          <span class="mode-btn-desc">Don't miss</span>
+        </a>
+        <a href="/play?set=bugs_101" class="mode-btn">
+          <span class="mode-btn-icon">🔰</span>
+          <span class="mode-btn-label">Classic</span>
+          <span class="mode-btn-desc">10 rounds</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="mode-group">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">🌍 All Bugs <span class="diff-badge diff-expert">Expert</span></h2>
+          <p class="mode-group-subtitle">Name the exact species from 1,000+ bugs worldwide</p>
+        </div>
+      </div>
+      <div class="mode-buttons">
+        <a href="/play?set=time_trial" class="mode-btn">
+          <span class="mode-btn-icon">⏱️</span>
+          <span class="mode-btn-label">Time Trial</span>
+          <span class="mode-btn-desc">60 seconds</span>
+        </a>
+        <a href="/play?set=streak" class="mode-btn">
+          <span class="mode-btn-icon">🎯</span>
+          <span class="mode-btn-label">Streaks</span>
+          <span class="mode-btn-desc">Don't miss</span>
+        </a>
+        <a href="/play?set=all_bugs" class="mode-btn">
+          <span class="mode-btn-icon">🌍</span>
+          <span class="mode-btn-label">Classic</span>
+          <span class="mode-btn-desc">10 rounds</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="mode-group" style="margin-top: 20px;">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">Themed Sets <span class="diff-badge diff-intermediate">Intermediate</span></h2>
+          <p class="mode-group-subtitle">Dive deeper into specific groups</p>
+        </div>
+      </div>
+      <div class="themed-buttons">
+        {themedGroup.map(set => (
+          <a href={`/play?set=${set.key}`} class="themed-btn">
+            <span class="themed-btn-icon">{set.icon}</span>
+            <span class="themed-btn-label">{set.name}</span>
+            <span class="themed-btn-meta">{set.countLabel}</span>
+          </a>
+        ))}
+      </div>
     </div>
   </div>
 
   <script>
     // Show best scores from localStorage
-    document.querySelectorAll('[id^="best-"]').forEach(el => {
-      const setKey = el.id.replace('best-', '');
-      const storageKey = `best_${setKey}`;
-      const best = localStorage.getItem(storageKey);
+    const bestKeys = [
+      'bugs_101_time_trial', 'bugs_101_streak', 'bugs_101',
+      'time_trial', 'streak', 'all_bugs',
+      'backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders',
+    ];
+    // Best scores are shown inline on mode buttons via data attributes
+    document.querySelectorAll('.mode-btn[data-key], .themed-btn[data-key]').forEach(el => {
+      const key = el.getAttribute('data-key');
+      if (!key) return;
+      const best = localStorage.getItem(`best_${key}`);
       if (best) {
-        el.textContent = `Best: ${best}`;
-        el.style.color = 'var(--accent)';
-        el.style.fontWeight = '600';
+        const meta = el.querySelector('.mode-btn-desc, .themed-btn-meta');
+        if (meta) {
+          meta.textContent = `Best: ${best}`;
+          meta.style.color = 'var(--accent)';
+        }
       }
     });
   </script>

@@ -17,6 +17,19 @@ export function calculateScore(picked, correct) {
   return 0;
 }
 
+/**
+ * Calculate score for Time Trial mode based on answer speed.
+ * @param {number} timeMs — milliseconds taken to answer
+ * @returns {number} 100 | 75 | 50 | 25 | 10
+ */
+export function calculateTimedScore(timeMs) {
+  if (timeMs < 3000) return 100;
+  if (timeMs < 5000) return 75;
+  if (timeMs < 8000) return 50;
+  if (timeMs < 12000) return 25;
+  return 10;
+}
+
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -135,12 +148,17 @@ export class SessionState {
     this.taxonomy = taxonomy;
     this.setDef = setDef;
     this.setKey = setKey;
+    this.mode = setDef.mode || 'classic';
     this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     this.currentRound = 0;
     this.totalScore = 0;
     this.history = [];
     this._usedObservationIds = new Set();
     this._currentCorrect = null;
+    this.questionsAnswered = 0;
+    this.correctCount = 0;
+    this.currentStreak = 0;
+    this.streakBroken = false;
 
     const fullPool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
     const recentIds = getRecentlyUsedIds(setKey);
@@ -156,6 +174,7 @@ export class SessionState {
   }
 
   get isComplete() {
+    if (this.mode === 'time_trial' || this.mode === 'streak') return false;
     return this.currentRound >= ROUNDS_PER_SESSION;
   }
 
@@ -175,7 +194,12 @@ export class SessionState {
 
   nextRound() {
     if (this.isComplete) return null;
-    const available = this._pool.filter(obs => !this._usedObservationIds.has(obs.id));
+    let available = this._pool.filter(obs => !this._usedObservationIds.has(obs.id));
+    // For non-classic modes, recycle the pool when exhausted so game continues indefinitely
+    if (available.length === 0 && this.mode !== 'classic') {
+      this._usedObservationIds.clear();
+      available = [...this._pool];
+    }
     if (available.length === 0) return null;
     const correct = pickRandom(available);
     this._usedObservationIds.add(correct.id);
@@ -196,6 +220,18 @@ export class SessionState {
       ? (pickedTaxon.order === correct.taxon.order ? 100 : 0)
       : calculateScore(pickedTaxon, correct.taxon);
     this.totalScore += score;
+    this.questionsAnswered++;
+    if (score === 100) {
+      this.correctCount++;
+      this.currentStreak++;
+    } else {
+      if (this.mode === 'streak') {
+        // Don't reset — currentStreak represents the final streak at time of break
+        this.streakBroken = true;
+      } else {
+        this.currentStreak = 0;
+      }
+    }
     this.history.push({
       round: this.currentRound,
       observation_id: correct.id,
@@ -203,8 +239,8 @@ export class SessionState {
       picked_taxon: pickedTaxon,
       score,
     });
-    // Save used IDs after last round so next session avoids repeats
-    if (this.isComplete) {
+    // Save used IDs after last round (classic mode only) so next session avoids repeats
+    if (this.mode === 'classic' && this.isComplete) {
       saveUsedIds(this.setKey, this._usedObservationIds);
     }
     return { score, correct };

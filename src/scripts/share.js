@@ -31,6 +31,52 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
   ].join('\n');
 }
 
+export function generateTimeTrialShareText(totalScore, history, correctCount, totalQuestions, setKey) {
+  const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Time Trial' : 'Time Trial';
+
+  let flavor;
+  if (correctCount === totalQuestions && totalQuestions >= 8) flavor = 'Lightning fast! ⚡';
+  else if (correctCount >= totalQuestions * 0.8) flavor = 'Speed demon! 🔬';
+  else if (correctCount >= totalQuestions * 0.5) flavor = 'Not bad for 60 seconds!';
+  else flavor = 'Bugs are tricky under pressure! 👀';
+
+  return [
+    `🪲 What's That Bug? — ${label}`,
+    '',
+    `${totalScore} pts | ${correctCount}/${totalQuestions} correct | 60s`,
+    '',
+    emojiGrid,
+    '',
+    flavor,
+    '',
+    `https://dewanggogte.com/games/bugs/?ref=share&mode=time_trial`,
+  ].join('\n');
+}
+
+export function generateStreakShareText(streakCount, history, setKey) {
+  const emojiGrid = history.filter(h => h.score === 100).map(() => '🟩').join('');
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Streaks' : 'Streaks';
+
+  let flavor;
+  if (streakCount >= 20) flavor = 'Unstoppable! 🏆';
+  else if (streakCount >= 10) flavor = 'Bug expert! 🔬';
+  else if (streakCount >= 5) flavor = 'Solid run!';
+  else flavor = 'Give it a shot! 👀';
+
+  return [
+    `🪲 What's That Bug? — ${label}`,
+    '',
+    `${streakCount} in a row`,
+    '',
+    emojiGrid,
+    '',
+    flavor,
+    '',
+    `https://dewanggogte.com/games/bugs/?ref=share&mode=streak`,
+  ].join('\n');
+}
+
 export async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
