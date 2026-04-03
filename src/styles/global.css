@@ -665,6 +665,48 @@ h2 {
   margin-top: 4px;
 }
 
+/* =============================================
+   Streak Ranks
+   ============================================= */
+.streak-rank {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.streak-rank-legendary {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(245, 158, 11, 0.15));
+  color: #d97706;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.streak-rank-expert {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success-border);
+}
+
+.streak-rank-sharp {
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.streak-rank-good {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+.streak-rank-start {
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
 @media (max-width: 480px) {
   .tt-stats {
     grid-template-columns: repeat(2, 1fr);

@@ -744,14 +744,27 @@ function renderStreakGameOver(picked, correct) {
   const streakCount = session.currentStreak;
   const shareText = generateStreakShareText(streakCount, session.history, currentSetKey);
 
-  const storageKey = `best_streak`;
+  const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
-  if (streakCount > prevBest) {
+  const isNewBest = streakCount > prevBest;
+  if (isNewBest) {
     localStorage.setItem(storageKey, streakCount.toString());
   }
 
   // Only green emojis
   const emojiGrid = Array(streakCount).fill('🟩').join('');
+
+  // Streak rank
+  let rank, rankClass;
+  if (streakCount >= 25) { rank = 'Legendary'; rankClass = 'streak-rank-legendary'; }
+  else if (streakCount >= 15) { rank = 'Expert'; rankClass = 'streak-rank-expert'; }
+  else if (streakCount >= 10) { rank = 'Sharp Eye'; rankClass = 'streak-rank-sharp'; }
+  else if (streakCount >= 5) { rank = 'Getting Good'; rankClass = 'streak-rank-good'; }
+  else { rank = 'Keep Trying'; rankClass = 'streak-rank-start'; }
+
+  const newBestHTML = isNewBest
+    ? `<div class="new-best-badge">New Personal Best!</div>`
+    : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} in a row</p>` : '';
 
   // Learning card content for the bug they got wrong
   let breadcrumb = '';
@@ -772,12 +785,31 @@ function renderStreakGameOver(picked, correct) {
     }
   }
 
+  const totalRounds = streakCount + 1;
+
   container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>🔥 Streaks Over</h1>
+        <h1>🎯 Streaks</h1>
         <div class="summary-score">${streakCount}</div>
-        <p class="subtitle" style="margin-bottom:16px;">in a row</p>
+        <p class="subtitle">in a row</p>
+        ${newBestHTML}
+
+        <div class="tt-stats" style="margin-top:20px;">
+          <div class="tt-stat">
+            <div class="tt-stat-value">${streakCount}/${totalRounds}</div>
+            <div class="tt-stat-label">Correct</div>
+          </div>
+          <div class="tt-stat">
+            <div class="tt-stat-value">${totalRounds > 0 ? Math.round((streakCount / totalRounds) * 100) : 0}%</div>
+            <div class="tt-stat-label">Accuracy</div>
+          </div>
+          <div class="tt-stat" style="grid-column: span 2;">
+            <div class="tt-stat-value"><span class="streak-rank ${rankClass}">${rank}</span></div>
+            <div class="tt-stat-label">Rank</div>
+          </div>
+        </div>
+
         <div class="emoji-grid">${emojiGrid}</div>
 
         <div class="share-buttons">
