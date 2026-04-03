@@ -126,7 +126,7 @@ function sendSessionEnd() {
   logSessionEnd(
     session.sessionId,
     session.totalScore,
-    session.currentRound,
+    displayRound,
     session.setDef.name,
     session.mode === 'classic' ? session.isComplete : true,
     shared,
@@ -435,7 +435,7 @@ function handleAnswer(picked, choices, choiceEls) {
 
   // Log round
   logRoundComplete(
-    session.sessionId, session.currentRound, correct.id,
+    session.sessionId, displayRound, correct.id,
     picked.taxon.species, correct.taxon.species,
     score, timeTaken, session.setDef.name, session.mode
   );
@@ -586,7 +586,7 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
       container.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       logRoundReaction(
-        session.sessionId, session.currentRound, correct.id,
+        session.sessionId, displayRound, correct.id,
         btn.dataset.difficulty, picked.taxon.species, correct.taxon.species,
         score, session.setDef.name
       );
