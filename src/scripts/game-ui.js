@@ -377,8 +377,10 @@ function renderRound() {
         <button class="report-photo-btn" id="report-photo" title="Report bad photo">&#9873;</button>
       </div>
 
-      <h2 style="margin-top: 16px;">What's this bug?</h2>
-      <p class="subtitle">Found in ${escapeHTML(correct.location)}</p>
+      <div class="round-prompt">
+        <span class="round-prompt-title">What's this bug?</span>
+        <span class="round-prompt-location">${escapeHTML(correct.location)}</span>
+      </div>
 
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {

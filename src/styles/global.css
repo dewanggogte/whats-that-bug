@@ -277,7 +277,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   position: relative;
 }
 
@@ -322,6 +322,39 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* =============================================
+   Round Prompt (question + location)
+   ============================================= */
+.round-prompt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.round-prompt-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.round-prompt-location {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .round-prompt {
+    margin-bottom: 6px;
+  }
+  .round-prompt-title {
+    font-size: 0.95rem;
+  }
+  .round-prompt-location {
+    font-size: 0.72rem;
+  }
 }
 
 /* =============================================
@@ -459,9 +492,10 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
+  font-size: 0.85rem;
 }
 
 
@@ -794,12 +828,32 @@ a {
    Responsive — 768px: stack choices to 1col
    ============================================= */
 @media (max-width: 768px) {
-  .choices {
-    grid-template-columns: 1fr;
-  }
-
   h1 {
     font-size: 1.6rem;
+  }
+
+  /* Game screen: fit photo + all 4 choices in viewport */
+  .photo-hero {
+    aspect-ratio: 16 / 8;
+    margin-bottom: 8px;
+    border-radius: 8px;
+  }
+
+  .choices {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .choice {
+    padding: 10px 12px;
+  }
+
+  .choice-name {
+    font-size: 0.9rem;
+  }
+
+  .choice-latin {
+    font-size: 0.78rem;
   }
 }
 
