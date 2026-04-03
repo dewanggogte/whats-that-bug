@@ -61,6 +61,7 @@ const MAX_ORDER_SHARE = 0.15; // default cap: 15% of total
 const MIN_ORDER_SHARE = 0.03; // boost under-represented orders to at least 3%
 // Per-order overrides for groups that are unpleasant in large doses
 const ORDER_CAP_OVERRIDES = {
+  'Lepidoptera': 0.25,       // butterflies & moths — popular, visually diverse
   'Blattodea': 0.01,         // cockroaches — visceral disgust
   'Ixodida': 0.02,           // ticks — engorged close-ups are unsettling
   'Araneae': 0.06,           // spiders — arachnophobia, but still a draw
