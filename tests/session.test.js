@@ -107,3 +107,78 @@ describe('SessionState', () => {
     }
   });
 });
+
+describe('SessionState — time_trial mode', () => {
+  let session;
+
+  beforeEach(() => {
+    const ttSetDef = { ...setDef, mode: 'time_trial', scoring: 'binary' };
+    session = new SessionState(observations, taxonomy, ttSetDef, 'time_trial');
+  });
+
+  it('is never "complete" by round count (unlimited rounds)', () => {
+    for (let i = 0; i < 15; i++) {
+      expect(session.isComplete).toBe(false);
+      const round = session.nextRound();
+      if (!round) break;
+      session.submitAnswer(round.correct.taxon);
+    }
+  });
+
+  it('uses binary scoring (100 for correct order, 0 for wrong)', () => {
+    const round = session.nextRound();
+    const result = session.submitAnswer(round.correct.taxon);
+    expect(result.score).toBe(100);
+  });
+
+  it('returns 0 for wrong order in binary mode', () => {
+    const round = session.nextRound();
+    const wrongTaxon = { species: 'X', genus: 'X', family: 'X', order: 'WRONG' };
+    const result = session.submitAnswer(wrongTaxon);
+    expect(result.score).toBe(0);
+  });
+
+  it('tracks questionsAnswered and correctCount', () => {
+    const r1 = session.nextRound();
+    session.submitAnswer(r1.correct.taxon);
+    const r2 = session.nextRound();
+    session.submitAnswer({ species: 'X', genus: 'X', family: 'X', order: 'WRONG' });
+    expect(session.questionsAnswered).toBe(2);
+    expect(session.correctCount).toBe(1);
+  });
+});
+
+describe('SessionState — streak mode', () => {
+  let session;
+
+  beforeEach(() => {
+    const streakSetDef = { ...setDef, mode: 'streak', scoring: 'binary' };
+    session = new SessionState(observations, taxonomy, streakSetDef, 'streak');
+  });
+
+  it('is never "complete" by round count', () => {
+    for (let i = 0; i < 5; i++) {
+      const round = session.nextRound();
+      if (!round) break;
+      session.submitAnswer(round.correct.taxon);
+    }
+    expect(session.isComplete).toBe(false);
+  });
+
+  it('tracks currentStreak', () => {
+    const r1 = session.nextRound();
+    session.submitAnswer(r1.correct.taxon);
+    const r2 = session.nextRound();
+    session.submitAnswer(r2.correct.taxon);
+    expect(session.currentStreak).toBe(2);
+  });
+
+  it('marks streakBroken on wrong answer', () => {
+    const r1 = session.nextRound();
+    session.submitAnswer(r1.correct.taxon);
+    const r2 = session.nextRound();
+    session.submitAnswer({ species: 'X', genus: 'X', family: 'X', order: 'WRONG' });
+    expect(session.streakBroken).toBe(true);
+    expect(session.currentStreak).toBe(1);
+  });
+});
