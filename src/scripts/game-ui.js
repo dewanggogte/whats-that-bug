@@ -350,7 +350,7 @@ function renderRound() {
 
       <div class="choices" id="choices">
         ${choices.map((choice, i) => {
-          const isBugs101 = session.setDef.scoring === 'binary' && session.mode === 'classic';
+          const isBugs101 = session.setDef.scoring === 'binary';
           const displayName = isBugs101 ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
           const displayLatin = isBugs101 ? choice.taxon.order : choice.taxon.species;
           return `
@@ -397,7 +397,10 @@ function handleAnswer(picked, choices, choiceEls) {
   if (mode === 'time_trial') {
     // Submit to get correct answer reference, then calculate timed score
     result = session.submitAnswer(picked.taxon);
-    const isCorrect = picked.taxon.species === result.correct.taxon.species;
+    const isBinarySet = session.setDef.scoring === 'binary';
+    const isCorrect = isBinarySet
+      ? picked.taxon.order === result.correct.taxon.order
+      : picked.taxon.species === result.correct.taxon.species;
     const timedScore = isCorrect ? calculateTimedScore(timeTaken) : 0;
     // Adjust: undo the binary 100 and apply timed score instead
     session.totalScore = session.totalScore - result.score + timedScore;
@@ -646,7 +649,7 @@ function renderTimeTrialSummary() {
 
   const correctCount = session.correctCount;
   const totalQ = session.questionsAnswered;
-  const shareText = generateTimeTrialShareText(session.totalScore, session.history, correctCount, totalQ);
+  const shareText = generateTimeTrialShareText(session.totalScore, session.history, correctCount, totalQ, currentSetKey);
 
   const storageKey = `best_time_trial`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
@@ -683,7 +686,7 @@ function renderTimeTrialSummary() {
 
 function renderStreakGameOver(picked, correct) {
   const streakCount = session.currentStreak;
-  const shareText = generateStreakShareText(streakCount, session.history);
+  const shareText = generateStreakShareText(streakCount, session.history, currentSetKey);
 
   const storageKey = `best_streak`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);

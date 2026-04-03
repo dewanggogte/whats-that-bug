@@ -31,8 +31,9 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
   ].join('\n');
 }
 
-export function generateTimeTrialShareText(totalScore, history, correctCount, totalQuestions) {
+export function generateTimeTrialShareText(totalScore, history, correctCount, totalQuestions, setKey) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Time Trial' : 'Time Trial';
 
   let flavor;
   if (correctCount === totalQuestions && totalQuestions >= 8) flavor = 'Lightning fast! ⚡';
@@ -41,7 +42,7 @@ export function generateTimeTrialShareText(totalScore, history, correctCount, to
   else flavor = 'Bugs are tricky under pressure! 👀';
 
   return [
-    `🪲 What's That Bug? — Time Trial`,
+    `🪲 What's That Bug? — ${label}`,
     '',
     `${totalScore} pts | ${correctCount}/${totalQuestions} correct | 60s`,
     '',
@@ -49,12 +50,13 @@ export function generateTimeTrialShareText(totalScore, history, correctCount, to
     '',
     flavor,
     '',
-    'https://dewanggogte.com/games/bugs/?ref=share&mode=time_trial',
+    `https://dewanggogte.com/games/bugs/?ref=share&mode=time_trial`,
   ].join('\n');
 }
 
-export function generateStreakShareText(streakCount, history) {
+export function generateStreakShareText(streakCount, history, setKey) {
   const emojiGrid = history.filter(h => h.score === 100).map(() => '🟩').join('');
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Streaks' : 'Streaks';
 
   let flavor;
   if (streakCount >= 20) flavor = 'Unstoppable! 🏆';
@@ -63,7 +65,7 @@ export function generateStreakShareText(streakCount, history) {
   else flavor = 'Give it a shot! 👀';
 
   return [
-    `🪲 What's That Bug? — Streaks`,
+    `🪲 What's That Bug? — ${label}`,
     '',
     `${streakCount} in a row`,
     '',
@@ -71,7 +73,7 @@ export function generateStreakShareText(streakCount, history) {
     '',
     flavor,
     '',
-    'https://dewanggogte.com/games/bugs/?ref=share&mode=streak',
+    `https://dewanggogte.com/games/bugs/?ref=share&mode=streak`,
   ].join('\n');
 }
 
