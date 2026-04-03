@@ -651,21 +651,77 @@ function renderTimeTrialSummary() {
   const totalQ = session.questionsAnswered;
   const shareText = generateTimeTrialShareText(session.totalScore, session.history, correctCount, totalQ, currentSetKey);
 
-  const storageKey = `best_time_trial`;
+  const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
-  if (session.totalScore > prevBest) {
+  const isNewBest = session.totalScore > prevBest;
+  if (isNewBest) {
     localStorage.setItem(storageKey, session.totalScore.toString());
   }
 
   const emojiGrid = session.history.map(h => h.score > 0 ? '🟩' : '🟥').join('');
+  const accuracy = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
+
+  // Calculate average time per correct answer
+  const correctTimes = [];
+  let roundStartMs = 0;
+  for (const h of session.history) {
+    if (h.score > 0) correctTimes.push(h.score);
+  }
+
+  // Speed bracket breakdown
+  const brackets = { fast: 0, good: 0, ok: 0, slow: 0, crawl: 0 };
+  for (const h of session.history) {
+    if (h.score >= 100) brackets.fast++;
+    else if (h.score >= 75) brackets.good++;
+    else if (h.score >= 50) brackets.ok++;
+    else if (h.score >= 25) brackets.slow++;
+    else if (h.score > 0) brackets.crawl++;
+  }
+
+  // Average points per question
+  const avgPts = totalQ > 0 ? Math.round(session.totalScore / totalQ) : 0;
+
+  // Points per second
+  const pps = (session.totalScore / 60).toFixed(1);
+
+  const newBestHTML = isNewBest
+    ? `<div class="new-best-badge">New Personal Best!</div>`
+    : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} pts</p>` : '';
 
   container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>⚡ Time Trial</h1>
+        <h1>⏱️ Time Trial</h1>
         <div class="summary-score">${session.totalScore} pts</div>
-        <div class="summary-breakdown">${correctCount}/${totalQ} correct in 60 seconds</div>
+        ${newBestHTML}
+
+        <div class="tt-stats">
+          <div class="tt-stat">
+            <div class="tt-stat-value">${correctCount}/${totalQ}</div>
+            <div class="tt-stat-label">Correct</div>
+          </div>
+          <div class="tt-stat">
+            <div class="tt-stat-value">${accuracy}%</div>
+            <div class="tt-stat-label">Accuracy</div>
+          </div>
+          <div class="tt-stat">
+            <div class="tt-stat-value">${avgPts}</div>
+            <div class="tt-stat-label">Avg pts/bug</div>
+          </div>
+          <div class="tt-stat">
+            <div class="tt-stat-value">${pps}</div>
+            <div class="tt-stat-label">Pts/second</div>
+          </div>
+        </div>
+
         <div class="emoji-grid">${emojiGrid}</div>
+
+        <div class="tt-brackets">
+          ${brackets.fast > 0 ? `<span class="tt-bracket tt-bracket-fast">${brackets.fast} blazing</span>` : ''}
+          ${brackets.good > 0 ? `<span class="tt-bracket tt-bracket-good">${brackets.good} fast</span>` : ''}
+          ${brackets.ok > 0 ? `<span class="tt-bracket tt-bracket-ok">${brackets.ok} steady</span>` : ''}
+          ${brackets.slow > 0 ? `<span class="tt-bracket tt-bracket-slow">${brackets.slow} slow</span>` : ''}
+        </div>
 
         <div class="share-buttons">
           <button class="btn btn-outline" id="copy-btn">📋 Copy</button>
