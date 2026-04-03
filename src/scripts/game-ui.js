@@ -406,6 +406,8 @@ function renderRound() {
 }
 
 function handleAnswer(picked, choices, choiceEls) {
+  // preloadNextRound() overwrites _currentCorrect — reset to the displayed round
+  session._currentCorrect = currentRound.correct;
   const timeTaken = Date.now() - roundStartTime;
   const mode = session.mode;
 
