@@ -75,29 +75,28 @@ let shared = false;
 let timerInterval = null;
 let timeRemaining = 60;
 
-// Preloading state — only preloads images, never calls nextRound() ahead of time
-let nextRoundCache = null; // Pre-generated next round for image preloading
+// Preloading state — pre-generates up to 3 rounds and starts loading their images.
+// The _currentCorrect fix in handleAnswer() prevents scoring bugs regardless of cache depth.
+const PRELOAD_AHEAD = 3;
+let roundCache = [];
 let displayRound = 0;
 
-function preloadNextRound() {
-  if (nextRoundCache) return; // already have one queued
-  const round = session.nextRound();
-  if (!round) return;
-  nextRoundCache = round;
-  // Start loading the image
-  const img = new Image();
-  img.src = round.correct.photo_url;
+function preloadRounds() {
+  while (roundCache.length < PRELOAD_AHEAD) {
+    const round = session.nextRound();
+    if (!round) break;
+    roundCache.push(round);
+    // Start loading the image in the background
+    const img = new Image();
+    img.src = round.correct.photo_url;
+  }
 }
 
 function getNextRound() {
-  let round;
-  if (nextRoundCache) {
-    round = nextRoundCache;
-    nextRoundCache = null;
-  } else {
-    round = session.nextRound();
+  if (roundCache.length > 0) {
+    return roundCache.shift();
   }
-  return round;
+  return session.nextRound();
 }
 
 function sendSessionEnd() {
@@ -165,10 +164,10 @@ export async function initGame() {
   window.addEventListener('pagehide', sendSessionEnd);
   window.addEventListener('beforeunload', sendSessionEnd);
 
-  // Pre-generate first round and start loading its image
-  nextRoundCache = null;
+  // Pre-generate first few rounds and start loading their images
+  roundCache = [];
   displayRound = 0;
-  preloadNextRound();
+  preloadRounds();
 
   // Show rules popup, then start game
   showRulesPopup(() => {
@@ -308,7 +307,7 @@ function startRound() {
   displayRound++;
 
   // Preload the NEXT round's image while the player looks at this one
-  preloadNextRound();
+  preloadRounds();
 
   roundStartTime = Date.now();
   renderRound();
@@ -406,7 +405,7 @@ function renderRound() {
 }
 
 function handleAnswer(picked, choices, choiceEls) {
-  // preloadNextRound() overwrites _currentCorrect — reset to the displayed round
+  // preloadRounds() calls nextRound() which overwrites _currentCorrect — reset to the displayed round
   session._currentCorrect = currentRound.correct;
   const timeTaken = Date.now() - roundStartTime;
   const mode = session.mode;
