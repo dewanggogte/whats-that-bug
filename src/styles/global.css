@@ -778,3 +778,336 @@ a {
 .site-links-social a:hover {
   color: var(--accent);
 }
+
+/* =============================================
+   Game Mode Cards (homepage)
+   ============================================= */
+.mode-card {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+
+.mode-card:hover {
+  box-shadow: 0 4px 16px rgba(184, 90, 59, 0.2);
+}
+
+.mode-card-body {
+  padding: 16px 18px;
+}
+
+.mode-card-body h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.mode-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--accent);
+  color: #fff;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.mode-card-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.mode-card-tagline {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.mode-card-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mode-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .mode-cards-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================
+   Timer Display (Time Trial)
+   ============================================= */
+.timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  position: relative;
+}
+
+.timer-countdown {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.timer-countdown.urgent {
+  color: var(--error);
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.timer-score {
+  font-size: 1.1rem;
+  position: relative;
+}
+
+.timer-last-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.timer-last-time.visible {
+  opacity: 1;
+}
+
+/* =============================================
+   Streak Counter
+   ============================================= */
+.streak-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.streak-count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+/* =============================================
+   Score Popup (+X animation)
+   ============================================= */
+.score-popup {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--success);
+  opacity: 0;
+  transform: translateY(0);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.score-popup.visible {
+  opacity: 1;
+  transform: translateY(-12px);
+}
+
+.score-popup.miss {
+  color: var(--error);
+}
+
+/* =============================================
+   Screen Flash (correct/wrong border)
+   ============================================= */
+.flash-correct {
+  animation: flashGreen 0.6s ease;
+}
+
+.flash-wrong {
+  animation: flashRed 0.6s ease;
+}
+
+@keyframes flashGreen {
+  0% { box-shadow: inset 0 0 0 4px var(--success); }
+  100% { box-shadow: inset 0 0 0 0px var(--success); }
+}
+
+@keyframes flashRed {
+  0% { box-shadow: inset 0 0 0 4px var(--error); }
+  100% { box-shadow: inset 0 0 0 0px var(--error); }
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to { opacity: 0.5; }
+}
+
+/* =============================================
+   Rules Popup Overlay
+   ============================================= */
+.rules-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+}
+
+.rules-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 380px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.rules-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.rules-close:hover {
+  color: var(--text);
+}
+
+.rules-diagram {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.rules-diagram .diagram-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.rules-diagram .diagram-row:last-child {
+  border-bottom: none;
+}
+
+.rules-diagram .diagram-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.rules-diagram .diagram-value {
+  font-size: 0.75rem;
+}
+
+.rules-diagram .diagram-photo-placeholder {
+  background: var(--photo-bg);
+  border-radius: 8px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.4);
+  font-size: 24px;
+  margin: 8px 0;
+}
+
+.rules-diagram .diagram-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.rules-diagram .diagram-choice {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.rules-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.rules-text strong {
+  color: var(--text);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* =============================================
+   Speed Brackets Table (in rules popup)
+   ============================================= */
+.speed-brackets {
+  width: 100%;
+  font-size: 0.75rem;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.speed-brackets td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.speed-brackets td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent);
+}
