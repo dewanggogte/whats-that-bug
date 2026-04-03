@@ -4,12 +4,6 @@ import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 
 const SET_ICONS: Record<string, string> = {
-  bugs_101: '🔰',
-  bugs_101_time_trial: '⏱️',
-  bugs_101_streak: '🎯',
-  all_bugs: '🌍',
-  time_trial: '⏱️',
-  streak: '🎯',
   backyard_basics: '🏡',
   beetles: '🪲',
   butterflies_moths: '🦋',
@@ -24,7 +18,10 @@ const DIFFICULTY_LABELS: Record<string, { label: string; class: string }> = {
   expert: { label: 'Expert', class: 'diff-expert' },
 };
 
-function makeEntry(key: string, set: any) {
+// Themed sets
+const themedKeys = ['backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders'];
+const themedGroup = themedKeys.map(key => {
+  const set = setsData[key];
   const isBinary = set.scoring === 'binary';
   const uniqueCount = isBinary
     ? new Set(set.observation_ids.map((i: number) => observations[i]?.taxon?.order)).size
@@ -32,86 +29,72 @@ function makeEntry(key: string, set: any) {
   const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
   const diff = DIFFICULTY_LABELS[set.difficulty] || null;
   return { key, ...set, icon: SET_ICONS[key] || '🐛', countLabel, diff };
-}
-
-// Group 1: Bugs 101
-const bugs101Group = [
-  makeEntry('bugs_101_time_trial', setsData.bugs_101_time_trial),
-  makeEntry('bugs_101_streak', setsData.bugs_101_streak),
-  makeEntry('bugs_101', setsData.bugs_101),
-];
-
-// Group 2: All Bugs
-const allBugsGroup = [
-  makeEntry('time_trial', setsData.time_trial),
-  makeEntry('streak', setsData.streak),
-  makeEntry('all_bugs', setsData.all_bugs),
-];
-
-// Group 3: Themed Sets
-const themedKeys = ['backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders'];
-const themedGroup = themedKeys.map(key => makeEntry(key, setsData[key]));
+});
 ---
 <Base title="What's That Bug? — Insect Identification Game">
   <div class="container">
     <div style="text-align: center; padding: 24px 0 8px;">
       <h1>🪲 What's That Bug?</h1>
-      <p class="subtitle">Can you identify insects from their photos? Pick a set and find out.</p>
+      <p class="subtitle">Can you identify insects from their photos? Pick a mode and find out.</p>
     </div>
 
-    <div class="set-group">
-      <h2 class="set-group-title">🔰 Bugs 101</h2>
-      <p class="set-group-subtitle">Identify by type — beetle, spider, butterfly, and more.</p>
-      <div class="set-grid set-grid-3">
-        {bugs101Group.map(set => (
-          <a href={`/play?set=${set.key}`} class="set-card">
-            <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
-              {set.icon}
-            </div>
-            <div class="set-card-body">
-              <h3>
-                {set.name}
-                {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
-              </h3>
-              <p>{set.description}</p>
-              <div class="set-card-meta">
-                <span>{set.countLabel}</span>
-                <span id={`best-${set.key}`}></span>
-              </div>
-            </div>
-          </a>
-        ))}
+    <div class="mode-group">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">🔰 Bugs 101 <span class="diff-badge diff-beginner">Beginner</span></h2>
+          <p class="mode-group-subtitle">Identify by type — beetle, spider, butterfly, and more</p>
+        </div>
+        <span class="mode-group-meta" id="bugs101-best"></span>
+      </div>
+      <div class="mode-buttons">
+        <a href="/play?set=bugs_101_time_trial" class="mode-btn">
+          <span class="mode-btn-icon">⏱️</span>
+          <span class="mode-btn-label">Time Trial</span>
+          <span class="mode-btn-desc">60 seconds</span>
+        </a>
+        <a href="/play?set=bugs_101_streak" class="mode-btn">
+          <span class="mode-btn-icon">🎯</span>
+          <span class="mode-btn-label">Streaks</span>
+          <span class="mode-btn-desc">Don't miss</span>
+        </a>
+        <a href="/play?set=bugs_101" class="mode-btn">
+          <span class="mode-btn-icon">🔰</span>
+          <span class="mode-btn-label">Classic</span>
+          <span class="mode-btn-desc">10 rounds</span>
+        </a>
       </div>
     </div>
 
-    <div class="set-group">
-      <h2 class="set-group-title">🌍 All Bugs</h2>
-      <p class="set-group-subtitle">Species-level identification from 1,000+ bugs worldwide.</p>
-      <div class="set-grid set-grid-3">
-        {allBugsGroup.map(set => (
-          <a href={`/play?set=${set.key}`} class="set-card">
-            <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
-              {set.icon}
-            </div>
-            <div class="set-card-body">
-              <h3>
-                {set.name}
-                {set.diff && <span class={`diff-badge ${set.diff.class}`}>{set.diff.label}</span>}
-              </h3>
-              <p>{set.description}</p>
-              <div class="set-card-meta">
-                <span>{set.countLabel}</span>
-                <span id={`best-${set.key}`}></span>
-              </div>
-            </div>
-          </a>
-        ))}
+    <div class="mode-group">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">🌍 All Bugs <span class="diff-badge diff-expert">Expert</span></h2>
+          <p class="mode-group-subtitle">Name the exact species from 1,000+ bugs worldwide</p>
+        </div>
+        <span class="mode-group-meta" id="allbugs-best"></span>
+      </div>
+      <div class="mode-buttons">
+        <a href="/play?set=time_trial" class="mode-btn">
+          <span class="mode-btn-icon">⏱️</span>
+          <span class="mode-btn-label">Time Trial</span>
+          <span class="mode-btn-desc">60 seconds</span>
+        </a>
+        <a href="/play?set=streak" class="mode-btn">
+          <span class="mode-btn-icon">🎯</span>
+          <span class="mode-btn-label">Streaks</span>
+          <span class="mode-btn-desc">Don't miss</span>
+        </a>
+        <a href="/play?set=all_bugs" class="mode-btn">
+          <span class="mode-btn-icon">🌍</span>
+          <span class="mode-btn-label">Classic</span>
+          <span class="mode-btn-desc">10 rounds</span>
+        </a>
       </div>
     </div>
 
     <div class="set-group">
       <h2 class="set-group-title">Themed Sets</h2>
-      <p class="set-group-subtitle">Dive deeper into specific groups.</p>
+      <p class="set-group-subtitle">Dive deeper into specific groups</p>
       <div class="set-grid">
         {themedGroup.map(set => (
           <a href={`/play?set=${set.key}`} class="set-card">
@@ -142,7 +125,7 @@ const themedGroup = themedKeys.map(key => makeEntry(key, setsData[key]));
       const storageKey = `best_${setKey}`;
       const best = localStorage.getItem(storageKey);
       if (best) {
-        const isStreak = setKey === 'streak' || setKey === 'bugs_101_streak';
+        const isStreak = setKey.includes('streak');
         const label = isStreak ? `Best: ${best} streak` : `Best: ${best}`;
         el.textContent = label;
         el.style.color = 'var(--accent)';
