@@ -111,7 +111,7 @@ function sendSessionEnd() {
     session.sessionId,
     session.totalScore,
     displayRound,
-    session.setDef.name,
+    currentSetKey,
     session.mode === 'classic' ? session.isComplete : true,
     shared,
     session.mode,
@@ -158,7 +158,7 @@ export async function initGame() {
   }
 
   session = new SessionState(observations, taxonomy, setDef, currentSetKey);
-  logSessionStart(session.sessionId, setDef.name, session.mode);
+  logSessionStart(session.sessionId, currentSetKey, session.mode);
   sessionEndSent = false;
   shared = false;
   window.addEventListener('pagehide', sendSessionEnd);
@@ -399,7 +399,7 @@ function renderRound() {
 
   // Report bad photo
   container.querySelector('#report-photo')?.addEventListener('click', () => {
-    logBadPhoto(session.sessionId, correct.id, correct.taxon.species, session.setDef.name);
+    logBadPhoto(session.sessionId, correct.id, correct.taxon.species, currentSetKey);
     const btn = container.querySelector('#report-photo');
     btn.textContent = '\u2713';
     btn.disabled = true;
@@ -460,7 +460,7 @@ function handleAnswer(picked, choices, choiceEls) {
   logRoundComplete(
     session.sessionId, displayRound, correct.id,
     picked.taxon.species, correct.taxon.species,
-    score, timeTaken, session.setDef.name, session.mode
+    score, timeTaken, currentSetKey, session.mode
   );
 
   // MODE-SPECIFIC POST-ANSWER FLOW
@@ -611,7 +611,7 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
       logRoundReaction(
         session.sessionId, displayRound, correct.id,
         btn.dataset.difficulty, picked.taxon.species, correct.taxon.species,
-        score, session.setDef.name
+        score, currentSetKey
       );
     });
   });
@@ -958,7 +958,7 @@ function attachSessionFeedbackHandlers() {
 
   container.querySelector('#submit-feedback')?.addEventListener('click', () => {
     logSessionFeedback(
-      session.sessionId, session.totalScore, session.setDef.name,
+      session.sessionId, session.totalScore, currentSetKey,
       container.querySelector('#difficulty-rating').value,
       container.querySelector('#interesting-round').value,
       container.querySelector('#free-text').value,
