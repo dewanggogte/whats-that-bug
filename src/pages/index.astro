@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 
-// Emoji icons for each set — distinctive and instant recognition
 const SET_ICONS: Record<string, string> = {
   bugs_101: '🔰',
   all_bugs: '🌍',
@@ -21,22 +20,19 @@ const DIFFICULTY_LABELS: Record<string, { label: string; class: string }> = {
   expert: { label: 'Expert', class: 'diff-expert' },
 };
 
-const setEntries = Object.entries(setsData).map(([key, set]) => {
-  const isBinary = set.scoring === 'binary';
-  const uniqueCount = isBinary
-    ? new Set(set.observation_ids.map(i => observations[i]?.taxon?.order)).size
-    : new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size;
-  const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
-  const diff = DIFFICULTY_LABELS[set.difficulty] || null;
-
-  return {
-    key,
-    ...set,
-    icon: SET_ICONS[key] || '🐛',
-    countLabel,
-    diff,
-  };
-});
+// Separate mode cards from regular set cards
+const modeKeys = ['time_trial', 'streak'];
+const regularEntries = Object.entries(setsData)
+  .filter(([key]) => !modeKeys.includes(key))
+  .map(([key, set]) => {
+    const isBinary = set.scoring === 'binary';
+    const uniqueCount = isBinary
+      ? new Set(set.observation_ids.map(i => observations[i]?.taxon?.order)).size
+      : new Set(set.observation_ids.map(i => observations[i]?.taxon?.species)).size;
+    const countLabel = isBinary ? `${uniqueCount} types` : `${uniqueCount} species`;
+    const diff = DIFFICULTY_LABELS[set.difficulty] || null;
+    return { key, ...set, icon: SET_ICONS[key] || '🐛', countLabel, diff };
+  });
 ---
 <Base title="What's That Bug? — Insect Identification Game">
   <div class="container">
@@ -45,17 +41,33 @@ const setEntries = Object.entries(setsData).map(([key, set]) => {
       <p class="subtitle">Can you identify insects from their photos? Pick a set and find out.</p>
     </div>
 
-    <div style="margin-top: 24px; padding: 16px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border);">
-      <h2 style="font-size: 16px; margin-bottom: 4px;">How to play</h2>
-      <p style="font-size: 14px; color: var(--text-secondary);">
-        Each round shows a real bug photo. Pick the correct answer from 4 choices.
-        Closer guesses earn more points — even getting the right family scores partial credit.
-        10 rounds, 1,000 points max.
-      </p>
+    <div class="mode-cards-row" style="margin-top: 24px;">
+      <a href="/play?set=time_trial" class="mode-card">
+        <div class="mode-card-body">
+          <div class="mode-card-icon">⚡</div>
+          <h3>Time Trial <span class="mode-tag">Mode</span></h3>
+          <p class="mode-card-tagline">60 seconds. Go.</p>
+          <div class="mode-card-meta">
+            <span>All bugs</span>
+            <span id="best-time_trial"></span>
+          </div>
+        </div>
+      </a>
+      <a href="/play?set=streak" class="mode-card">
+        <div class="mode-card-body">
+          <div class="mode-card-icon">🔥</div>
+          <h3>Streak <span class="mode-tag">Mode</span></h3>
+          <p class="mode-card-tagline">Don't miss.</p>
+          <div class="mode-card-meta">
+            <span>All bugs</span>
+            <span id="best-streak"></span>
+          </div>
+        </div>
+      </a>
     </div>
 
     <div class="set-grid">
-      {setEntries.map(set => (
+      {regularEntries.map(set => (
         <a href={`/play?set=${set.key}`} class="set-card">
           <div class="set-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:48px;">
             {set.icon}
@@ -83,7 +95,8 @@ const setEntries = Object.entries(setsData).map(([key, set]) => {
       const storageKey = `best_${setKey}`;
       const best = localStorage.getItem(storageKey);
       if (best) {
-        el.textContent = `Best: ${best}`;
+        const label = (setKey === 'streak') ? `Best: ${best} streak` : `Best: ${best}`;
+        el.textContent = label;
         el.style.color = 'var(--accent)';
         el.style.fontWeight = '600';
       }
