@@ -17,6 +17,19 @@ export function calculateScore(picked, correct) {
   return 0;
 }
 
+/**
+ * Calculate score for Time Trial mode based on answer speed.
+ * @param {number} timeMs — milliseconds taken to answer
+ * @returns {number} 100 | 75 | 50 | 25 | 10
+ */
+export function calculateTimedScore(timeMs) {
+  if (timeMs < 3000) return 100;
+  if (timeMs < 5000) return 75;
+  if (timeMs < 8000) return 50;
+  if (timeMs < 12000) return 25;
+  return 10;
+}
+
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
