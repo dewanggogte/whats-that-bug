@@ -206,6 +206,9 @@ function renderRound() {
     </div>
   `;
 
+  // Remove any accidental focus from the freshly rendered choices
+  if (document.activeElement) document.activeElement.blur();
+
   // Attach click and keyboard handlers
   const choiceEls = container.querySelectorAll('.choice');
   choiceEls.forEach((el, i) => {

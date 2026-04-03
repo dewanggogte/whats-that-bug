@@ -113,7 +113,7 @@ export function logSessionStart(sessionId, setName) {
     type: 'session_start',
     session_id: sessionId,
     set: setName,
-    referrer: document.referrer || '',
+    referrer: sessionStorage.getItem('original_referrer') || document.referrer || '',
     device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
   });
   flush();

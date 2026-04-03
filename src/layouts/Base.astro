@@ -15,6 +15,17 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>{title}</title>
   <script is:inline>
+    // Capture the original external referrer once per session.
+    // Internal navigations (/ -> /play) overwrite document.referrer,
+    // so we stash the landing referrer in sessionStorage on first hit.
+    (function() {
+      if (!sessionStorage.getItem('original_referrer')) {
+        var ref = document.referrer || '';
+        var own = location.origin;
+        sessionStorage.setItem('original_referrer', ref.startsWith(own) ? '' : ref);
+      }
+    })();
+
     // Detect base path for subpath deployments (e.g. /games/bugs/)
     // At root, __BASE is empty string so all paths work unchanged.
     (function() {
