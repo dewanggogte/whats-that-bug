@@ -87,7 +87,7 @@ export async function copyToClipboard(text) {
 }
 
 export function openWhatsApp(text) {
-  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');
 }
 

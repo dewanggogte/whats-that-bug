@@ -699,17 +699,24 @@ h2 {
    Share Buttons
    ============================================= */
 .share-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 10px;
+  justify-content: center;
   margin: 16px 0;
 }
 
-@media (max-width: 480px) {
-  .share-buttons {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
+.share-icon-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.share-icon-btn svg {
+  flex-shrink: 0;
 }
 
 /* =============================================
