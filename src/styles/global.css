@@ -728,3 +728,53 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* =============================================
+   Site links (personal site footer)
+   ============================================= */
+.site-links {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.site-links-nav {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.site-links-nav a {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-links-nav a:hover {
+  color: var(--accent);
+}
+
+.site-links-social {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.site-links-social a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+}
+
+.site-links-social a:hover {
+  color: var(--accent);
+}
