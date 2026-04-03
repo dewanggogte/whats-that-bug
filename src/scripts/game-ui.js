@@ -202,31 +202,63 @@ function getRulesContent() {
   const mode = session.mode;
 
   if (mode === 'time_trial') {
-    return `<strong>60 seconds on the clock.</strong> Identify as many bugs as you can. Faster correct answers earn more points. Wrong answers score 0.`;
+    return {
+      title: '⏱️ Time Trial',
+      items: [
+        ['⏱️', '60 seconds on the clock'],
+        ['✅', 'Faster answers = more points'],
+        ['❌', 'Wrong answers = 0 points'],
+      ],
+    };
   }
 
   if (mode === 'streak') {
-    return `<strong>How many can you get right in a row?</strong> No time pressure — but one wrong answer and it's over.`;
+    return {
+      title: '🎯 Streaks',
+      items: [
+        ['🎯', 'Get as many right in a row'],
+        ['⏳', 'No time pressure'],
+        ['💀', 'One wrong = game over'],
+      ],
+    };
   }
 
   const isBinary = session.setDef.scoring === 'binary';
 
   if (isBinary) {
-    return `<strong>Identify the bug type.</strong> 10 rounds, right = 100 points, wrong = 0. 1,000 points max.`;
+    return {
+      title: '🔰 Bugs 101',
+      items: [
+        ['🖼️', 'See a bug photo, pick the type'],
+        ['🔢', '10 rounds · 1,000 pts max'],
+        ['✅', 'Right = 100 pts · Wrong = 0'],
+      ],
+    };
   }
 
-  return `<strong>Closer guess = more points.</strong> Exact species: 100 · Same genus: 75 · Same family: 50 · Same order: 25. 10 rounds, 1,000 points max.`;
+  return {
+    title: '🌍 All Bugs',
+    items: [
+      ['🖼️', 'See a bug photo, name the species'],
+      ['🔢', '10 rounds · 1,000 pts max'],
+      ['🎯', 'Closer guess = more points'],
+    ],
+  };
 }
 
 function showRulesPopup(onDismiss) {
-  const rulesText = getRulesContent();
+  const { title, items } = getRulesContent();
+  const itemsHTML = items.map(([icon, text]) =>
+    `<div class="rules-item"><span class="rules-item-icon">${icon}</span><span>${text}</span></div>`
+  ).join('');
 
   const overlay = document.createElement('div');
   overlay.className = 'rules-overlay';
   overlay.innerHTML = `
     <div class="rules-card">
       <button class="rules-close" aria-label="Close">&times;</button>
-      <div class="rules-text">${rulesText}</div>
+      <div class="rules-title">${title}</div>
+      <div class="rules-items">${itemsHTML}</div>
     </div>
   `;
 
