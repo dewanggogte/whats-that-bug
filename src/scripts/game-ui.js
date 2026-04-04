@@ -181,7 +181,6 @@ export async function initGame() {
   sessionEndSent = false;
   shared = false;
   window.addEventListener('pagehide', sendSessionEnd);
-  window.addEventListener('beforeunload', sendSessionEnd);
 
   // Pre-generate first few rounds and start loading their images
   roundCache = [];
