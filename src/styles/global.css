@@ -696,18 +696,55 @@ h2 {
 }
 
 /* =============================================
-   Share Buttons
+   Share Section — hero CTA + secondary channel buttons
    ============================================= */
-.share-buttons {
-  display: flex;
-  gap: 10px;
+.share-section {
+  margin: 24px 0 8px;
+  text-align: center;
+}
+
+.share-flavor {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.btn-share-hero {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  margin: 16px 0;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 24px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.btn-share-hero svg {
+  flex-shrink: 0;
+}
+
+.share-buttons-secondary {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.share-buttons-secondary .share-icon-btn {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.share-buttons-secondary .share-icon-btn:hover {
+  opacity: 1;
 }
 
 .share-icon-btn {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   display: inline-flex;
   align-items: center;

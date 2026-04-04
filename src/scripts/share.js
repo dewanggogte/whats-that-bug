@@ -8,16 +8,17 @@ export function scoreToEmoji(score) {
   return '🟥';
 }
 
+export function getClassicFlavor(correctCount) {
+  if (correctCount === 10) return 'Perfect score! 🏆';
+  if (correctCount >= 8) return 'Bug expert! 🔬';
+  if (correctCount >= 5) return 'Not bad! Can you beat me?';
+  return 'Bugs are tricky! Give it a shot 👀';
+}
+
 export function generateShareText(totalScore, history, setName, bestStreak) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
   const correctCount = history.filter(h => h.score === 100).length;
-
-  // Pick a flavor line based on performance
-  let flavor;
-  if (correctCount === 10) flavor = 'Perfect score! 🏆';
-  else if (correctCount >= 8) flavor = 'Bug expert! 🔬';
-  else if (correctCount >= 5) flavor = 'Not bad! Can you beat me?';
-  else flavor = "Bugs are tricky! Give it a shot 👀";
+  const flavor = getClassicFlavor(correctCount);
 
   return [
     `🪲 What's That Bug? — ${totalScore}/1000`,
@@ -31,15 +32,17 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
   ].join('\n');
 }
 
+export function getTimeTrialFlavor(correctCount, totalQuestions) {
+  if (correctCount === totalQuestions && totalQuestions >= 8) return 'Lightning fast! ⚡';
+  if (correctCount >= totalQuestions * 0.8) return 'Speed demon! 🔬';
+  if (correctCount >= totalQuestions * 0.5) return 'Not bad for 60 seconds!';
+  return 'Bugs are tricky under pressure! 👀';
+}
+
 export function generateTimeTrialShareText(totalScore, history, correctCount, totalQuestions, setKey) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
   const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Time Trial' : 'Time Trial';
-
-  let flavor;
-  if (correctCount === totalQuestions && totalQuestions >= 8) flavor = 'Lightning fast! ⚡';
-  else if (correctCount >= totalQuestions * 0.8) flavor = 'Speed demon! 🔬';
-  else if (correctCount >= totalQuestions * 0.5) flavor = 'Not bad for 60 seconds!';
-  else flavor = 'Bugs are tricky under pressure! 👀';
+  const flavor = getTimeTrialFlavor(correctCount, totalQuestions);
 
   return [
     `🪲 What's That Bug? — ${label}`,
@@ -54,15 +57,17 @@ export function generateTimeTrialShareText(totalScore, history, correctCount, to
   ].join('\n');
 }
 
+export function getStreakFlavor(streakCount) {
+  if (streakCount >= 20) return 'Unstoppable! 🏆';
+  if (streakCount >= 10) return 'Bug expert! 🔬';
+  if (streakCount >= 5) return 'Solid run!';
+  return 'Give it a shot! 👀';
+}
+
 export function generateStreakShareText(streakCount, history, setKey) {
   const emojiGrid = history.filter(h => h.score === 100).map(() => '🟩').join('');
   const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Streaks' : 'Streaks';
-
-  let flavor;
-  if (streakCount >= 20) flavor = 'Unstoppable! 🏆';
-  else if (streakCount >= 10) flavor = 'Bug expert! 🔬';
-  else if (streakCount >= 5) flavor = 'Solid run!';
-  else flavor = 'Give it a shot! 👀';
+  const flavor = getStreakFlavor(streakCount);
 
   return [
     `🪲 What's That Bug? — ${label}`,
@@ -98,4 +103,18 @@ export function openIMessage(text) {
 export function openTweetIntent(text) {
   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
   window.open(url, '_blank', 'noopener');
+}
+
+export function canNativeShare() {
+  return typeof navigator !== 'undefined' && !!navigator.share;
+}
+
+export async function nativeShare(text) {
+  if (!navigator.share) return false;
+  try {
+    await navigator.share({ text });
+    return true;
+  } catch {
+    return false;
+  }
 }
