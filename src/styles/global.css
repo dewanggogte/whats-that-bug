@@ -1538,20 +1538,40 @@ a {
   font-size: 48px;
   line-height: 1;
   margin-bottom: 8px;
+  animation: lbBounce 0.6s ease;
+}
+
+@keyframes lbBounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.3); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 
 .lb-popup-heading {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.lb-popup-rank-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
 }
 
 .lb-popup-score {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 2px;
 }
 
 .lb-popup-prev {
@@ -1561,13 +1581,98 @@ a {
 }
 
 /* =============================================
-   Leaderboard Form (name + country)
+   Celebration Confetti
    ============================================= */
+.lb-confetti {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: lbConfetti 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  opacity: 0;
+  z-index: 10;
+}
+
+@keyframes lbConfetti {
+  0% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(320px) translateX(var(--x)) rotate(var(--r));
+  }
+}
+
+.lb-celebrate {
+  overflow: hidden;
+}
+
+/* =============================================
+   Share Section (celebration popup)
+   ============================================= */
+.lb-share-primary {
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.lb-share-secondary {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.lb-share-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* =============================================
+   Claim Section (name + country)
+   ============================================= */
+.lb-claim-section {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+.lb-claim-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
 .lb-popup-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+}
+
+.lb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lb-field-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding-left: 4px;
 }
 
 .lb-input, .lb-select {
@@ -1589,6 +1694,41 @@ a {
 .lb-submit-btn {
   width: 100%;
   margin-top: 4px;
+}
+
+.lb-skip-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 4px;
+  text-align: center;
+  font-family: inherit;
+}
+.lb-skip-btn:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* =============================================
+   Mini Leaderboard (inside popup)
+   ============================================= */
+.lb-mini-board {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.lb-view-full {
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin-top: 8px;
+  text-decoration: none;
+}
+.lb-view-full:hover {
+  text-decoration: underline;
 }
 
 /* =============================================
