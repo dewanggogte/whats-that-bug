@@ -135,8 +135,12 @@ export function showCelebrationPopup({ rank, score, streak, setKey, sessionId, b
       setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
     });
 
-    // Submit handler
+    // Submit handler — guarded against multiple calls
+    let submitted = false;
     const submitEntry = async () => {
+      if (submitted) return;
+      submitted = true;
+
       const name = overlay.querySelector('#lb-name')?.value.trim() || '';
       const country = overlay.querySelector('#lb-country')?.value || '';
 
