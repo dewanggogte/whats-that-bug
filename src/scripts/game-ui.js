@@ -64,6 +64,23 @@ function getBugs101Name(taxon) {
 
 const base = window.__BASE || '';
 
+// Audio — synthesize a short ding using Web Audio API
+let audioCtx = null;
+function playDing() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
 let session = null;
 let currentRound = null;
 let roundStartTime = null;
@@ -462,6 +479,9 @@ function handleAnswer(picked, choices, choiceEls) {
     picked.taxon.species, correct.taxon.species,
     score, timeTaken, currentSetKey, session.mode
   );
+
+  // Ding on correct answer
+  if (score > 0) playDing();
 
   // MODE-SPECIFIC POST-ANSWER FLOW
   if (mode === 'time_trial') {
