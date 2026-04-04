@@ -12,7 +12,7 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A GeoGuessr-style insect identification game. Can you tell a beetle from a butterfly?">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/svg+xml" id="favicon" href="/favicon.svg">
   <title>{title}</title>
   <script is:inline>
     // Capture the original external referrer once per session.
@@ -33,8 +33,11 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
       var base = path.replace(/\/(play|leaderboard)$/, '');
       window.__BASE = (base === '/' || base === '') ? '' : base;
 
-      // Rewrite internal links once DOM is ready
+      // Rewrite favicon and internal links for subpath
       if (window.__BASE) {
+        var fav = document.getElementById('favicon');
+        if (fav) fav.setAttribute('href', window.__BASE + fav.getAttribute('href'));
+
         document.addEventListener('DOMContentLoaded', function() {
           document.querySelectorAll('a[href^="/"]:not([href^="//"])').forEach(function(a) {
             a.setAttribute('href', window.__BASE + a.getAttribute('href'));
