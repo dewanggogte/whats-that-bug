@@ -577,6 +577,8 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
       const isBugs101Mode = session.setDef.scoring === 'binary';
       if (isBugs101Mode) {
         breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
+      } else if (picked.taxon.order === correct.taxon.order) {
+        breadcrumb = `Both are ${escapeHTML(correct.taxon.order)}, but different families — this is ${escapeHTML(correct.taxon.family_common || correct.taxon.family)}.`;
       } else {
         breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
       }
@@ -855,6 +857,8 @@ function renderStreakGameOver(picked, correct) {
   const isBugs101Mode = session.setDef.scoring === 'binary';
   if (isBugs101Mode) {
     breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
+  } else if (picked.taxon.order === correct.taxon.order) {
+    breadcrumb = `Both are ${escapeHTML(correct.taxon.order)}, but different families — this is ${escapeHTML(correct.taxon.family_common || correct.taxon.family)}.`;
   } else {
     breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
   }
