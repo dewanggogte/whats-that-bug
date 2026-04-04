@@ -82,6 +82,54 @@ export function generateStreakShareText(streakCount, history, setKey) {
   ].join('\n');
 }
 
+/**
+ * Generate share text for a leaderboard entry.
+ * rank: 1-10, setKey: e.g. 'bugs_101_time_trial', score: number, streak: number (for streak modes)
+ */
+export function generateLeaderboardShareText(rank, setKey, score, streak) {
+  const isStreak = setKey.includes('streak');
+  const isBugs101 = setKey.startsWith('bugs_101');
+
+  const modeLabel = isStreak ? 'Streaks' : 'Time Trial';
+  const modeIcon = isStreak ? '🎯' : '⏱️';
+  const setLabel = isBugs101 ? `Bugs 101 ${modeLabel}` : `All Bugs ${modeLabel}`;
+  const scoreText = isStreak ? `${streak} in a row` : `${score} pts`;
+
+  // Medal emoji
+  let medal;
+  if (rank === 1) medal = '🥇';
+  else if (rank === 2) medal = '🥈';
+  else if (rank === 3) medal = '🥉';
+  else medal = '🏆';
+
+  // Record line
+  let recordLine;
+  if (rank === 1) recordLine = '⚡ WORLD RECORD ⚡';
+  else if (rank <= 3) recordLine = '👑 NEW RECORD 👑';
+  else recordLine = '🚨 NEW RECORD 🚨';
+
+  // Heading
+  let heading;
+  if (rank === 1) heading = `⚡${medal}🪲 I'm the #1 Bug Identifier in the WORLD!`;
+  else heading = `${medal}🪲 I'm ranked #${rank} in the WORLD on What's That Bug!`;
+
+  // CTA
+  const cta = rank === 1 ? 'Come dethrone me' : 'Think you can beat me?';
+
+  const modeParam = isStreak ? 'streak' : 'time_trial';
+
+  return [
+    heading,
+    '',
+    `${modeIcon} ${setLabel} — ${scoreText}`,
+    '',
+    recordLine,
+    '',
+    cta,
+    `https://dewanggogte.com/games/bugs/?ref=share&mode=${modeParam}`,
+  ].join('\n');
+}
+
 export async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
