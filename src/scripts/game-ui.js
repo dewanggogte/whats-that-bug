@@ -6,6 +6,8 @@
 import { SessionState, calculateTimedScore } from './game-engine.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
+import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
+import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
 
 function escapeHTML(str) {
   return String(str)
@@ -639,6 +641,59 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
   container.querySelector('#next-btn').addEventListener('click', startRound);
 }
 
+// ===== LEADERBOARD CHECK =====
+
+async function handleLeaderboardCheck(score, streak, renderResultsFn) {
+  const isStreak = currentSetKey.includes('streak');
+  const value = isStreak ? streak : score;
+
+  if (!isLeaderboardEligible(currentSetKey) || value <= 0) {
+    renderResultsFn();
+    return;
+  }
+
+  const dismissSpinner = showLoadingSpinner('Checking leaderboard...');
+
+  try {
+    const allBoards = await fetchLeaderboards();
+    const board = allBoards?.[currentSetKey] || [];
+
+    dismissSpinner();
+
+    const { qualifies, rank } = checkTop10(board, value, isStreak);
+    const { isPersonalBest, previousBest } = checkPersonalBest(currentSetKey, value, isStreak);
+
+    if (qualifies) {
+      await showCelebrationPopup({
+        rank,
+        score,
+        streak,
+        setKey: currentSetKey,
+        sessionId: session.sessionId,
+        board,
+        questionsAnswered: session.questionsAnswered,
+        correctCount: session.correctCount,
+      });
+      renderResultsFn();
+    } else if (isPersonalBest) {
+      await showPersonalBestPopup({
+        score,
+        streak,
+        previousBest,
+        setKey: currentSetKey,
+        board,
+      });
+      renderResultsFn();
+    } else {
+      renderResultsFn();
+    }
+  } catch (err) {
+    console.warn('Leaderboard check failed:', err);
+    dismissSpinner();
+    renderResultsFn();
+  }
+}
+
 // ===== SUMMARY SCREENS =====
 
 function renderClassicSummary() {
@@ -691,9 +746,6 @@ function renderTimeTrialSummary() {
   const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = session.totalScore > prevBest;
-  if (isNewBest) {
-    localStorage.setItem(storageKey, session.totalScore.toString());
-  }
 
   const emojiGrid = session.history.map(h => h.score > 0 ? '🟩' : '🟥').join('');
   const accuracy = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
@@ -725,7 +777,8 @@ function renderTimeTrialSummary() {
     ? `<div class="new-best-badge">New Personal Best!</div>`
     : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} pts</p>` : '';
 
-  container.innerHTML = `
+  handleLeaderboardCheck(session.totalScore, 0, () => {
+    container.innerHTML = `
     <div class="container">
       <div class="summary">
         <h1>⏱️ Time Trial</h1>
@@ -769,9 +822,9 @@ function renderTimeTrialSummary() {
       </div>
     </div>
   `;
-
-  attachShareHandlers(shareText);
-  attachPlayAgainHandlers();
+    attachShareHandlers(shareText);
+    attachPlayAgainHandlers();
+  });
 }
 
 function renderStreakGameOver(picked, correct) {
@@ -781,9 +834,6 @@ function renderStreakGameOver(picked, correct) {
   const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = streakCount > prevBest;
-  if (isNewBest) {
-    localStorage.setItem(storageKey, streakCount.toString());
-  }
 
   // Only green emojis
   const emojiGrid = Array(streakCount).fill('🟩').join('');
@@ -821,7 +871,8 @@ function renderStreakGameOver(picked, correct) {
 
   const totalRounds = streakCount + 1;
 
-  container.innerHTML = `
+  handleLeaderboardCheck(0, streakCount, () => {
+    container.innerHTML = `
     <div class="container">
       <div class="summary">
         <h1>🎯 Streaks</h1>
@@ -867,9 +918,9 @@ function renderStreakGameOver(picked, correct) {
       </div>
     </div>
   `;
-
-  attachShareHandlers(shareText);
-  attachPlayAgainHandlers();
+    attachShareHandlers(shareText);
+    attachPlayAgainHandlers();
+  });
 }
 
 function renderStreakSummary() {
