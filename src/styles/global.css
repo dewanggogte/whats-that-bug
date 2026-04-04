@@ -1425,3 +1425,258 @@ a {
   font-weight: 600;
   color: var(--accent);
 }
+
+/* =============================================
+   Leaderboard Table
+   ============================================= */
+.lb-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 36px 28px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.lb-row-top1 { background: rgba(234, 179, 8, 0.1); }
+.lb-row-top2 { background: rgba(192, 192, 192, 0.1); }
+.lb-row-top3 { background: rgba(205, 127, 50, 0.1); }
+
+.lb-row-highlight {
+  border: 2px solid var(--accent);
+  animation: lbPulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes lbPulse {
+  from { box-shadow: 0 0 0 0 rgba(184, 90, 59, 0.3); }
+  to { box-shadow: 0 0 0 6px rgba(184, 90, 59, 0); }
+}
+
+.lb-rank {
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.lb-flag {
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.lb-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-value {
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================
+   Leaderboard Popup Overlay
+   ============================================= */
+.lb-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  padding: 24px 16px;
+}
+
+.lb-popup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.lb-popup-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.lb-popup-close:hover { color: var(--text); }
+
+.lb-popup-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.lb-popup-medal {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.lb-popup-heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.lb-popup-score {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-popup-prev {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* =============================================
+   Leaderboard Form (name + country)
+   ============================================= */
+.lb-popup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lb-input, .lb-select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.lb-input:focus, .lb-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.lb-submit-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* =============================================
+   Leaderboard Loading Spinner
+   ============================================= */
+.lb-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.lb-loading-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px 40px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.lb-loading-card p {
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.lb-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: lbSpin 0.7s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes lbSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* =============================================
+   Leaderboard Page Tabs
+   ============================================= */
+.lb-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.lb-tab {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.lb-tab:hover {
+  color: var(--text);
+}
+
+.lb-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.lb-tab-content {
+  display: none;
+}
+
+.lb-tab-content.active {
+  display: block;
+}
+
+/* =============================================
+   Leaderboard Page Spinner
+   ============================================= */
+.lb-page-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
