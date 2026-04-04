@@ -849,6 +849,11 @@ function renderStreakGameOver(picked, correct) {
         ${renderShareSection(getStreakFlavor(streakCount))}
       </div>
 
+      <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-outline" id="play-again-btn">Play Again</button>
+        <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
+      </div>
+
       <div class="feedback-card miss" style="margin-top: 16px;">
         <div class="feedback-title">The one that got away</div>
         <div class="feedback-body">
@@ -859,11 +864,6 @@ function renderStreakGameOver(picked, correct) {
         <div style="margin-top: 8px;">
           <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="font-size: 13px;">Learn more →</a>
         </div>
-      </div>
-
-      <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-        <button class="btn btn-outline" id="play-again-btn">Play Again</button>
-        <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
       </div>
     </div>
   `;
