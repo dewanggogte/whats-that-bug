@@ -236,6 +236,12 @@ h2 {
   background: var(--surface);
 }
 
+#play-again-btn,
+#change-set-btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* =============================================
    Badges
    ============================================= */
