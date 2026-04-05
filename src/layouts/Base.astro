@@ -2,18 +2,50 @@
 import '../styles/global.css';
 interface Props {
   title: string;
+  description: string;
+  ogImage?: string;
+  ogType?: string;
+  canonicalPath?: string;
 }
-const { title } = Astro.props;
+const { title, description, ogImage, ogType, canonicalPath } = Astro.props;
 const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
+
+const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
+const resolvedOgImage = `${CANONICAL_BASE}${ogImage || '/og-default.png'}`;
+const resolvedCanonical = canonicalPath != null ? `${CANONICAL_BASE}${canonicalPath}` : undefined;
+const resolvedOgType = ogType || 'website';
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A GeoGuessr-style insect identification game. Can you tell a beetle from a butterfly?">
+  <meta name="description" content={description}>
   <link rel="icon" type="image/svg+xml" id="favicon" href="/favicon.svg">
   <title>{title}</title>
+
+  {/* Canonical URL */}
+  {resolvedCanonical && <link rel="canonical" href={resolvedCanonical} />}
+
+  {/* Open Graph */}
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={resolvedOgImage} />
+  {resolvedCanonical && <meta property="og:url" content={resolvedCanonical} />}
+  <meta property="og:type" content={resolvedOgType} />
+  <meta property="og:site_name" content="What's That Bug?" />
+
+  {/* Twitter Card */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={resolvedOgImage} />
+
+  {/* PWA */}
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <meta name="theme-color" content="#c97a4a" />
+
   <script is:inline>
     // Capture the original external referrer once per session.
     // Internal navigations (/ -> /play) overwrite document.referrer,
@@ -57,7 +89,9 @@ const goatCounterId = import.meta.env.PUBLIC_GOATCOUNTER_ID || '';
       </nav>
     </div>
   </header>
-  <slot />
+  <main>
+    <slot />
+  </main>
 
   <footer style="text-align:center;padding:20px 16px 16px;color:var(--text-secondary);font-size:11px;border-top:1px solid var(--border);margin-top:48px;">
     <p>Photos from <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a> · Inspired by <a href="https://www.reddit.com/r/whatsthisbug/" target="_blank" rel="noopener">r/whatsthisbug</a></p>
