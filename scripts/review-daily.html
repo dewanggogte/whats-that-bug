@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Challenge Review Tool</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; background: #1a1917; color: #e0ddd8; padding: 24px; }
+    h1 { margin-bottom: 24px; }
+    .challenge { border: 2px solid #2e2c28; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+    .challenge.approved { border-color: #059669; }
+    .challenge.rejected { border-color: #dc2626; opacity: 0.5; }
+    .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .challenge-header h2 { font-size: 18px; }
+    .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge.pending { background: #7c5a1e; color: #fde047; }
+    .badge.approved { background: #1a5c33; color: #86efac; }
+    .mode-section { margin-bottom: 16px; }
+    .mode-section h3 { margin-bottom: 8px; font-size: 15px; color: #9a9590; }
+    .crops { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+    .crops img { height: 150px; border-radius: 6px; border: 1px solid #2e2c28; }
+    .crops img.reveal { border: 2px solid #d4794e; }
+    .crop-label { text-align: center; font-size: 11px; color: #9a9590; }
+    .answer { margin: 8px 0; font-size: 14px; }
+    .answer strong { color: #d4794e; }
+    .actions { display: flex; gap: 12px; margin-top: 12px; }
+    .btn { padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn-approve { background: #059669; color: white; }
+    .btn-reject { background: #dc2626; color: white; }
+    .btn-approve:hover { background: #047857; }
+    .btn-reject:hover { background: #b91c1c; }
+    .btn-approve:disabled, .btn-reject:disabled { opacity: 0.4; cursor: default; }
+    .export-bar { position: sticky; top: 0; background: #222120; padding: 16px; border-radius: 8px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; z-index: 10; }
+    .btn-export { background: #d4794e; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; }
+    .btn-export:hover { background: #c06a42; }
+    .status { font-size: 14px; color: #9a9590; }
+    .instructions { background: #222120; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; line-height: 1.6; }
+    .instructions code { background: #2e2c28; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Daily Challenge Review</h1>
+
+  <div class="instructions">
+    <strong>How to use:</strong><br>
+    1. Run <code>npm run generate-daily</code> to create candidate challenges.<br>
+    2. Open this file in your browser (File &rarr; Open).<br>
+    3. Click "Load manifest.json" and select <code>public/data/daily/manifest.json</code>.<br>
+    4. Review each challenge's crops. Approve or reject.<br>
+    5. Click "Download approved manifest" to save. Replace the original file with it.<br>
+    6. Commit and deploy.
+  </div>
+
+  <div class="export-bar">
+    <input type="file" id="fileInput" accept=".json" />
+    <button class="btn-export" onclick="downloadManifest()">Download approved manifest</button>
+    <span class="status" id="status">No manifest loaded</span>
+  </div>
+
+  <div id="challenges"></div>
+
+  <script>
+    let manifest = null;
+    const BUGS101_SIZES = ['20%', '50%', '80%'];
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        manifest = JSON.parse(text);
+      } catch (err) {
+        alert('Invalid JSON file: ' + err.message);
+        return;
+      }
+      if (!manifest.challenges || !Array.isArray(manifest.challenges)) {
+        alert('Invalid manifest: missing "challenges" array');
+        manifest = null;
+        return;
+      }
+      render();
+    });
+
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function render() {
+      const container = document.getElementById('challenges');
+      const pending = manifest.challenges.filter(c => !c.approved).length;
+      const approved = manifest.challenges.filter(c => c.approved).length;
+      document.getElementById('status').textContent =
+        `${approved} approved, ${pending} pending, ${manifest.challenges.length} total`;
+
+      container.innerHTML = manifest.challenges.map((ch, idx) => {
+        const statusClass = ch.approved ? 'approved' : 'pending';
+        const badgeClass = ch.approved ? 'approved' : 'pending';
+        const badgeText = ch.approved ? 'Approved' : 'Pending';
+
+        return `
+          <div class="challenge ${statusClass}" id="challenge-${idx}">
+            <div class="challenge-header">
+              <h2>Day #${ch.number} &mdash; ${escapeHTML(ch.date)}</h2>
+              <span class="badge ${badgeClass}">${badgeText}</span>
+            </div>
+
+            <div class="mode-section">
+              <h3>Bugs 101 Daily</h3>
+              <div class="answer">Answer: <strong>${escapeHTML(ch.bugs101.answer_common)}</strong> (${escapeHTML(ch.bugs101.answer_order)})</div>
+              <div class="crops">
+                ${ch.bugs101.crops.map((c, i) => `
+                  <div class="crop-label">
+                    <img src="../public/data/${c}" alt="Crop ${i + 1}" title="Crop ${i + 1} (${BUGS101_SIZES[i] || ''})">
+                    <div>${BUGS101_SIZES[i] || 'Crop ' + (i + 1)}</div>
+                  </div>
+                `).join('')}
+                <div class="crop-label">
+                  <img src="../public/data/${ch.bugs101.reveal}" alt="Full reveal" class="reveal" title="Full reveal">
+                  <div>Reveal</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mode-section">
+              <h3>All Bugs Daily</h3>
+              <div class="answer">Answer: <strong>${escapeHTML(ch.allbugs.answer_common)}</strong> (<em>${escapeHTML(ch.allbugs.answer_species)}</em>)</div>
+              <div class="crops">
+                ${ch.allbugs.crops.map((c, i) => `
+                  <div class="crop-label">
+                    <img src="../public/data/${c}" alt="Crop ${i + 1}" title="Crop ${i + 1}">
+                    <div>Crop ${i + 1}</div>
+                  </div>
+                `).join('')}
+                <div class="crop-label">
+                  <img src="../public/data/${ch.allbugs.reveal}" alt="Full reveal" class="reveal" title="Full reveal">
+                  <div>Reveal</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-approve" onclick="approve(${idx})" ${ch.approved ? 'disabled' : ''}>Approve</button>
+              <button class="btn btn-reject" onclick="reject(${idx})">Reject</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function approve(idx) {
+      manifest.challenges[idx].approved = true;
+      render();
+    }
+
+    function reject(idx) {
+      if (!confirm('Remove this challenge? This cannot be undone.')) return;
+      manifest.challenges.splice(idx, 1);
+      render();
+    }
+
+    function downloadManifest() {
+      if (!manifest) return alert('Load a manifest first');
+      const unapproved = manifest.challenges.filter(c => !c.approved);
+      if (unapproved.length > 0) {
+        if (!confirm(`${unapproved.length} challenge(s) are still pending. Download anyway?`)) return;
+      }
+      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'manifest.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>
