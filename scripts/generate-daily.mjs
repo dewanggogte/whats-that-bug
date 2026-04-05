@@ -260,10 +260,13 @@ async function main() {
   const usedBugs101Ids = new Set(usedObs.bugs101 || []);
   const usedAllbugsIds = new Set(usedObs.allbugs || []);
 
-  // Load existing manifest
+  // Load existing manifest — file stores { challenges: [...] }
   let manifest = [];
   if (existsSync(MANIFEST_FILE)) {
-    try { manifest = JSON.parse(readFileSync(MANIFEST_FILE, 'utf-8')); } catch {}
+    try {
+      const raw = JSON.parse(readFileSync(MANIFEST_FILE, 'utf-8'));
+      manifest = Array.isArray(raw) ? raw : (raw.challenges || []);
+    } catch {}
   }
   const existingDates = new Set(manifest.map(e => e.date));
 
@@ -358,8 +361,8 @@ async function main() {
     await sleep(500);
   }
 
-  // Save manifest
-  writeFileSync(MANIFEST_FILE, JSON.stringify(manifest, null, 2));
+  // Save manifest — wrap in { challenges: [...] } for the client
+  writeFileSync(MANIFEST_FILE, JSON.stringify({ challenges: manifest }, null, 2));
   console.log(`\nManifest saved: ${manifest.length} total entries`);
 
   // Save used observations
