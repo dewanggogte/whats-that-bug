@@ -43,7 +43,7 @@
     {
       "date": "2026-04-06",
       "number": 2,
-      "approved": true,
+      "approved": false,
       "bugs101": {
         "observation_id": 142071737,
         "crops": [
@@ -83,7 +83,7 @@
     {
       "date": "2026-04-07",
       "number": 3,
-      "approved": true,
+      "approved": false,
       "bugs101": {
         "observation_id": 127937394,
         "crops": [
@@ -203,7 +203,7 @@
     {
       "date": "2026-04-10",
       "number": 6,
-      "approved": true,
+      "approved": false,
       "bugs101": {
         "observation_id": 253973769,
         "crops": [
@@ -243,7 +243,7 @@
     {
       "date": "2026-04-11",
       "number": 7,
-      "approved": true,
+      "approved": false,
       "bugs101": {
         "observation_id": 167330107,
         "crops": [
