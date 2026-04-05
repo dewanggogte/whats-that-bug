@@ -1,17 +1,17 @@
 {
   "challenges": [
     {
-      "date": "2026-04-06",
-      "number": 2,
+      "date": "2026-04-05",
+      "number": 1,
       "approved": true,
       "bugs101": {
         "observation_id": 79066650,
         "crops": [
-          "daily/2026-04-06/b101_1.jpg",
-          "daily/2026-04-06/b101_2.jpg",
-          "daily/2026-04-06/b101_3.jpg"
+          "daily/2026-04-05/b101_1.jpg",
+          "daily/2026-04-05/b101_2.jpg",
+          "daily/2026-04-05/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-06/b101_full.jpg",
+        "reveal": "daily/2026-04-05/b101_full.jpg",
         "attribution": "(c) ponpon42, some rights reserved (CC BY)",
         "wikipedia_summary": "Carios vespertilionis, also known as the short-legged bat tick, is an argasid tick parasite of bats. It is a widely-distributed species, found widely ",
         "inat_url": "https://www.inaturalist.org/observations/79066650",
@@ -23,14 +23,14 @@
       "allbugs": {
         "observation_id": 34519923,
         "crops": [
-          "daily/2026-04-06/all_1.jpg",
-          "daily/2026-04-06/all_2.jpg",
-          "daily/2026-04-06/all_3.jpg",
-          "daily/2026-04-06/all_4.jpg",
-          "daily/2026-04-06/all_5.jpg",
-          "daily/2026-04-06/all_6.jpg"
+          "daily/2026-04-05/all_1.jpg",
+          "daily/2026-04-05/all_2.jpg",
+          "daily/2026-04-05/all_3.jpg",
+          "daily/2026-04-05/all_4.jpg",
+          "daily/2026-04-05/all_5.jpg",
+          "daily/2026-04-05/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-06/all_full.jpg",
+        "reveal": "daily/2026-04-05/all_full.jpg",
         "attribution": "(c) Thomas Mesaglio, some rights reserved (CC BY)",
         "wikipedia_summary": "The Sydney funnel-web spider (Atrax robustus) is a species of venomous mygalomorph spider native to eastern Australia, usually found within a 100\u00a0km (",
         "inat_url": "https://www.inaturalist.org/observations/34519923",
@@ -41,17 +41,17 @@
       }
     },
     {
-      "date": "2026-04-07",
-      "number": 3,
+      "date": "2026-04-06",
+      "number": 2,
       "approved": true,
       "bugs101": {
         "observation_id": 45406081,
         "crops": [
-          "daily/2026-04-07/b101_1.jpg",
-          "daily/2026-04-07/b101_2.jpg",
-          "daily/2026-04-07/b101_3.jpg"
+          "daily/2026-04-06/b101_1.jpg",
+          "daily/2026-04-06/b101_2.jpg",
+          "daily/2026-04-06/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-07/b101_full.jpg",
+        "reveal": "daily/2026-04-06/b101_full.jpg",
         "attribution": "(c) Trevor Edmonson, some rights reserved (CC BY)",
         "wikipedia_summary": "Megalopyge crispata, the black-waved flannel moth, crinkled flannel moth or white flannel moth, is a moth of the Megalopygidae family. It is found alo",
         "inat_url": "https://www.inaturalist.org/observations/45406081",
@@ -63,14 +63,14 @@
       "allbugs": {
         "observation_id": 8109363,
         "crops": [
-          "daily/2026-04-07/all_1.jpg",
-          "daily/2026-04-07/all_2.jpg",
-          "daily/2026-04-07/all_3.jpg",
-          "daily/2026-04-07/all_4.jpg",
-          "daily/2026-04-07/all_5.jpg",
-          "daily/2026-04-07/all_6.jpg"
+          "daily/2026-04-06/all_1.jpg",
+          "daily/2026-04-06/all_2.jpg",
+          "daily/2026-04-06/all_3.jpg",
+          "daily/2026-04-06/all_4.jpg",
+          "daily/2026-04-06/all_5.jpg",
+          "daily/2026-04-06/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-07/all_full.jpg",
+        "reveal": "daily/2026-04-06/all_full.jpg",
         "attribution": "(c) Julien Renoult, some rights reserved (CC BY)",
         "wikipedia_summary": "Mantispa styriaca, common name Styrian Praying Lacewing, is a species of mantidfly. It is a yellow-brown insect as an adult and has multiple larva sta",
         "inat_url": "https://www.inaturalist.org/observations/8109363",
@@ -80,17 +80,17 @@
       }
     },
     {
-      "date": "2026-04-08",
-      "number": 4,
+      "date": "2026-04-07",
+      "number": 3,
       "approved": true,
       "bugs101": {
         "observation_id": 333006786,
         "crops": [
-          "daily/2026-04-08/b101_1.jpg",
-          "daily/2026-04-08/b101_2.jpg",
-          "daily/2026-04-08/b101_3.jpg"
+          "daily/2026-04-07/b101_1.jpg",
+          "daily/2026-04-07/b101_2.jpg",
+          "daily/2026-04-07/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-08/b101_full.jpg",
+        "reveal": "daily/2026-04-07/b101_full.jpg",
         "attribution": "(c) Aleksandr Gromov, some rights reserved (CC BY)",
         "wikipedia_summary": "Muscimantis is a monotypic genus of praying mantis in the family Gonypetidae , subfamily Iridopteryginae. It is represented by a single species, Musci",
         "inat_url": "https://www.inaturalist.org/observations/333006786",
@@ -102,14 +102,14 @@
       "allbugs": {
         "observation_id": 189841934,
         "crops": [
-          "daily/2026-04-08/all_1.jpg",
-          "daily/2026-04-08/all_2.jpg",
-          "daily/2026-04-08/all_3.jpg",
-          "daily/2026-04-08/all_4.jpg",
-          "daily/2026-04-08/all_5.jpg",
-          "daily/2026-04-08/all_6.jpg"
+          "daily/2026-04-07/all_1.jpg",
+          "daily/2026-04-07/all_2.jpg",
+          "daily/2026-04-07/all_3.jpg",
+          "daily/2026-04-07/all_4.jpg",
+          "daily/2026-04-07/all_5.jpg",
+          "daily/2026-04-07/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-08/all_full.jpg",
+        "reveal": "daily/2026-04-07/all_full.jpg",
         "attribution": "(c) SteveM4560, some rights reserved (CC BY)",
         "wikipedia_summary": "Utetheisa pulchella, common name crimson-speckled flunkey or crimson-speckled moth, is a moth of the family Erebidae.",
         "inat_url": "https://www.inaturalist.org/observations/189841934",
@@ -119,17 +119,17 @@
       }
     },
     {
-      "date": "2026-04-09",
-      "number": 5,
+      "date": "2026-04-08",
+      "number": 4,
       "approved": true,
       "bugs101": {
         "observation_id": 97117272,
         "crops": [
-          "daily/2026-04-09/b101_1.jpg",
-          "daily/2026-04-09/b101_2.jpg",
-          "daily/2026-04-09/b101_3.jpg"
+          "daily/2026-04-08/b101_1.jpg",
+          "daily/2026-04-08/b101_2.jpg",
+          "daily/2026-04-08/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-09/b101_full.jpg",
+        "reveal": "daily/2026-04-08/b101_full.jpg",
         "attribution": "(c) Franz Anthony, some rights reserved (CC BY)",
         "wikipedia_summary": "Micropholcus fauroti is a cellar spider species with Pantropical distribution. It has been introduced in Belgium and Germany.",
         "inat_url": "https://www.inaturalist.org/observations/97117272",
@@ -141,14 +141,14 @@
       "allbugs": {
         "observation_id": 149124131,
         "crops": [
-          "daily/2026-04-09/all_1.jpg",
-          "daily/2026-04-09/all_2.jpg",
-          "daily/2026-04-09/all_3.jpg",
-          "daily/2026-04-09/all_4.jpg",
-          "daily/2026-04-09/all_5.jpg",
-          "daily/2026-04-09/all_6.jpg"
+          "daily/2026-04-08/all_1.jpg",
+          "daily/2026-04-08/all_2.jpg",
+          "daily/2026-04-08/all_3.jpg",
+          "daily/2026-04-08/all_4.jpg",
+          "daily/2026-04-08/all_5.jpg",
+          "daily/2026-04-08/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-09/all_full.jpg",
+        "reveal": "daily/2026-04-08/all_full.jpg",
         "attribution": "(c) Ethan Yeoman, some rights reserved (CC BY)",
         "wikipedia_summary": "Austrarchaea judyae is a species of spider in the family Archaeidae. It is endemic to Australia.",
         "inat_url": "https://www.inaturalist.org/observations/149124131",
@@ -159,17 +159,17 @@
       }
     },
     {
-      "date": "2026-04-10",
-      "number": 6,
+      "date": "2026-04-09",
+      "number": 5,
       "approved": true,
       "bugs101": {
         "observation_id": 201459347,
         "crops": [
-          "daily/2026-04-10/b101_1.jpg",
-          "daily/2026-04-10/b101_2.jpg",
-          "daily/2026-04-10/b101_3.jpg"
+          "daily/2026-04-09/b101_1.jpg",
+          "daily/2026-04-09/b101_2.jpg",
+          "daily/2026-04-09/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-10/b101_full.jpg",
+        "reveal": "daily/2026-04-09/b101_full.jpg",
         "attribution": "(c) johnkroberts, some rights reserved (CC BY)",
         "wikipedia_summary": "Syncordulia serendipator, the rustic presba, is a species of dragonfly in the family Synthemistidae.",
         "inat_url": "https://www.inaturalist.org/observations/201459347",
@@ -181,14 +181,14 @@
       "allbugs": {
         "observation_id": 253973769,
         "crops": [
-          "daily/2026-04-10/all_1.jpg",
-          "daily/2026-04-10/all_2.jpg",
-          "daily/2026-04-10/all_3.jpg",
-          "daily/2026-04-10/all_4.jpg",
-          "daily/2026-04-10/all_5.jpg",
-          "daily/2026-04-10/all_6.jpg"
+          "daily/2026-04-09/all_1.jpg",
+          "daily/2026-04-09/all_2.jpg",
+          "daily/2026-04-09/all_3.jpg",
+          "daily/2026-04-09/all_4.jpg",
+          "daily/2026-04-09/all_5.jpg",
+          "daily/2026-04-09/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-10/all_full.jpg",
+        "reveal": "daily/2026-04-09/all_full.jpg",
         "attribution": "(c) Amanda Doty, some rights reserved (CC BY)",
         "wikipedia_summary": "Acrophylla alta is a species of stick insects in the tribe Phasmatini and discovered in 2025.",
         "inat_url": "https://www.inaturalist.org/observations/253973769",
@@ -199,17 +199,17 @@
       }
     },
     {
-      "date": "2026-04-11",
-      "number": 7,
+      "date": "2026-04-10",
+      "number": 6,
       "approved": true,
       "bugs101": {
         "observation_id": 103917360,
         "crops": [
-          "daily/2026-04-11/b101_1.jpg",
-          "daily/2026-04-11/b101_2.jpg",
-          "daily/2026-04-11/b101_3.jpg"
+          "daily/2026-04-10/b101_1.jpg",
+          "daily/2026-04-10/b101_2.jpg",
+          "daily/2026-04-10/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-11/b101_full.jpg",
+        "reveal": "daily/2026-04-10/b101_full.jpg",
         "attribution": "(c) Michael Eisen, some rights reserved (CC BY)",
         "wikipedia_summary": "Tricholepidion is a genus of wingless insect belonging to Zygentoma (silverfish and allies), with only a single described species T. gertschi, native ",
         "inat_url": "https://www.inaturalist.org/observations/103917360",
@@ -221,14 +221,14 @@
       "allbugs": {
         "observation_id": 9456994,
         "crops": [
-          "daily/2026-04-11/all_1.jpg",
-          "daily/2026-04-11/all_2.jpg",
-          "daily/2026-04-11/all_3.jpg",
-          "daily/2026-04-11/all_4.jpg",
-          "daily/2026-04-11/all_5.jpg",
-          "daily/2026-04-11/all_6.jpg"
+          "daily/2026-04-10/all_1.jpg",
+          "daily/2026-04-10/all_2.jpg",
+          "daily/2026-04-10/all_3.jpg",
+          "daily/2026-04-10/all_4.jpg",
+          "daily/2026-04-10/all_5.jpg",
+          "daily/2026-04-10/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-11/all_full.jpg",
+        "reveal": "daily/2026-04-10/all_full.jpg",
         "attribution": "(c) Sun\u010dana Bradley, some rights reserved (CC BY)",
         "wikipedia_summary": "",
         "inat_url": "https://www.inaturalist.org/observations/9456994",
@@ -239,17 +239,17 @@
       }
     },
     {
-      "date": "2026-04-12",
-      "number": 8,
+      "date": "2026-04-11",
+      "number": 7,
       "approved": true,
       "bugs101": {
         "observation_id": 30026569,
         "crops": [
-          "daily/2026-04-12/b101_1.jpg",
-          "daily/2026-04-12/b101_2.jpg",
-          "daily/2026-04-12/b101_3.jpg"
+          "daily/2026-04-11/b101_1.jpg",
+          "daily/2026-04-11/b101_2.jpg",
+          "daily/2026-04-11/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-12/b101_full.jpg",
+        "reveal": "daily/2026-04-11/b101_full.jpg",
         "attribution": "(c) Wilderness Safaris Botswana - Conservation Team, some rights reserved (CC BY)",
         "wikipedia_summary": "The Namaqua plumefoot mite (Eatoniana namaquensis) is a species of mite of the subfamily Erythraeinae in the family Erythraeidae.",
         "inat_url": "https://www.inaturalist.org/observations/30026569",
@@ -261,14 +261,14 @@
       "allbugs": {
         "observation_id": 135043264,
         "crops": [
-          "daily/2026-04-12/all_1.jpg",
-          "daily/2026-04-12/all_2.jpg",
-          "daily/2026-04-12/all_3.jpg",
-          "daily/2026-04-12/all_4.jpg",
-          "daily/2026-04-12/all_5.jpg",
-          "daily/2026-04-12/all_6.jpg"
+          "daily/2026-04-11/all_1.jpg",
+          "daily/2026-04-11/all_2.jpg",
+          "daily/2026-04-11/all_3.jpg",
+          "daily/2026-04-11/all_4.jpg",
+          "daily/2026-04-11/all_5.jpg",
+          "daily/2026-04-11/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-12/all_full.jpg",
+        "reveal": "daily/2026-04-11/all_full.jpg",
         "attribution": "(c) Neal Kelso, some rights reserved (CC BY)",
         "wikipedia_summary": "Curculio caryatrypes , the greater chestnut weevil, is a species of weevil in the family Curculionidae.",
         "inat_url": "https://www.inaturalist.org/observations/135043264",
@@ -279,41 +279,41 @@
       }
     },
     {
-      "date": "2026-04-05",
-      "number": 1,
+      "date": "2026-04-12",
+      "number": 8,
       "approved": true,
       "bugs101": {
         "observation_id": 38051645,
         "crops": [
-          "daily/2026-04-05/b101_1.jpg",
-          "daily/2026-04-05/b101_2.jpg",
-          "daily/2026-04-05/b101_3.jpg"
+          "daily/2026-04-12/b101_1.jpg",
+          "daily/2026-04-12/b101_2.jpg",
+          "daily/2026-04-12/b101_3.jpg"
         ],
-        "reveal": "daily/2026-04-05/b101_full.jpg",
+        "reveal": "daily/2026-04-12/b101_full.jpg",
         "attribution": "(c) Franz Anthony, some rights reserved (CC BY)",
         "wikipedia_summary": "Polyura schreiber, the blue nawab, is a butterfly species found in tropical Asia. It belongs to the Charaxinae (rajahs and nawabs) in the brush-footed",
         "inat_url": "https://www.inaturalist.org/observations/38051645",
-        "center_x": 0.1,
-        "center_y": 0.09977494373593399,
+        "center_x": 0.258,
+        "center_y": 0.298,
         "answer_order": "Lepidoptera",
         "answer_common": "Butterfly"
       },
       "allbugs": {
         "observation_id": 9219580,
         "crops": [
-          "daily/2026-04-05/all_1.jpg",
-          "daily/2026-04-05/all_2.jpg",
-          "daily/2026-04-05/all_3.jpg",
-          "daily/2026-04-05/all_4.jpg",
-          "daily/2026-04-05/all_5.jpg",
-          "daily/2026-04-05/all_6.jpg"
+          "daily/2026-04-12/all_1.jpg",
+          "daily/2026-04-12/all_2.jpg",
+          "daily/2026-04-12/all_3.jpg",
+          "daily/2026-04-12/all_4.jpg",
+          "daily/2026-04-12/all_5.jpg",
+          "daily/2026-04-12/all_6.jpg"
         ],
-        "reveal": "daily/2026-04-05/all_full.jpg",
+        "reveal": "daily/2026-04-12/all_full.jpg",
         "attribution": "(c) Katja Schulz, some rights reserved (CC BY)",
         "wikipedia_summary": "Chilocorus bipustulatus, the heather ladybird, is a beetle species belonging to the family Coccinellidae, subfamily Chilocorinae.",
         "inat_url": "https://www.inaturalist.org/observations/9219580",
-        "center_x": 0.099853515625,
-        "center_y": 0.1,
+        "center_x": 0.537,
+        "center_y": 0.317,
         "answer_species": "Chilocorus bipustulatus",
         "answer_common": "Heather Ladybird"
       }
