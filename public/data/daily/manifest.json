@@ -45,23 +45,23 @@
       "number": 2,
       "approved": true,
       "bugs101": {
-        "observation_id": 45406081,
+        "observation_id": 142071737,
         "crops": [
           "daily/2026-04-06/b101_1.jpg",
           "daily/2026-04-06/b101_2.jpg",
           "daily/2026-04-06/b101_3.jpg"
         ],
         "reveal": "daily/2026-04-06/b101_full.jpg",
-        "attribution": "(c) Trevor Edmonson, some rights reserved (CC BY)",
-        "wikipedia_summary": "Megalopyge crispata, the black-waved flannel moth, crinkled flannel moth or white flannel moth, is a moth of the Megalopygidae family. It is found alo",
-        "inat_url": "https://www.inaturalist.org/observations/45406081",
-        "center_x": 0.677,
-        "center_y": 0.573,
-        "answer_order": "Lepidoptera",
-        "answer_common": "Moth"
+        "attribution": "(c) Mario Oswald, some rights reserved (CC BY)",
+        "wikipedia_summary": "The spined dwarf mantis (Ameles fasciipennis) is a species of praying mantis that is endemic to Italy.",
+        "inat_url": "https://www.inaturalist.org/observations/142071737",
+        "center_x": 0.09994780793319416,
+        "center_y": 0.099853515625,
+        "answer_order": "Mantodea",
+        "answer_common": "Mantis"
       },
       "allbugs": {
-        "observation_id": 8109363,
+        "observation_id": 11475175,
         "crops": [
           "daily/2026-04-06/all_1.jpg",
           "daily/2026-04-06/all_2.jpg",
@@ -71,12 +71,13 @@
           "daily/2026-04-06/all_6.jpg"
         ],
         "reveal": "daily/2026-04-06/all_full.jpg",
-        "attribution": "(c) Julien Renoult, some rights reserved (CC BY)",
-        "wikipedia_summary": "Mantispa styriaca, common name Styrian Praying Lacewing, is a species of mantidfly. It is a yellow-brown insect as an adult and has multiple larva sta",
-        "inat_url": "https://www.inaturalist.org/observations/8109363",
-        "center_x": 0.595,
-        "center_y": 0.358,
-        "answer_common": "Styrian praying lacewing"
+        "attribution": "(c) Katja Schulz, some rights reserved (CC BY)",
+        "wikipedia_summary": "Lasioglossum coeruleum is a species of sweat bee in the family Halictidae.",
+        "inat_url": "https://www.inaturalist.org/observations/11475175",
+        "center_x": 0.099853515625,
+        "center_y": 0.09993489583333333,
+        "answer_species": "Lasioglossum coeruleum",
+        "answer_common": "Deep-blue Sweat Bee"
       }
     },
     {
@@ -84,23 +85,23 @@
       "number": 3,
       "approved": true,
       "bugs101": {
-        "observation_id": 333006786,
+        "observation_id": 127937394,
         "crops": [
           "daily/2026-04-07/b101_1.jpg",
           "daily/2026-04-07/b101_2.jpg",
           "daily/2026-04-07/b101_3.jpg"
         ],
         "reveal": "daily/2026-04-07/b101_full.jpg",
-        "attribution": "(c) Aleksandr Gromov, some rights reserved (CC BY)",
-        "wikipedia_summary": "Muscimantis is a monotypic genus of praying mantis in the family Gonypetidae , subfamily Iridopteryginae. It is represented by a single species, Musci",
-        "inat_url": "https://www.inaturalist.org/observations/333006786",
-        "center_x": 0.642,
-        "center_y": 0.71,
-        "answer_order": "Mantodea",
-        "answer_common": "Mantis"
+        "attribution": "(c) Ludivine Lamare, some rights reserved (CC BY)",
+        "wikipedia_summary": "...",
+        "inat_url": "https://www.inaturalist.org/observations/127937394",
+        "center_x": 0.099853515625,
+        "center_y": 0.09981684981684982,
+        "answer_order": "Opiliones",
+        "answer_common": "Harvestman"
       },
       "allbugs": {
-        "observation_id": 189841934,
+        "observation_id": 97571069,
         "crops": [
           "daily/2026-04-07/all_1.jpg",
           "daily/2026-04-07/all_2.jpg",
@@ -110,12 +111,13 @@
           "daily/2026-04-07/all_6.jpg"
         ],
         "reveal": "daily/2026-04-07/all_full.jpg",
-        "attribution": "(c) SteveM4560, some rights reserved (CC BY)",
-        "wikipedia_summary": "Utetheisa pulchella, common name crimson-speckled flunkey or crimson-speckled moth, is a moth of the family Erebidae.",
-        "inat_url": "https://www.inaturalist.org/observations/189841934",
-        "center_x": 0.107,
-        "center_y": 0.251,
-        "answer_common": "Crimson-speckled Flunkey"
+        "attribution": "(c) Sun\u010dana Bradley, some rights reserved (CC BY)",
+        "wikipedia_summary": "Cladomelea debeeri is a species of spider in the orb-weaver spider family Araneidae, found in South Africa. It was first described in 2004. Cladomelea",
+        "inat_url": "https://www.inaturalist.org/observations/97571069",
+        "center_x": 0.099853515625,
+        "center_y": 0.1,
+        "answer_species": "Cladomelea debeeri",
+        "answer_common": "De Beer's Bolas Spider"
       }
     },
     {
@@ -203,23 +205,23 @@
       "number": 6,
       "approved": true,
       "bugs101": {
-        "observation_id": 103917360,
+        "observation_id": 253973769,
         "crops": [
           "daily/2026-04-10/b101_1.jpg",
           "daily/2026-04-10/b101_2.jpg",
           "daily/2026-04-10/b101_3.jpg"
         ],
         "reveal": "daily/2026-04-10/b101_full.jpg",
-        "attribution": "(c) Michael Eisen, some rights reserved (CC BY)",
-        "wikipedia_summary": "Tricholepidion is a genus of wingless insect belonging to Zygentoma (silverfish and allies), with only a single described species T. gertschi, native ",
-        "inat_url": "https://www.inaturalist.org/observations/103917360",
-        "center_x": 0.731,
-        "center_y": 0.373,
-        "answer_order": "Zygentoma",
-        "answer_common": "Silverfishes"
+        "attribution": "(c) Amanda Doty, some rights reserved (CC BY)",
+        "wikipedia_summary": "Acrophylla alta is a species of stick insects in the tribe Phasmatini and discovered in 2025.",
+        "inat_url": "https://www.inaturalist.org/observations/253973769",
+        "center_x": 0.09993489583333333,
+        "center_y": 0.099853515625,
+        "answer_order": "Phasmida",
+        "answer_common": "Stick Insect"
       },
       "allbugs": {
-        "observation_id": 9456994,
+        "observation_id": 37502682,
         "crops": [
           "daily/2026-04-10/all_1.jpg",
           "daily/2026-04-10/all_2.jpg",
@@ -229,13 +231,13 @@
           "daily/2026-04-10/all_6.jpg"
         ],
         "reveal": "daily/2026-04-10/all_full.jpg",
-        "attribution": "(c) Sun\u010dana Bradley, some rights reserved (CC BY)",
-        "wikipedia_summary": "",
-        "inat_url": "https://www.inaturalist.org/observations/9456994",
-        "center_x": 0.649,
-        "center_y": 0.29,
-        "answer_species": "Piezosternum calidum",
-        "answer_common": ""
+        "attribution": "(c) Diogo Luiz, some rights reserved (CC BY)",
+        "wikipedia_summary": "Stenophylla cornigera is a species of praying mantis native to Brazil.",
+        "inat_url": "https://www.inaturalist.org/observations/37502682",
+        "center_x": 0.1,
+        "center_y": 0.1,
+        "answer_species": "Stenophylla cornigera",
+        "answer_common": "Brazilian Dragon Mantis"
       }
     },
     {
@@ -243,23 +245,23 @@
       "number": 7,
       "approved": true,
       "bugs101": {
-        "observation_id": 30026569,
+        "observation_id": 167330107,
         "crops": [
           "daily/2026-04-11/b101_1.jpg",
           "daily/2026-04-11/b101_2.jpg",
           "daily/2026-04-11/b101_3.jpg"
         ],
         "reveal": "daily/2026-04-11/b101_full.jpg",
-        "attribution": "(c) Wilderness Safaris Botswana - Conservation Team, some rights reserved (CC BY)",
-        "wikipedia_summary": "The Namaqua plumefoot mite (Eatoniana namaquensis) is a species of mite of the subfamily Erythraeinae in the family Erythraeidae.",
-        "inat_url": "https://www.inaturalist.org/observations/30026569",
-        "center_x": 0.09978824775013234,
-        "center_y": 0.099853515625,
-        "answer_order": "Trombidiformes",
-        "answer_common": "Trombidiform Mites"
+        "attribution": "(c) Jonghyun Park, some rights reserved (CC BY)",
+        "wikipedia_summary": "",
+        "inat_url": "https://www.inaturalist.org/observations/167330107",
+        "center_x": 0.099853515625,
+        "center_y": 0.1,
+        "answer_order": "Hymenoptera",
+        "answer_common": "Ant"
       },
       "allbugs": {
-        "observation_id": 135043264,
+        "observation_id": 38564383,
         "crops": [
           "daily/2026-04-11/all_1.jpg",
           "daily/2026-04-11/all_2.jpg",
@@ -269,13 +271,13 @@
           "daily/2026-04-11/all_6.jpg"
         ],
         "reveal": "daily/2026-04-11/all_full.jpg",
-        "attribution": "(c) Neal Kelso, some rights reserved (CC BY)",
-        "wikipedia_summary": "Curculio caryatrypes , the greater chestnut weevil, is a species of weevil in the family Curculionidae.",
-        "inat_url": "https://www.inaturalist.org/observations/135043264",
-        "center_x": 0.511,
-        "center_y": 0.568,
-        "answer_species": "Curculio caryatrypes",
-        "answer_common": "Greater Chestnut Weevil"
+        "attribution": "(c) Lisa Bennett, some rights reserved (CC BY)",
+        "wikipedia_summary": "The New Zealand giraffe weevil, Lasiorhynchus barbicornis, is a highly distinctive, straight-snouted weevil endemic to New Zealand. L. barbicornis is ",
+        "inat_url": "https://www.inaturalist.org/observations/38564383",
+        "center_x": 0.099853515625,
+        "center_y": 0.09993489583333333,
+        "answer_species": "Lasiorhynchus barbicornis",
+        "answer_common": "New Zealand Giraffe Weevil"
       }
     },
     {
