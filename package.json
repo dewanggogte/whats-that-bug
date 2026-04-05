@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "fetch-data": "node scripts/fetch-data.mjs",
-    "generate-daily": "node scripts/generate-daily.mjs"
+    "generate-daily": "node scripts/generate-daily.mjs",
+    "fetch-daily-candidates": "node scripts/fetch-daily-candidates.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",

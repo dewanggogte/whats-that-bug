@@ -26,6 +26,7 @@ const ROOT = join(__dirname, '..');
 const DATA_DIR = join(ROOT, 'public', 'data');
 const DAILY_DIR = join(DATA_DIR, 'daily');
 const OBS_FILE = join(DATA_DIR, 'observations.json');
+const CANDIDATES_FILE = join(DAILY_DIR, 'candidates.json');
 const USED_FILE = join(DAILY_DIR, 'used-observations.json');
 const MANIFEST_FILE = join(DAILY_DIR, 'manifest.json');
 
@@ -300,27 +301,34 @@ async function selectCandidate(observations, usedIds, { mode = 'bugs101', orderR
     [available[i], available[j]] = [available[j], available[i]];
   }
 
-  // Try candidates, checking resolution via API
-  const maxAttempts = 20; // don't hit the API too much per slot
+  // Try candidates, checking resolution (from stored data or API fallback)
+  const maxAttempts = 20;
   let attempts = 0;
 
   async function tryCandidate(obs) {
     attempts++;
-    const dims = await checkPhotoDimensions(obs.id);
-    if (!dims) {
-      console.log(`    [skip] ${obs.id} — could not check dimensions`);
+    // If the candidate pool already has dimensions (from fetch-daily-candidates),
+    // use those directly — no API call needed.
+    let w = obs.photo_width || 0;
+    let h = obs.photo_height || 0;
+
+    if (w === 0 || h === 0) {
+      // Fallback: check via API (for non-curated observations)
+      const dims = await checkPhotoDimensions(obs.id);
+      if (!dims) {
+        console.log(`    [skip] ${obs.id} — could not check dimensions`);
+        return false;
+      }
+      w = dims.width;
+      h = dims.height;
+    }
+
+    const minSide = Math.min(w, h);
+    if (minSide < MIN_SHORT_SIDE) {
+      console.log(`    [skip] ${obs.id} ${obs.taxon.common_name || obs.taxon.species} — too small (${w}x${h})`);
       return false;
     }
-    const minSide = Math.min(dims.width, dims.height);
-    // iNaturalist caps at 2048px, so original_dimensions may report the
-    // pre-resize value. The actual stored file is capped at 2048.
-    // Use the min of reported and 2048 for the long side.
-    const actualMin = Math.min(minSide, 2048);
-    if (actualMin < MIN_SHORT_SIDE) {
-      console.log(`    [skip] ${obs.id} ${obs.taxon.common_name} — too small (${dims.width}x${dims.height})`);
-      return false;
-    }
-    console.log(`    [ok]   ${obs.id} ${obs.taxon.common_name} — ${dims.width}x${dims.height}`);
+    console.log(`    [ok]   ${obs.id} ${obs.taxon.common_name || obs.taxon.species} — ${w}x${h}`);
     return true;
   }
 
@@ -369,13 +377,18 @@ async function main() {
   console.log('=== What\'s That Bug — Daily Content Pipeline ===\n');
   console.log(`Generating ${days} day(s) starting ${startDate}\n`);
 
-  // Load observations
-  if (!existsSync(OBS_FILE)) {
-    console.error(`Error: ${OBS_FILE} not found. Run "npm run fetch-data" first.`);
+  // Load curated candidates pool (preferred) or fall back to general observations
+  let observations;
+  if (existsSync(CANDIDATES_FILE)) {
+    observations = JSON.parse(readFileSync(CANDIDATES_FILE, 'utf-8'));
+    console.log(`Loaded ${observations.length} curated daily candidates`);
+  } else if (existsSync(OBS_FILE)) {
+    observations = JSON.parse(readFileSync(OBS_FILE, 'utf-8'));
+    console.log(`Loaded ${observations.length} observations (no curated pool found — run fetch-daily-candidates.mjs first for best results)`);
+  } else {
+    console.error(`Error: No data found. Run "npm run fetch-daily-candidates" or "npm run fetch-data" first.`);
     process.exit(1);
   }
-  const observations = JSON.parse(readFileSync(OBS_FILE, 'utf-8'));
-  console.log(`Loaded ${observations.length} observations`);
 
   // Load used-observations tracker
   let usedObs = { bugs101: [], allbugs: [] };
