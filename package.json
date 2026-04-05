@@ -11,9 +11,11 @@
     "fetch-data": "node scripts/fetch-data.mjs"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.4.1",
     "astro": "^4.0.0"
   },
   "devDependencies": {
+    "sharp": "^0.34.5",
     "vitest": "^1.0.0"
   }
 }
