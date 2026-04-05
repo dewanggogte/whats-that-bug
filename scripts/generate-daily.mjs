@@ -31,7 +31,7 @@ const USED_FILE = join(DAILY_DIR, 'used-observations.json');
 const MANIFEST_FILE = join(DAILY_DIR, 'manifest.json');
 
 // Challenge numbering starts at this date (day 1)
-const EPOCH = '2026-04-07';
+const EPOCH = '2026-04-05';
 
 // ---------------------------------------------------------------------------
 // CLI args

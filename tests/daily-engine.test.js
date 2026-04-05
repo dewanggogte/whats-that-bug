@@ -56,17 +56,17 @@ describe('getTodayET', () => {
 // getChallengeNumber
 // ──────────────────────────────────────────────
 describe('getChallengeNumber', () => {
-  it('returns 1 for the epoch date 2026-04-07', () => {
-    expect(getChallengeNumber('2026-04-07')).toBe(1);
+  it('returns 1 for the epoch date 2026-04-05', () => {
+    expect(getChallengeNumber('2026-04-05')).toBe(1);
   });
 
   it('increments by 1 per day', () => {
-    expect(getChallengeNumber('2026-04-08')).toBe(2);
-    expect(getChallengeNumber('2026-04-17')).toBe(11);
+    expect(getChallengeNumber('2026-04-06')).toBe(2);
+    expect(getChallengeNumber('2026-04-15')).toBe(11);
   });
 
   it('returns 0 for the day before epoch', () => {
-    expect(getChallengeNumber('2026-04-06')).toBe(0);
+    expect(getChallengeNumber('2026-04-04')).toBe(0);
   });
 });
 

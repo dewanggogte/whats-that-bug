@@ -3,7 +3,7 @@
 // No DOM dependencies. Handles: today's date in ET, challenge numbering,
 // guess validation, streak calculation, and localStorage state persistence.
 
-const EPOCH = '2026-04-07';
+const EPOCH = '2026-04-05';
 
 /**
  * Returns today's date as YYYY-MM-DD in Eastern Time.
