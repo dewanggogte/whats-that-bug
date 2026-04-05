@@ -62,7 +62,7 @@ const resolvedOgType = ogType || 'website';
     // At root, __BASE is empty string so all paths work unchanged.
     (function() {
       var path = window.location.pathname.replace(/\/+$/, '') || '/';
-      var base = path.replace(/\/(play|leaderboard|daily\/play|daily)$/, '');
+      var base = path.replace(/\/(play|leaderboard|daily\/play)$/, '');
       window.__BASE = (base === '/' || base === '') ? '' : base;
 
       // Rewrite favicon and internal links for subpath

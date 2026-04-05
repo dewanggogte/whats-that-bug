@@ -34,20 +34,20 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       <div class="mode-group-header">
         <div>
           <h2 class="mode-group-title">📅 Daily Challenge <span class="diff-badge" style="background:var(--accent);color:white;">New</span></h2>
-          <p class="mode-group-subtitle">One bug per day. Same for everyone. Can you identify it?</p>
+          <p class="mode-group-subtitle">One bug per day. Same for everyone. How fast can you spot it?</p>
         </div>
       </div>
-      <div class="daily-cards" id="homepage-daily-cards">
-        <a href="/daily/play?mode=bugs101" class="daily-card">
-          <span style="font-size: 20px;">🔰</span>
-          <span class="daily-card-title">Bugs 101</span>
-          <span class="daily-card-status" id="hp-status-bugs101">3 guesses</span>
+      <div class="mode-buttons">
+        <a href="/daily/play?mode=bugs101" class="mode-btn">
+          <span class="mode-btn-icon">🔰</span>
+          <span class="mode-btn-label">Bugs 101</span>
+          <span class="mode-btn-desc" id="hp-status-bugs101">Name the type</span>
           <span class="daily-card-streak" id="hp-streak-bugs101"></span>
         </a>
-        <a href="/daily/play?mode=allbugs" class="daily-card">
-          <span style="font-size: 20px;">🌍</span>
-          <span class="daily-card-title">All Bugs</span>
-          <span class="daily-card-status" id="hp-status-allbugs">6 guesses</span>
+        <a href="/daily/play?mode=allbugs" class="mode-btn">
+          <span class="mode-btn-icon">🌍</span>
+          <span class="mode-btn-label">All Bugs</span>
+          <span class="mode-btn-desc" id="hp-status-allbugs">Name the species</span>
           <span class="daily-card-streak" id="hp-streak-allbugs"></span>
         </a>
       </div>

@@ -131,7 +131,7 @@ async function loadChallenge() {
       container.innerHTML = `<div class="container" style="text-align:center;padding-top:80px;">
         <h2>No challenge today</h2>
         <p class="subtitle">Check back tomorrow!</p>
-        <a href="${base}/daily" style="color:var(--accent);">Back to Daily Hub</a>
+        <a href="${base}/" style="color:var(--accent);">Back to home</a>
       </div>`;
       return false;
     }
@@ -469,7 +469,7 @@ function renderReveal() {
 
       <div class="daily-countdown">Next bug in <strong>${countdown.hours}h ${countdown.minutes}m</strong></div>
 
-      <div style="margin-top:16px;"><a href="${base}/daily" style="color:var(--accent);font-size:14px;">Back to Daily Hub</a></div>
+      <div style="margin-top:16px;"><a href="${base}/" style="color:var(--accent);font-size:14px;">Back to home</a></div>
     </div>
   `;
 
