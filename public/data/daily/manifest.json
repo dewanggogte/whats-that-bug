@@ -283,23 +283,23 @@
       "number": 1,
       "approved": true,
       "bugs101": {
-        "observation_id": 69214893,
+        "observation_id": 38051645,
         "crops": [
           "daily/2026-04-05/b101_1.jpg",
           "daily/2026-04-05/b101_2.jpg",
           "daily/2026-04-05/b101_3.jpg"
         ],
         "reveal": "daily/2026-04-05/b101_full.jpg",
-        "attribution": "(c) Mario Bassini, some rights reserved (CC BY)",
-        "wikipedia_summary": "",
-        "inat_url": "https://www.inaturalist.org/observations/69214893",
+        "attribution": "(c) Franz Anthony, some rights reserved (CC BY)",
+        "wikipedia_summary": "Polyura schreiber, the blue nawab, is a butterfly species found in tropical Asia. It belongs to the Charaxinae (rajahs and nawabs) in the brush-footed",
+        "inat_url": "https://www.inaturalist.org/observations/38051645",
         "center_x": 0.1,
-        "center_y": 0.1,
-        "answer_order": "Trombidiformes",
-        "answer_common": "Trombidiform Mites"
+        "center_y": 0.09977494373593399,
+        "answer_order": "Lepidoptera",
+        "answer_common": "Butterfly"
       },
       "allbugs": {
-        "observation_id": 34048676,
+        "observation_id": 9219580,
         "crops": [
           "daily/2026-04-05/all_1.jpg",
           "daily/2026-04-05/all_2.jpg",
@@ -309,13 +309,13 @@
           "daily/2026-04-05/all_6.jpg"
         ],
         "reveal": "daily/2026-04-05/all_full.jpg",
-        "attribution": "(c) Kristof Zyskowski, some rights reserved (CC BY)",
-        "wikipedia_summary": "Chrysiridia rhipheus, the Madagascan sunset moth, is a day-flying moth of the family Uraniidae. It is considered one of the most impressive and appeal",
-        "inat_url": "https://www.inaturalist.org/observations/34048676",
-        "center_x": 0.1,
-        "center_y": 0.099853515625,
-        "answer_species": "Chrysiridia rhipheus",
-        "answer_common": "Madagascan Sunset Moth"
+        "attribution": "(c) Katja Schulz, some rights reserved (CC BY)",
+        "wikipedia_summary": "Chilocorus bipustulatus, the heather ladybird, is a beetle species belonging to the family Coccinellidae, subfamily Chilocorinae.",
+        "inat_url": "https://www.inaturalist.org/observations/9219580",
+        "center_x": 0.099853515625,
+        "center_y": 0.1,
+        "answer_species": "Chilocorus bipustulatus",
+        "answer_common": "Heather Ladybird"
       }
     }
   ]

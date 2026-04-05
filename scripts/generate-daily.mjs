@@ -130,6 +130,16 @@ function getBugs101Name(taxon) {
   return ORDER_NAMES[taxon.order] || taxon.order_common || taxon.order;
 }
 
+// Valid Bugs 101 answer names — must match BUGS101_OPTIONS in daily-ui.js.
+// The pipeline will reject candidates whose getBugs101Name() is not in this set.
+const VALID_BUGS101_NAMES = new Set([
+  'Ant', 'Aphid', 'Bee', 'Beetle', 'Butterfly', 'Caddisfly', 'Cicada',
+  'Cockroach', 'Cricket', 'Damselfly', 'Dragonfly', 'Earwig', 'Fly',
+  'Grasshopper', 'Harvestman', 'Isopods', 'Lacewing', 'Mantis', 'Mayfly', 'Moth',
+  'Planthopper', 'Scorpion', 'Spider', 'Stick Insect', 'Stink Bug',
+  'Tick', 'True Bug', 'Wasp', 'Water Bug',
+]);
+
 // ---------------------------------------------------------------------------
 // Image download
 // ---------------------------------------------------------------------------
@@ -333,10 +343,17 @@ async function selectCandidate(observations, usedIds, { mode = 'bugs101', orderR
   }
 
   if (mode === 'bugs101' && orderRotation) {
+    // Pre-filter: only keep observations whose bugs101 name is in the valid set
+    const validAvailable = available.filter(o => {
+      const name = getBugs101Name(o.taxon);
+      return VALID_BUGS101_NAMES.has(name);
+    });
+    console.log(`    Bugs101 pool: ${validAvailable.length} with valid names (of ${available.length} available)`);
+
     const rotationCopy = [...orderRotation];
     for (let i = 0; i < rotationCopy.length && attempts < maxAttempts; i++) {
       const targetOrder = rotationCopy[i];
-      const orderCandidates = available.filter(o => o.taxon.order === targetOrder);
+      const orderCandidates = validAvailable.filter(o => o.taxon.order === targetOrder);
       for (const candidate of orderCandidates) {
         if (attempts >= maxAttempts) break;
         await sleep(300); // rate limit API
@@ -350,8 +367,8 @@ async function selectCandidate(observations, usedIds, { mode = 'bugs101', orderR
         }
       }
     }
-    // Fallback: any available with good resolution
-    for (const candidate of available) {
+    // Fallback: any valid-named candidate with good resolution
+    for (const candidate of validAvailable) {
       if (attempts >= maxAttempts) break;
       await sleep(300);
       if (await tryCandidate(candidate)) return candidate;
@@ -359,8 +376,12 @@ async function selectCandidate(observations, usedIds, { mode = 'bugs101', orderR
     return null;
   }
 
-  // For allbugs: try random candidates until one passes resolution check
-  for (const candidate of available) {
+  // For allbugs: try random candidates until one passes resolution + taxonomy check
+  const allbugsValid = available.filter(o =>
+    o.taxon?.species && o.taxon?.common_name
+  );
+  console.log(`    AllBugs pool: ${allbugsValid.length} with complete taxonomy (of ${available.length} available)`);
+  for (const candidate of allbugsValid) {
     if (attempts >= maxAttempts) break;
     await sleep(300);
     if (await tryCandidate(candidate)) return candidate;
