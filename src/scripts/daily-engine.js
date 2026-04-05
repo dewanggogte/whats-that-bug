@@ -128,16 +128,25 @@ export function loadHistory(mode) {
 /**
  * Returns { hours, minutes } until the next midnight Eastern Time.
  * Used for the "next challenge in..." countdown display.
+ *
+ * Extracts hours/minutes directly from the ET-formatted time string
+ * rather than re-parsing into a Date (which would use the local timezone).
  */
 export function getCountdownToReset() {
   const now = new Date();
-  const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
-  const et = new Date(etStr);
-  const midnight = new Date(et);
-  midnight.setDate(midnight.getDate() + 1);
-  midnight.setHours(0, 0, 0, 0);
-  const diffMs = midnight - et;
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  // Get current ET time components directly via Intl formatting
+  const etParts = {};
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  }).formatToParts(now).forEach(p => { etParts[p.type] = parseInt(p.value, 10); });
+
+  const etHour = etParts.hour || 0;
+  const etMinute = etParts.minute || 0;
+
+  // Minutes remaining until midnight ET
+  const totalMinutesLeft = (24 * 60) - (etHour * 60 + etMinute);
+  const hours = Math.floor(totalMinutesLeft / 60);
+  const minutes = totalMinutesLeft % 60;
   return { hours, minutes };
 }
