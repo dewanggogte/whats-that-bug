@@ -19,7 +19,11 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   return { key, name: set.name, icon, countLabel: `${uniqueSpecies} species` };
 });
 ---
-<Base title="What's That Bug? — Insect Identification Game">
+<Base
+  title="What's That Bug? — The Insect Identification Game"
+  description="A free guess-the-bug game with 1,000+ species. Can you identify insects from real research-grade photos? Test your insect ID skills in this GeoGuessr-style quiz."
+  canonicalPath="/"
+>
   <div class="container">
     <div style="text-align: center; padding: 24px 0 8px;">
       <h1>🪲 What's That Bug?</h1>
@@ -117,5 +121,29 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
         }
       }
     });
+  </script>
+
+  <script type="application/ld+json" is:inline>
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "What's That Bug?",
+    "description": "A free guess-the-bug game with 1,000+ species. Identify insects from real research-grade photos in this GeoGuessr-style quiz.",
+    "url": "https://dewanggogte.com/games/bugs",
+    "applicationCategory": "GameApplication",
+    "genre": "Trivia",
+    "operatingSystem": "Web",
+    "browserRequirements": "Requires JavaScript",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Dewang Gogte",
+      "url": "https://dewanggogte.com"
+    }
+  }
   </script>
 </Base>
