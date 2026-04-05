@@ -30,6 +30,29 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       <p class="subtitle">Can you identify insects from their photos? Pick a mode and find out.</p>
     </div>
 
+    <div class="mode-group" style="border: 2px solid var(--accent); border-radius: 12px; padding: 2px;">
+      <div class="mode-group-header">
+        <div>
+          <h2 class="mode-group-title">📅 Daily Challenge <span class="diff-badge" style="background:var(--accent);color:white;">New</span></h2>
+          <p class="mode-group-subtitle">One bug per day. Same for everyone. Can you identify it?</p>
+        </div>
+      </div>
+      <div class="daily-cards" id="homepage-daily-cards">
+        <a href="/daily/play?mode=bugs101" class="daily-card">
+          <span style="font-size: 20px;">🔰</span>
+          <span class="daily-card-title">Bugs 101</span>
+          <span class="daily-card-status" id="hp-status-bugs101">3 guesses</span>
+          <span class="daily-card-streak" id="hp-streak-bugs101"></span>
+        </a>
+        <a href="/daily/play?mode=allbugs" class="daily-card">
+          <span style="font-size: 20px;">🌍</span>
+          <span class="daily-card-title">All Bugs</span>
+          <span class="daily-card-status" id="hp-status-allbugs">6 guesses</span>
+          <span class="daily-card-streak" id="hp-streak-allbugs"></span>
+        </a>
+      </div>
+    </div>
+
     <div class="mode-group">
       <div class="mode-group-header">
         <div>
@@ -146,4 +169,31 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     }
   }
   </script>
+
+<script>
+  import { getTodayET, loadDailyState, loadHistory, calculateStreaks } from '../scripts/daily-engine.js';
+
+  try {
+    const today = getTodayET();
+    ['bugs101', 'allbugs'].forEach(mode => {
+      const result = loadDailyState(mode, today);
+      const statusEl = document.getElementById(`hp-status-${mode}`);
+      const streakEl = document.getElementById(`hp-streak-${mode}`);
+      const maxG = mode === 'bugs101' ? 3 : 6;
+
+      if (result && statusEl) {
+        statusEl.textContent = result.solved
+          ? `Solved in ${result.guesses}/${maxG}!`
+          : `Missed today`;
+        statusEl.style.color = result.solved ? 'var(--success)' : 'var(--error)';
+      }
+
+      const history = loadHistory(mode);
+      const streaks = calculateStreaks(history, today);
+      if (streaks.playStreak > 0 && streakEl) {
+        streakEl.textContent = `${streaks.playStreak} day streak`;
+      }
+    });
+  } catch { /* daily challenge not yet available */ }
+</script>
 </Base>
