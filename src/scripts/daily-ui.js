@@ -103,23 +103,32 @@ export async function initDaily() {
 
   logDailyStart(sessionId, mode, today, challengeNumber);
 
-  // Load species list for allbugs autocomplete
+  // Load species list for allbugs autocomplete — merge from both
+  // observations.json (main game pool) and candidates.json (curated daily pool)
+  // so the daily answer is always in the autocomplete.
   if (mode === 'allbugs') {
+    const speciesSet = new Map();
     try {
       const obsRes = await fetch(`${base}/data/observations.json`);
       const observations = await obsRes.json();
-      const speciesSet = new Map();
       for (const obs of observations) {
         if (obs.taxon?.species && !speciesSet.has(obs.taxon.species)) {
           speciesSet.set(obs.taxon.species, obs.taxon.common_name || obs.taxon.species);
         }
       }
-      allSpeciesList = Array.from(speciesSet.entries())
-        .map(([species, common]) => ({ species, common, label: `${common} (${species})` }))
-        .sort((a, b) => a.common.localeCompare(b.common));
-    } catch {
-      console.warn('Failed to load species list for autocomplete');
-    }
+    } catch { /* observations may not be available */ }
+    try {
+      const candRes = await fetch(`${base}/data/daily/candidates.json`);
+      const candidates = await candRes.json();
+      for (const c of candidates) {
+        if (c.taxon?.species && !speciesSet.has(c.taxon.species)) {
+          speciesSet.set(c.taxon.species, c.taxon.common_name || c.taxon.species);
+        }
+      }
+    } catch { /* candidates may not be available */ }
+    allSpeciesList = Array.from(speciesSet.entries())
+      .map(([species, common]) => ({ species, common, label: `${common} (${species})` }))
+      .sort((a, b) => a.common.localeCompare(b.common));
   }
 
   // Show rules popup, then start game on dismiss
@@ -575,18 +584,17 @@ function renderReveal() {
         <span>${wasSolved ? '\u2705' : '\u274c'}</span>
       </div>
 
-      <img class="daily-reveal-image" src="${base}/data/${data.reveal}" alt="${escapeHTML(speciesName)}">
+      <div class="daily-reveal-image-wrapper">
+        <img class="daily-reveal-image" src="${base}/data/${data.reveal}" alt="${escapeHTML(speciesName)}">
+        <span class="daily-reveal-credit">${escapeHTML(data.attribution || '')}</span>
+      </div>
 
       <div class="daily-result-badge ${badgeClass}">${resultLabel}</div>
 
       <div class="daily-species-name">${escapeHTML(speciesName)}</div>
-      <div class="daily-species-scientific">${escapeHTML(scientificName)}</div>
-
-      ${data.wikipedia_summary ? `<div class="daily-blurb">${escapeHTML(data.wikipedia_summary)}</div>` : ''}
-
-      <div class="daily-attribution">
-        ${escapeHTML(data.attribution || '')}
-        ${data.inat_url ? ` \u00b7 <a href="${escapeHTML(data.inat_url)}" target="_blank" rel="noopener" style="color:var(--accent);">View on iNaturalist</a>` : ''}
+      <div class="daily-species-scientific">
+        ${escapeHTML(scientificName)}
+        ${data.inat_url ? ` · <a href="${escapeHTML(data.inat_url)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;">iNaturalist</a>` : ''}
       </div>
 
       <div class="emoji-grid">${emojiGrid}</div>

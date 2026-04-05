@@ -1881,7 +1881,7 @@ a {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: opacity 0.2s ease;
+  transition: opacity 1s ease;
 }
 
 /* --- Guess history strip --- */
@@ -1971,7 +1971,7 @@ a {
   padding: 12px 14px;
   border: 2px solid var(--border);
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 16px;
   background: var(--surface);
   color: var(--text);
   outline: none;
@@ -2044,10 +2044,30 @@ a {
   text-align: center;
 }
 
+.daily-reveal-image-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
 .daily-reveal-image {
   width: 100%;
   border-radius: 12px;
-  margin-bottom: 16px;
+  display: block;
+}
+
+.daily-reveal-credit {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .daily-result-badge {
@@ -2072,51 +2092,45 @@ a {
 }
 
 .daily-species-name {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .daily-species-scientific {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-secondary);
   font-style: italic;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .daily-blurb {
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-secondary);
-  padding: 12px;
+  padding: 10px;
   background: var(--surface);
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   text-align: left;
-}
-
-.daily-attribution {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
 }
 
 .daily-streaks {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .daily-streak-box {
   flex: 1;
   text-align: center;
-  padding: 10px;
+  padding: 8px;
   background: var(--surface);
   border-radius: 10px;
 }
 
 .daily-streak-number {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
 }
 
@@ -2170,13 +2184,13 @@ a {
 /* --- Daily mobile breakpoints --- */
 @media (max-width: 480px) {
   .daily-image-container {
-    aspect-ratio: 16 / 8;
+    aspect-ratio: 4 / 3;
     border-radius: 8px;
   }
 
   .daily-input {
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .daily-submit {
