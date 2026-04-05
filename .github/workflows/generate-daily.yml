@@ -1,0 +1,50 @@
+name: Generate Daily Challenges
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Number of days to generate'
+        default: '7'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate daily challenges
+        run: node scripts/generate-daily.mjs --days ${{ github.event.inputs.days || '7' }}
+
+      - name: Check for new challenges
+        id: check
+        run: |
+          if git diff --quiet public/data/daily/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR with new challenges
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="daily/$(date +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git add public/data/daily/
+          git commit -m "feat(daily): generate challenges for week of $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Daily challenges: week of $(date +%Y-%m-%d)" \
+            --body "Auto-generated daily challenges. Review with scripts/review-daily.html before merging." \
+            --label "daily-challenge"
