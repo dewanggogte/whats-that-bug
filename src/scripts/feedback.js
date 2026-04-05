@@ -226,3 +226,41 @@ export function logBadPhoto(sessionId, observationId, species, setName) {
   });
   flush();
 }
+
+// --- Daily challenge events ---
+
+export function logDailyStart(sessionId, mode, date, challengeNumber) {
+  enqueue({
+    type: 'daily_start',
+    session_id: sessionId,
+    mode,
+    date,
+    challenge_number: challengeNumber,
+  });
+}
+
+export function logDailyGuess(sessionId, guessNumber, userAnswer, correct, mode, date) {
+  enqueue({
+    type: 'daily_guess',
+    session_id: sessionId,
+    guess_number: guessNumber,
+    user_answer: userAnswer,
+    correct,
+    mode,
+    date,
+  });
+}
+
+export function logDailyComplete(sessionId, mode, solved, guessesUsed, date, shareClicked, playStreak, winStreak) {
+  enqueue({
+    type: 'daily_complete',
+    session_id: sessionId,
+    mode,
+    solved,
+    guesses_used: guessesUsed,
+    date,
+    share_clicked: shareClicked,
+    play_streak: playStreak,
+    win_streak: winStreak,
+  });
+}

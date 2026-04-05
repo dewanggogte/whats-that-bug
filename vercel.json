@@ -1,7 +1,25 @@
 {
   "headers": [
     {
-      "source": "/data/(.*).json",
+      "source": "/data/(observations|taxonomy|sets).json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/data/daily/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/data/daily/:date/:file",
       "headers": [
         {
           "key": "Cache-Control",
