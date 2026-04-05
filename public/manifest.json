@@ -1,0 +1,13 @@
+{
+  "name": "What's That Bug?",
+  "short_name": "What's That Bug?",
+  "description": "A free guess-the-bug game with 1,000+ species.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1917",
+  "theme_color": "#c97a4a",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
