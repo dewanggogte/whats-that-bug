@@ -4,10 +4,10 @@
 
 export function getDailyFlavor(guessCount, solved) {
   if (!solved) return 'Better luck tomorrow!';
-  if (guessCount === 1) return 'Incredible! First try! 🏆';
-  if (guessCount === 2) return 'Impressive eye! 🔬';
-  if (guessCount <= 4) return 'Well spotted!';
-  return 'Just in time!';
+  if (guessCount === 1) return 'First try! 🏆';
+  if (guessCount === 2) return 'Sharp eye! 🔬';
+  if (guessCount <= 4) return 'Nailed it!';
+  return 'Down to the wire!';
 }
 
 export function generateDailyShareText({ mode, challengeNumber, solved, guesses, maxGuesses }) {
