@@ -10,13 +10,13 @@
     h1 { margin-bottom: 24px; }
     .challenge { border: 2px solid #2e2c28; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
     .challenge.approved { border-color: #059669; }
-    .challenge.rejected { border-color: #dc2626; opacity: 0.5; }
     .challenge-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .challenge-header h2 { font-size: 18px; }
     .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
     .badge.pending { background: #7c5a1e; color: #fde047; }
     .badge.approved { background: #1a5c33; color: #86efac; }
-    .mode-section { margin-bottom: 16px; }
+    .badge.needs-recrop { background: #7c1e1e; color: #fca5a5; }
+    .mode-section { margin-bottom: 20px; }
     .mode-section h3 { margin-bottom: 8px; font-size: 15px; color: #9a9590; }
     .crops { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
     .crops img { height: 150px; border-radius: 6px; border: 1px solid #2e2c28; }
@@ -31,12 +31,38 @@
     .btn-approve:hover { background: #047857; }
     .btn-reject:hover { background: #b91c1c; }
     .btn-approve:disabled, .btn-reject:disabled { opacity: 0.4; cursor: default; }
-    .export-bar { position: sticky; top: 0; background: #222120; padding: 16px; border-radius: 8px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; z-index: 10; }
+    .export-bar { position: sticky; top: 0; background: #222120; padding: 16px; border-radius: 8px; margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; z-index: 10; }
     .btn-export { background: #d4794e; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; }
     .btn-export:hover { background: #c06a42; }
     .status { font-size: 14px; color: #9a9590; }
     .instructions { background: #222120; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; line-height: 1.6; }
     .instructions code { background: #2e2c28; padding: 2px 6px; border-radius: 4px; }
+
+    /* Center-picker */
+    .center-picker-row { display: flex; gap: 16px; align-items: flex-start; margin-top: 10px; }
+    .center-picker { position: relative; display: inline-block; cursor: crosshair; }
+    .center-picker img { max-height: 350px; border-radius: 8px; border: 2px solid #2e2c28; display: block; }
+    .center-picker .crosshair {
+      position: absolute; width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid #ff4444; background: rgba(255, 68, 68, 0.3);
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
+    .center-picker .crosshair::after {
+      content: '+'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #ff4444; font-size: 16px; font-weight: 700;
+    }
+    .center-picker .crosshair.adjusted { border-color: #4aff44; background: rgba(68, 255, 68, 0.3); }
+    .center-picker .crosshair.adjusted::after { color: #4aff44; }
+    .center-info {
+      font-size: 12px; color: #9a9590; padding: 8px 0; min-width: 180px;
+    }
+    .center-info .coord { font-family: monospace; color: #d4794e; }
+    .center-info .label { font-weight: 600; margin-bottom: 4px; }
+    .recrop-notice {
+      display: inline-block; margin-top: 6px; padding: 4px 10px;
+      background: #7c1e1e; color: #fca5a5; border-radius: 6px; font-size: 11px; font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -47,14 +73,16 @@
     1. Run <code>npm run generate-daily</code> to create candidate challenges.<br>
     2. Open this file in your browser (File &rarr; Open).<br>
     3. Click "Load manifest.json" and select <code>public/data/daily/manifest.json</code>.<br>
-    4. Review each challenge's crops. Approve or reject.<br>
-    5. Click "Download approved manifest" to save. Replace the original file with it.<br>
-    6. Commit and deploy.
+    4. Review crops. <strong>Click on the reveal image to set the insect center</strong> &mdash; a green crosshair shows where crops will be centered.<br>
+    5. After adjusting centers, click "Download manifest" and replace the original.<br>
+    6. Run <code>npm run recrop-daily</code> to regenerate crops with corrected centers.<br>
+    7. Reload manifest to verify. Approve good challenges, reject bad ones.<br>
+    8. Download final manifest, commit, and deploy.
   </div>
 
   <div class="export-bar">
     <input type="file" id="fileInput" accept=".json" />
-    <button class="btn-export" onclick="downloadManifest()">Download approved manifest</button>
+    <button class="btn-export" onclick="downloadManifest()">Download manifest</button>
     <span class="status" id="status">No manifest loaded</span>
   </div>
 
@@ -62,7 +90,8 @@
 
   <script>
     let manifest = null;
-    const BUGS101_SIZES = ['20%', '50%', '80%'];
+    const BUGS101_FRACS = ['12%', '35%', '65%'];
+    const ALLBUGS_FRACS = ['8%', '15%', '25%', '38%', '55%', '75%'];
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -90,15 +119,18 @@
 
     function render() {
       const container = document.getElementById('challenges');
-      const pending = manifest.challenges.filter(c => !c.approved).length;
+      const pending = manifest.challenges.filter(c => !c.approved && !c.bugs101._needsRecrop && !c.allbugs._needsRecrop).length;
       const approved = manifest.challenges.filter(c => c.approved).length;
-      document.getElementById('status').textContent =
-        `${approved} approved, ${pending} pending, ${manifest.challenges.length} total`;
+      const needsRecrop = manifest.challenges.filter(c => c.bugs101._needsRecrop || c.allbugs._needsRecrop).length;
+      let statusText = `${approved} approved, ${pending} pending, ${manifest.challenges.length} total`;
+      if (needsRecrop > 0) statusText += ` | ${needsRecrop} need recrop`;
+      document.getElementById('status').textContent = statusText;
 
       container.innerHTML = manifest.challenges.map((ch, idx) => {
+        const hasRecrop = ch.bugs101._needsRecrop || ch.allbugs._needsRecrop;
         const statusClass = ch.approved ? 'approved' : 'pending';
-        const badgeClass = ch.approved ? 'approved' : 'pending';
-        const badgeText = ch.approved ? 'Approved' : 'Pending';
+        const badgeClass = hasRecrop ? 'needs-recrop' : (ch.approved ? 'approved' : 'pending');
+        const badgeText = hasRecrop ? 'Needs Recrop' : (ch.approved ? 'Approved' : 'Pending');
 
         return `
           <div class="challenge ${statusClass}" id="challenge-${idx}">
@@ -107,39 +139,8 @@
               <span class="badge ${badgeClass}">${badgeText}</span>
             </div>
 
-            <div class="mode-section">
-              <h3>Bugs 101 Daily</h3>
-              <div class="answer">Answer: <strong>${escapeHTML(ch.bugs101.answer_common)}</strong> (${escapeHTML(ch.bugs101.answer_order)})</div>
-              <div class="crops">
-                ${ch.bugs101.crops.map((c, i) => `
-                  <div class="crop-label">
-                    <img src="../public/data/${c}" alt="Crop ${i + 1}" title="Crop ${i + 1} (${BUGS101_SIZES[i] || ''})">
-                    <div>${BUGS101_SIZES[i] || 'Crop ' + (i + 1)}</div>
-                  </div>
-                `).join('')}
-                <div class="crop-label">
-                  <img src="../public/data/${ch.bugs101.reveal}" alt="Full reveal" class="reveal" title="Full reveal">
-                  <div>Reveal</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mode-section">
-              <h3>All Bugs Daily</h3>
-              <div class="answer">Answer: <strong>${escapeHTML(ch.allbugs.answer_common)}</strong> (<em>${escapeHTML(ch.allbugs.answer_species)}</em>)</div>
-              <div class="crops">
-                ${ch.allbugs.crops.map((c, i) => `
-                  <div class="crop-label">
-                    <img src="../public/data/${c}" alt="Crop ${i + 1}" title="Crop ${i + 1}">
-                    <div>Crop ${i + 1}</div>
-                  </div>
-                `).join('')}
-                <div class="crop-label">
-                  <img src="../public/data/${ch.allbugs.reveal}" alt="Full reveal" class="reveal" title="Full reveal">
-                  <div>Reveal</div>
-                </div>
-              </div>
-            </div>
+            ${renderMode(ch, idx, 'bugs101', 'Bugs 101 Daily', BUGS101_FRACS)}
+            ${renderMode(ch, idx, 'allbugs', 'All Bugs Daily', ALLBUGS_FRACS)}
 
             <div class="actions">
               <button class="btn btn-approve" onclick="approve(${idx})" ${ch.approved ? 'disabled' : ''}>Approve</button>
@@ -148,10 +149,84 @@
           </div>
         `;
       }).join('');
+
+      // Attach click handlers to center-picker images
+      document.querySelectorAll('.center-picker').forEach(picker => {
+        const img = picker.querySelector('img');
+        const crosshair = picker.querySelector('.crosshair');
+        const idx = parseInt(picker.dataset.idx);
+        const mode = picker.dataset.mode;
+
+        picker.addEventListener('click', (e) => {
+          const rect = img.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width;
+          const y = (e.clientY - rect.top) / rect.height;
+          setCenter(idx, mode, x, y);
+        });
+      });
+    }
+
+    function renderMode(ch, idx, mode, title, fracLabels) {
+      const data = ch[mode];
+      const cx = data.center_x ?? 0.5;
+      const cy = data.center_y ?? 0.5;
+      const isAdjusted = data._needsRecrop;
+      const crosshairClass = isAdjusted ? 'crosshair adjusted' : 'crosshair';
+
+      const answerLine = mode === 'bugs101'
+        ? `Answer: <strong>${escapeHTML(data.answer_common)}</strong> (${escapeHTML(data.answer_order)})`
+        : `Answer: <strong>${escapeHTML(data.answer_common)}</strong> (<em>${escapeHTML(data.answer_species)}</em>)`;
+
+      return `
+        <div class="mode-section">
+          <h3>${title}</h3>
+          <div class="answer">${answerLine}</div>
+          <div class="crops">
+            ${data.crops.map((c, i) => `
+              <div class="crop-label">
+                <img src="../public/data/${c}" alt="Crop ${i + 1}">
+                <div>${fracLabels[i] || 'Crop ' + (i + 1)}</div>
+              </div>
+            `).join('')}
+            <div class="crop-label">
+              <img src="../public/data/${data.reveal}" alt="Full reveal" class="reveal">
+              <div>Reveal</div>
+            </div>
+          </div>
+
+          <div class="center-picker-row">
+            <div class="center-picker" data-idx="${idx}" data-mode="${mode}">
+              <img src="../public/data/${data.reveal}" alt="Click to set center">
+              <div class="${crosshairClass}" style="left: ${cx * 100}%; top: ${cy * 100}%;"></div>
+            </div>
+            <div class="center-info">
+              <div class="label">Crop center:</div>
+              <div>x: <span class="coord">${(cx * 100).toFixed(1)}%</span></div>
+              <div>y: <span class="coord">${(cy * 100).toFixed(1)}%</span></div>
+              ${isAdjusted ? '<div class="recrop-notice">Center adjusted — needs recrop</div>' : '<div style="margin-top:6px;font-size:11px;">Click image to reposition</div>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function setCenter(idx, mode, x, y) {
+      const data = manifest.challenges[idx][mode];
+      data.center_x = Math.round(x * 1000) / 1000;
+      data.center_y = Math.round(y * 1000) / 1000;
+      data._needsRecrop = true;
+      // Un-approve if it was approved — center changed, crops are stale
+      manifest.challenges[idx].approved = false;
+      render();
     }
 
     function approve(idx) {
-      manifest.challenges[idx].approved = true;
+      const ch = manifest.challenges[idx];
+      if (ch.bugs101._needsRecrop || ch.allbugs._needsRecrop) {
+        alert('This challenge has adjusted centers. Download the manifest and run "npm run recrop-daily" first, then reload.');
+        return;
+      }
+      ch.approved = true;
       render();
     }
 
@@ -163,11 +238,13 @@
 
     function downloadManifest() {
       if (!manifest) return alert('Load a manifest first');
-      const unapproved = manifest.challenges.filter(c => !c.approved);
-      if (unapproved.length > 0) {
-        if (!confirm(`${unapproved.length} challenge(s) are still pending. Download anyway?`)) return;
+      // Clean internal flags before saving
+      const output = JSON.parse(JSON.stringify(manifest));
+      for (const ch of output.challenges) {
+        delete ch.bugs101._needsRecrop;
+        delete ch.allbugs._needsRecrop;
       }
-      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'manifest.json';

@@ -558,6 +558,8 @@ async function processObservation(obs, dayDir, date, prefix, { cropDimFractions 
     attribution: obs.attribution,
     wikipedia_summary: obs.wikipedia_summary || '',
     inat_url: obs.inat_url,
+    center_x: attention.x,
+    center_y: attention.y,
   };
 }
 

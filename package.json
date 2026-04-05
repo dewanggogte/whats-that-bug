@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "fetch-data": "node scripts/fetch-data.mjs",
     "generate-daily": "node scripts/generate-daily.mjs",
-    "fetch-daily-candidates": "node scripts/fetch-daily-candidates.mjs"
+    "fetch-daily-candidates": "node scripts/fetch-daily-candidates.mjs",
+    "recrop-daily": "node scripts/recrop-daily.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",
