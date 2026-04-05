@@ -1,0 +1,14 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+<Base title="Daily Challenge — What's That Bug?">
+  <div id="daily-container">
+    <div class="container" style="text-align: center; padding-top: 80px;">
+      <p class="subtitle">Loading today's challenge...</p>
+    </div>
+  </div>
+  <script>
+    import { initDaily } from '../../scripts/daily-ui.js';
+    initDaily();
+  </script>
+</Base>
