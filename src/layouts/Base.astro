@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Analytics from '@vercel/analytics/astro';
 interface Props {
   title: string;
   description: string;
@@ -186,5 +187,6 @@ const resolvedOgType = ogType || 'website';
     />
   )}
   <script defer src="https://cloud.umami.is/script.js" data-website-id="2aa5ada3-d88c-44ac-aed9-4dac3c12b7f2" is:inline />
+  <Analytics />
 </body>
 </html>
