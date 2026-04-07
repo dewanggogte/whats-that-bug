@@ -8,7 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
-import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, isMuted, toggleMute } from './sounds.js';
+import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, startBgMusic, stopBgMusic, isMuted, toggleMute } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
 let achievementsModule = null;
@@ -122,6 +122,8 @@ function ensureMuteToggle() {
   btn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
   btn.addEventListener('click', () => {
     const nowMuted = toggleMute();
+    if (nowMuted) stopBgMusic();
+    else startBgMusic();
     btn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
   });
   document.body.appendChild(btn);
@@ -211,6 +213,12 @@ export async function initGame() {
   shared = false;
   window.addEventListener('pagehide', sendSessionEnd);
 
+  // Pause/resume music on tab visibility
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopBgMusic();
+    else if (!isMuted()) startBgMusic();
+  });
+
   // Pre-generate first few rounds and start loading their images
   roundCache = [];
   displayRound = 0;
@@ -220,6 +228,7 @@ export async function initGame() {
   // Show rules popup, then start game
   showRulesPopup(() => {
     playGameStart();
+    startBgMusic();
     if (session.mode === 'time_trial') {
       startTimeTrial();
     } else {
@@ -925,6 +934,7 @@ function renderRecommendation(totalScore, setKey, mode) {
 // ===== SUMMARY SCREENS =====
 
 function renderClassicSummary() {
+  stopBgMusic();
   playSessionEnd();
   const exactCount = session.history.filter(h => h.score === 100).length;
   const closeCount = session.history.filter(h => h.score >= 50 && h.score < 100).length;
@@ -995,6 +1005,7 @@ function renderClassicSummary() {
 }
 
 function renderTimeTrialSummary() {
+  stopBgMusic();
   playSessionEnd();
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
@@ -1105,6 +1116,7 @@ function renderTimeTrialSummary() {
 }
 
 function renderStreakGameOver(picked, correct) {
+  stopBgMusic();
   const streakCount = session.currentStreak;
   const shareText = generateStreakShareText(streakCount, session.history, currentSetKey);
 

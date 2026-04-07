@@ -169,3 +169,76 @@ export function playStreakBreak() {
     playNoise(ctx, 0.03, 0.03, 0.001, t + i * 0.06, f * 2, 'bandpass');
   });
 }
+
+// ========== BACKGROUND MUSIC ==========
+
+let bgMusicInterval = null;
+let bgMusicStep = 0;
+
+/**
+ * Start lo-fi chill beat background music.
+ * 90 BPM loop: kick + hi-hat + snare pattern over a 4-chord progression
+ * with triangle-wave pads and sine bass.
+ */
+export function startBgMusic() {
+  if (muted || bgMusicInterval) return;
+  const ctx = getCtx();
+  const bpm = 90;
+  const beatMs = 60000 / bpm / 2; // 8th notes
+  bgMusicStep = 0;
+
+  const chords = [
+    [262, 330, 392], // C
+    [294, 370, 440], // Dm
+    [220, 277, 330], // Am
+    [247, 311, 392], // G/B
+  ];
+
+  function tick() {
+    if (muted) { stopBgMusic(); return; }
+    const t = ctx.currentTime;
+    const beat = bgMusicStep % 8;
+    const chordIdx = Math.floor((bgMusicStep % 32) / 8);
+    const chord = chords[chordIdx];
+
+    // Kick on 0, 4
+    if (beat === 0 || beat === 4) {
+      playNote(ctx, 'sine', 150, 40, 0.2, 0.001, t, 0.12);
+    }
+    // Hi-hat on every 8th
+    playNoise(ctx, 0.03, 0.04, 0.001, t, 8000, 'highpass');
+    // Snare on 2, 6
+    if (beat === 2 || beat === 6) {
+      playNoise(ctx, 0.08, 0.08, 0.001, t, 3000, 'highpass');
+      playNote(ctx, 'sine', 200, 120, 0.06, 0.001, t, 0.05);
+    }
+    // Chord pad on beat 0 of each chord
+    if (beat === 0) {
+      chord.forEach(f => {
+        playNote(ctx, 'triangle', f, f, 0.04, 0.001, t, beatMs * 8 / 1000);
+      });
+    }
+    // Bass on 0, 3, 4, 7
+    if (beat === 0 || beat === 3 || beat === 4 || beat === 7) {
+      playNote(ctx, 'sine', chord[0] / 2, chord[0] / 2, 0.1, 0.01, t, beatMs * 2 / 1000);
+    }
+    bgMusicStep++;
+  }
+
+  tick();
+  bgMusicInterval = setInterval(tick, beatMs);
+}
+
+/** Stop background music loop. */
+export function stopBgMusic() {
+  if (bgMusicInterval) {
+    clearInterval(bgMusicInterval);
+    bgMusicInterval = null;
+  }
+  bgMusicStep = 0;
+}
+
+/** Returns whether background music is currently playing. */
+export function isBgMusicPlaying() {
+  return bgMusicInterval !== null;
+}
