@@ -143,11 +143,12 @@ function saveUsedIds(setKey, ids) {
 }
 
 export class SessionState {
-  constructor(observations, taxonomy, setDef, setKey) {
+  constructor(observations, taxonomy, setDef, setKey, difficulty = null) {
     this.observations = observations;
     this.taxonomy = taxonomy;
     this.setDef = setDef;
     this.setKey = setKey;
+    this._difficulty = difficulty;
     this.mode = setDef.mode || 'classic';
     this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     this.currentRound = 0;
@@ -201,16 +202,68 @@ export class SessionState {
       available = [...this._pool];
     }
     if (available.length === 0) return null;
-    const correct = pickRandom(available);
+
+    // Pick observation based on difficulty curve (classic only, when difficulty data exists)
+    let correct;
+    if (this.mode === 'classic' && this._difficulty) {
+      correct = this._pickByDifficulty(available);
+    } else {
+      correct = pickRandom(available);
+    }
+
     this._usedObservationIds.add(correct.id);
     this._currentCorrect = correct;
     this.currentRound++;
+
     const isBugs101 = this.setDef.scoring === 'binary';
-    const distractors = isBugs101
-      ? generateBugs101Distractors(correct, this.taxonomy, this.observations)
-      : generateDistractors(correct, this.taxonomy, this.observations);
+    let distractors;
+    if (isBugs101) {
+      distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+    } else if (this._difficulty && this.currentRound <= 3) {
+      // Easy rounds in All Bugs: use cross-order distractors for visual distinction
+      distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+    } else {
+      distractors = generateDistractors(correct, this.taxonomy, this.observations);
+    }
+
     const choices = shuffle([correct, ...distractors]);
     return { correct, choices };
+  }
+
+  _pickByDifficulty(available) {
+    const round = this.currentRound + 1; // currentRound hasn't been incremented yet
+
+    let targetTier;
+    if (round <= 3) targetTier = 'easy';
+    else if (round <= 7) targetTier = 'medium';
+    else targetTier = 'hard';
+
+    // Split available into target tier
+    const tierPool = available.filter(obs => {
+      const d = this._difficulty[obs.id];
+      return d ? d.tier === targetTier : targetTier === 'medium'; // unknown = medium
+    });
+
+    if (tierPool.length > 0) {
+      return pickRandom(tierPool);
+    }
+
+    // Try adjacent tiers before falling back to fully random
+    const fallbackOrder = targetTier === 'easy'
+      ? ['medium', 'hard']
+      : targetTier === 'hard'
+        ? ['medium', 'easy']
+        : ['easy', 'hard'];
+
+    for (const tier of fallbackOrder) {
+      const fallback = available.filter(obs => {
+        const d = this._difficulty[obs.id];
+        return d ? d.tier === tier : tier === 'medium';
+      });
+      if (fallback.length > 0) return pickRandom(fallback);
+    }
+
+    return pickRandom(available);
   }
 
   submitAnswer(pickedTaxon) {

@@ -12,7 +12,8 @@
     "generate-daily": "node scripts/generate-daily.mjs",
     "fetch-daily-candidates": "node scripts/fetch-daily-candidates.mjs",
     "recrop-daily": "node scripts/recrop-daily.mjs",
-    "review-daily": "node scripts/review-server.mjs"
+    "review-daily": "node scripts/review-server.mjs",
+    "calculate-difficulty": "node scripts/calculate-difficulty.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",
