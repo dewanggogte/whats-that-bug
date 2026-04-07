@@ -1,18 +1,31 @@
 /**
  * Support / Ko-fi prompt.
- * Shows a one-time modal after the player has completed 3+ sessions.
+ * Shows a modal after the player has completed 3+ sessions.
+ * "Maybe later" snoozes for 7 days; clicking the Ko-fi link permanently dismisses.
  * Uses the same overlay pattern as onboarding.js.
  */
 
-const SEEN_KEY = 'wtb_seen_support';
+const SNOOZE_KEY = 'wtb_support_snoozed';
+const DONATED_KEY = 'wtb_support_donated';
+const SNOOZE_DAYS = 7;
 const SUPPORT_URL = 'https://ko-fi.com/whatsthatbug';
 
-function hasSeen() {
-  try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return true; }
+function shouldShow() {
+  try {
+    if (localStorage.getItem(DONATED_KEY) === '1') return false;
+    const snoozed = localStorage.getItem(SNOOZE_KEY);
+    if (!snoozed) return true;
+    const elapsed = Date.now() - parseInt(snoozed, 10);
+    return elapsed >= SNOOZE_DAYS * 86400000;
+  } catch { return false; }
 }
 
-function markSeen() {
-  try { localStorage.setItem(SEEN_KEY, '1'); } catch {}
+function snooze() {
+  try { localStorage.setItem(SNOOZE_KEY, Date.now().toString()); } catch {}
+}
+
+function markDonated() {
+  try { localStorage.setItem(DONATED_KEY, '1'); } catch {}
 }
 
 function getSessionCount() {
@@ -68,7 +81,7 @@ function createSupportModal() {
   requestAnimationFrame(() => overlay.classList.add('visible'));
 
   const dismiss = () => {
-    markSeen();
+    snooze();
     overlay.classList.remove('visible');
     setTimeout(() => overlay.remove(), 340);
   };
@@ -85,7 +98,7 @@ function createSupportModal() {
   };
   document.addEventListener('keydown', onKey);
 
-  overlay.querySelector('.support-cta')?.addEventListener('click', () => markSeen());
+  overlay.querySelector('.support-cta')?.addEventListener('click', () => markDonated());
   overlay.querySelector('.support-dismiss')?.addEventListener('click', dismiss);
 }
 
@@ -94,7 +107,7 @@ function createSupportModal() {
  * Call from index.astro after onboarding is done.
  */
 export function maybeShowSupportPrompt() {
-  if (hasSeen()) return;
+  if (!shouldShow()) return;
   if (getSessionCount() < 3) return;
 
   // Small delay so it doesn't collide with onboarding
