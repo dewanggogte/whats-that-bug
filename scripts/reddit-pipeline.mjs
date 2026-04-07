@@ -292,10 +292,80 @@ async function stageFetch(state) {
   success('Fetch complete!');
 }
 
-// ---- Stage 2: Review (placeholder — Task 3) ----
+// ---- Stage 2: Review ----
 async function stageReview(state) {
   heading('Stage 2: Review & Curate');
-  log('Not yet implemented');
+
+  // Check if selections already exist
+  const hasSelections = Object.values(state.selections).some(arr => arr?.length > 0);
+  if (hasSelections) {
+    log('Existing selections found:');
+    for (const [subId, ids] of Object.entries(state.selections)) {
+      if (ids?.length > 0) log(`  r/${subId}: ${ids.length} selected`);
+    }
+    const redo = await ask('Re-do curation? (y/N): ');
+    if (redo.toLowerCase() !== 'y') {
+      state.stage = 'prepare';
+      saveState(state);
+      return;
+    }
+  }
+
+  const PORT = 3847;
+  const reviewHtml = readFileSync(join(__dirname, 'reddit-review.html'), 'utf-8');
+
+  // Build data to inject
+  const candidateData = {};
+  const subMeta = {};
+  for (const subId of state.targets) {
+    if (!state.candidates[subId]?.length) continue;
+    candidateData[subId] = state.candidates[subId];
+    const sub = SUBREDDITS.find(s => s.id === subId);
+    subMeta[subId] = { name: sub.name, title: sub.title };
+  }
+
+  return new Promise((resolve) => {
+    const server = createServer((req, res) => {
+      if (req.method === 'GET' && req.url === '/') {
+        const injectedScript = `<script>window.CANDIDATES = ${JSON.stringify(candidateData)}; window.SUB_META = ${JSON.stringify(subMeta)};</script>`;
+        const html = reviewHtml.replace('</head>', injectedScript + '\n</head>');
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(html);
+      } else if (req.method === 'POST' && req.url === '/api/save-selections') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            state.selections = JSON.parse(body);
+            state.stage = 'prepare';
+            saveState(state);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true }));
+            success('Selections saved!');
+            server.close();
+            resolve();
+          } catch (e) {
+            res.writeHead(400);
+            res.end(e.message);
+          }
+        });
+      } else {
+        res.writeHead(404);
+        res.end('Not found');
+      }
+    });
+
+    server.listen(PORT, () => {
+      const url = `http://localhost:${PORT}`;
+      log(`Review UI running at ${url}`);
+      log('Opening browser...');
+      import('child_process').then(cp => {
+        cp.exec(`open "${url}"`);
+      });
+      log('Star 4-6 images per subreddit, then click "Done".');
+      log('Waiting for selections...');
+    });
+  });
 }
 
 // ---- Stage 3: Prepare (placeholder — Task 4) ----
