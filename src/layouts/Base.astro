@@ -276,7 +276,20 @@ const resolvedOgType = ogType || 'website';
       is:inline
     />
   )}
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="2aa5ada3-d88c-44ac-aed9-4dac3c12b7f2" is:inline />
+  <script is:inline>
+    // Proxy Umami through our own domain to avoid ad-blocker filtering.
+    // Vercel rewrites /t/s.js → cloud.umami.is/script.js
+    //                  /t/e   → cloud.umami.is/api/send
+    (function() {
+      var base = window.__BASE || '';
+      var s = document.createElement('script');
+      s.defer = true;
+      s.src = base + '/t/s.js';
+      s.dataset.websiteId = '2aa5ada3-d88c-44ac-aed9-4dac3c12b7f2';
+      s.dataset.hostUrl = window.location.origin + base + '/t';
+      document.head.appendChild(s);
+    })();
+  </script>
   <Analytics />
 </body>
 </html>

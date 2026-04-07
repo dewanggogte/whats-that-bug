@@ -1,4 +1,8 @@
 {
+  "rewrites": [
+    { "source": "/t/s.js", "destination": "https://cloud.umami.is/script.js" },
+    { "source": "/t/api/send", "destination": "https://cloud.umami.is/api/send" }
+  ],
   "headers": [
     {
       "source": "/data/(observations|taxonomy|sets).json",
