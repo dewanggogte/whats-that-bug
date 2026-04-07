@@ -368,10 +368,131 @@ async function stageReview(state) {
   });
 }
 
-// ---- Stage 3: Prepare (placeholder — Task 4) ----
+// ---- Stage 3: Prepare helpers ----
+function generatePostBody(sub, selectedObs) {
+  const credits = selectedObs
+    .map(o => o.attribution.replace(/\(c\)\s*/i, '').split(',')[0].trim())
+    .filter((v, i, a) => a.indexOf(v) === i) // unique
+    .join(', ');
+
+  const gameUrl = 'https://whats-that-bug.vercel.app';
+  const label = sub.categoryLabel;
+
+  let body;
+  if (sub.bodyTone === 'dramatic') {
+    body = `These are some of the most stunning ${label} photos I've come across. I've been working on a "Guess the Bug" game (${gameUrl}) and have gone through thousands of ${label} photos in the process — these ones stopped me in my tracks.\n\nAll photos are research-grade observations from iNaturalist (CC BY licensed).\n📸 Credits: ${credits}`;
+  } else if (sub.bodyTone === 'formal') {
+    body = `I've been curating research-grade observations from iNaturalist for an insect identification game (${gameUrl}) and came across some remarkable photography. Sharing a few favourites here.\n\nAll observations are research-grade with CC BY licensing.\n📸 Credits: ${credits}`;
+  } else if (sub.bodyTone === 'cute') {
+    body = `I've been going through thousands of bug photos while working on a "Guess the Bug" game (${gameUrl}) and couldn't resist sharing some of the most adorable ones.\n\nAll photos from iNaturalist (CC BY licensed).\n📸 Credits: ${credits}`;
+  } else {
+    body = `I've been working on a "Guess the Bug" game (${gameUrl}) and have gone through thousands of ${label} photos in the process. Here are a few of my favourites. Enjoy!\n\nAll photos from iNaturalist (CC BY licensed).\n📸 Credits: ${credits}`;
+  }
+
+  return body;
+}
+
+function generateCaptions(selectedObs) {
+  return selectedObs.map(obs => {
+    const photographer = obs.attribution.replace(/\(c\)\s*/i, '').split(',')[0].trim();
+    return `${obs.taxon.common_name} (${obs.taxon.species}) — 📸 ${photographer} via iNaturalist`;
+  });
+}
+
+async function downloadImage(url, outputPath) {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project)' },
+  });
+  if (!res.ok) throw new Error(`Download failed: ${res.status} ${url}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  writeFileSync(outputPath, buffer);
+  return buffer.length;
+}
+
+// ---- Stage 3: Prepare ----
 async function stagePrepare(state) {
   heading('Stage 3: Prepare Posts');
-  log('Not yet implemented');
+
+  for (const subId of state.targets) {
+    const sub = SUBREDDITS.find(s => s.id === subId);
+    const selectedIds = new Set(state.selections[subId] || []);
+    if (selectedIds.size === 0) {
+      warn(`r/${subId}: no selections, skipping`);
+      continue;
+    }
+
+    const candidates = state.candidates[subId] || [];
+    const selectedObs = candidates.filter(c => selectedIds.has(c.id));
+
+    log(`r/${subId}: preparing ${selectedObs.length} images...`);
+
+    // Create output directory
+    const subDir = join(POSTS_DIR, `r-${subId}`);
+    mkdirSync(subDir, { recursive: true });
+
+    // Download images
+    for (let i = 0; i < selectedObs.length; i++) {
+      const obs = selectedObs[i];
+      const imgUrl = obs.photo_url_original || obs.photo_url_large || obs.photo_url;
+      const ext = imgUrl.match(/\.(jpe?g|png|gif|webp)/i)?.[1] || 'jpg';
+      const filename = `${String(i + 1).padStart(3, '0')}.${ext}`;
+      const outputPath = join(subDir, filename);
+
+      if (existsSync(outputPath)) {
+        log(`  ${filename}: already downloaded`);
+        continue;
+      }
+
+      try {
+        const size = await downloadImage(imgUrl, outputPath);
+        log(`  ${filename}: ${(size / 1024).toFixed(0)} KB — ${obs.taxon.common_name}`);
+        await sleep(500); // be nice to iNaturalist
+      } catch (e) {
+        warn(`  ${filename}: download failed — ${e.message}`);
+      }
+    }
+
+    // Generate post content
+    const title = sub.title;
+    const body = generatePostBody(sub, selectedObs);
+    const captions = generateCaptions(selectedObs);
+
+    const post = { title, body, captions, images: selectedObs.map((obs, i) => {
+      const ext = (obs.photo_url_original || obs.photo_url).match(/\.(jpe?g|png|gif|webp)/i)?.[1] || 'jpg';
+      return {
+        filename: `${String(i + 1).padStart(3, '0')}.${ext}`,
+        caption: captions[i],
+        obs_id: obs.id,
+        inat_url: obs.inat_url,
+      };
+    })};
+
+    state.posts[subId] = post;
+
+    // Write human-readable preview
+    const preview = `# Post for r/${subId}\n\n**Title:** ${title}\n\n**Body:**\n${body}\n\n**Images (${post.images.length}):**\n${post.images.map((img, i) => `${i + 1}. ${img.filename} — ${img.caption}`).join('\n')}\n`;
+    writeFileSync(join(subDir, 'preview.md'), preview);
+    writeFileSync(join(subDir, 'post.json'), JSON.stringify(post, null, 2));
+
+    success(`r/${subId}: ${selectedObs.length} images downloaded, post prepared`);
+  }
+
+  saveState(state);
+  state.stage = 'post';
+  saveState(state);
+
+  // Show previews
+  heading('Post Previews');
+  for (const subId of state.targets) {
+    const post = state.posts[subId];
+    if (!post) continue;
+    console.log(`\x1b[1mr/${subId}\x1b[0m`);
+    console.log(`  Title: ${post.title}`);
+    console.log(`  Images: ${post.images.length}`);
+    console.log(`  Body: ${post.body.slice(0, 80)}...`);
+    console.log();
+  }
+  success('All posts prepared!');
 }
 
 // ---- Stage 4: Post (placeholder — Task 5) ----
