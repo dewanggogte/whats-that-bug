@@ -13,7 +13,8 @@
     "fetch-daily-candidates": "node scripts/fetch-daily-candidates.mjs",
     "recrop-daily": "node scripts/recrop-daily.mjs",
     "review-daily": "node scripts/review-server.mjs",
-    "calculate-difficulty": "node scripts/calculate-difficulty.mjs"
+    "calculate-difficulty": "node scripts/calculate-difficulty.mjs",
+    "reddit-pipeline": "node scripts/reddit-pipeline.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.4.1",

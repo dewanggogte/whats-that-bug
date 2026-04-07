@@ -495,10 +495,213 @@ async function stagePrepare(state) {
   success('All posts prepared!');
 }
 
-// ---- Stage 4: Post (placeholder — Task 5) ----
+// ---- Reddit API helpers ----
+function loadRedditCredentials() {
+  const envPath = join(ROOT, '.env');
+  if (!existsSync(envPath)) return null;
+  const env = {};
+  readFileSync(envPath, 'utf-8').split('\n').forEach(line => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) env[match[1].trim()] = match[2].trim();
+  });
+  if (env.REDDIT_CLIENT_ID && env.REDDIT_CLIENT_SECRET && env.REDDIT_USERNAME && env.REDDIT_PASSWORD) {
+    return env;
+  }
+  return null;
+}
+
+async function getRedditToken(creds) {
+  const auth = Buffer.from(`${creds.REDDIT_CLIENT_ID}:${creds.REDDIT_CLIENT_SECRET}`).toString('base64');
+  const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'WhatsThatBugGame/1.0 (by /u/' + creds.REDDIT_USERNAME + ')',
+    },
+    body: `grant_type=password&username=${encodeURIComponent(creds.REDDIT_USERNAME)}&password=${encodeURIComponent(creds.REDDIT_PASSWORD)}`,
+  });
+  if (!res.ok) throw new Error(`Reddit auth failed: ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(`Reddit auth error: ${data.error}`);
+  return data.access_token;
+}
+
+async function uploadImageToReddit(token, imagePath, userAgent) {
+  const filename = imagePath.split('/').pop();
+  const ext = filename.split('.').pop().toLowerCase();
+  const mimeType = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp' }[ext] || 'image/jpeg';
+
+  // Step 1: Get upload lease
+  const leaseRes = await fetch('https://oauth.reddit.com/api/media/asset.json', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': userAgent,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `filepath=${encodeURIComponent(filename)}&mimetype=${encodeURIComponent(mimeType)}`,
+  });
+  if (!leaseRes.ok) throw new Error(`Upload lease failed: ${leaseRes.status}`);
+  const lease = await leaseRes.json();
+
+  // Step 2: Upload to S3
+  const uploadUrl = `https:${lease.args.action}`;
+  const formData = new FormData();
+  for (const field of lease.args.fields) {
+    formData.append(field.name, field.value);
+  }
+  const imageBuffer = readFileSync(imagePath);
+  formData.append('file', new Blob([imageBuffer], { type: mimeType }), filename);
+
+  const uploadRes = await fetch(uploadUrl, { method: 'POST', body: formData });
+  if (!uploadRes.ok && uploadRes.status !== 201) {
+    throw new Error(`S3 upload failed: ${uploadRes.status}`);
+  }
+
+  return lease.asset.asset_id;
+}
+
+async function submitGalleryPost(token, subreddit, title, body, assetIds, captions, userAgent) {
+  const items = assetIds.map((id, i) => ({
+    media_id: id,
+    caption: captions[i] || '',
+    outbound_url: '',
+  }));
+
+  const res = await fetch('https://oauth.reddit.com/api/submit', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'User-Agent': userAgent,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sr: subreddit,
+      kind: 'gallery',
+      title,
+      text: body,
+      items,
+      resubmit: true,
+      send_replies: true,
+    }),
+  });
+  if (!res.ok) throw new Error(`Submit failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  if (!data.json?.data?.url) {
+    throw new Error(`Submit error: ${JSON.stringify(data.json?.errors || data)}`);
+  }
+  return data.json.data.url;
+}
+
+// ---- Stage 4: Post ----
 async function stagePost(state) {
   heading('Stage 4: Post to Reddit');
-  log('Not yet implemented');
+
+  const creds = loadRedditCredentials();
+  if (!creds) {
+    warn('No Reddit credentials found in .env');
+    warn('To enable API posting, add to .env:');
+    console.log('  REDDIT_CLIENT_ID=...');
+    console.log('  REDDIT_CLIENT_SECRET=...');
+    console.log('  REDDIT_USERNAME=...');
+    console.log('  REDDIT_PASSWORD=...');
+    console.log();
+  }
+
+  let token = null;
+  let userAgent = null;
+  if (creds) {
+    userAgent = `WhatsThatBugGame/1.0 (by /u/${creds.REDDIT_USERNAME})`;
+    try {
+      token = await getRedditToken(creds);
+      success('Reddit authenticated!');
+    } catch (e) {
+      warn(`Reddit auth failed: ${e.message}`);
+      warn('Falling back to manual posting.');
+    }
+  }
+
+  for (const subId of state.targets) {
+    const post = state.posts[subId];
+    if (!post) continue;
+
+    if (state.posted[subId]) {
+      log(`r/${subId}: already posted, skipping`);
+      continue;
+    }
+
+    console.log(`\n\x1b[1mr/${subId}\x1b[0m — ${post.title}`);
+    console.log(`  ${post.images.length} images`);
+
+    const action = await ask(`  [A]PI post / [M]anual / [S]kip / [Q]uit: `);
+
+    if (action.toLowerCase() === 'q') {
+      log('Quitting. Run again to resume.');
+      saveState(state);
+      process.exit(0);
+    }
+
+    if (action.toLowerCase() === 's') {
+      log('Skipped.');
+      continue;
+    }
+
+    if (action.toLowerCase() === 'a') {
+      if (!token) {
+        warn('No Reddit token available. Use manual mode.');
+        continue;
+      }
+
+      try {
+        log('Uploading images...');
+        const assetIds = [];
+        for (const img of post.images) {
+          const imgPath = join(POSTS_DIR, `r-${subId}`, img.filename);
+          const assetId = await uploadImageToReddit(token, imgPath, userAgent);
+          assetIds.push(assetId);
+          log(`  Uploaded: ${img.filename}`);
+          await sleep(1000);
+        }
+
+        log('Submitting gallery post...');
+        const url = await submitGalleryPost(token, subId, post.title, post.body, assetIds, post.captions, userAgent);
+        state.posted[subId] = { url, timestamp: new Date().toISOString(), method: 'api' };
+        saveState(state);
+        success(`Posted! ${url}`);
+      } catch (e) {
+        warn(`API posting failed: ${e.message}`);
+        warn('Try manual posting instead.');
+      }
+
+    } else {
+      // Manual mode
+      console.log('\n  ── Manual Posting Instructions ──');
+      console.log(`  1. Go to: https://www.reddit.com/r/${subId}/submit`);
+      console.log(`  2. Select "Images & Video" or "Gallery"`);
+      console.log(`  3. Title: ${post.title}`);
+      console.log(`  4. Upload images from: scripts/reddit-posts/r-${subId}/`);
+      console.log(`  5. Add captions:`);
+      post.captions.forEach((c, i) => console.log(`     ${i + 1}. ${c}`));
+      console.log(`  6. Body text:\n`);
+      console.log(`     ${post.body.replace(/\n/g, '\n     ')}`);
+      console.log();
+
+      // Try to open the browser
+      import('child_process').then(cp => {
+        cp.exec(`open "https://www.reddit.com/r/${subId}/submit"`);
+      });
+
+      const done = await ask('  Mark as posted? (y/N): ');
+      if (done.toLowerCase() === 'y') {
+        state.posted[subId] = { timestamp: new Date().toISOString(), method: 'manual' };
+        saveState(state);
+        success('Marked as posted!');
+      }
+    }
+  }
+
+  saveState(state);
 }
 
 // ---- Main ----
