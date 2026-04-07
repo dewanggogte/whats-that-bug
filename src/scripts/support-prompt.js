@@ -42,11 +42,11 @@ function createSupportModal() {
       </div>
       <h2 class="onboarding-title">Help keep the bugs alive!</h2>
       <p class="onboarding-text">
-        I built this game this year and it has been played <strong>over 2,000 times</strong> since!
-        It brings me a lot of joy that people play this every day, and I want to keep making it better.
+        I built this game this year and it's been played <strong>over 2,000 times</strong>!
+        It brings me so much joy that people play every day — I want to keep making it better.
       </p>
       <p class="onboarding-detail">
-        Help me maintain and keep this site ad-free, your contributions directly help me continue to work on this.
+        This site is ad-free and always will be. Your support helps me keep it that way.
       </p>
       <a href="${SUPPORT_URL}" target="_blank" rel="noopener noreferrer"
          class="btn btn-primary onboarding-cta support-cta">
