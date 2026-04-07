@@ -26,13 +26,16 @@ const IMESSAGE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height
 const TWITTER_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
 const CLIPBOARD_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
-// Bugs 101 autocomplete list — matches getBugs101Name categories in game-ui.js
+// Bugs 101 autocomplete list — matches getBugs101Name categories in game-engine.js
 const BUGS101_OPTIONS = [
-  'Ant', 'Aphid', 'Bee', 'Beetle', 'Butterfly', 'Caddisfly', 'Cicada',
-  'Cockroach', 'Cricket', 'Damselfly', 'Dragonfly', 'Earwig', 'Fly',
-  'Grasshopper', 'Harvestman', 'Isopods', 'Lacewing', 'Mantis', 'Mayfly', 'Moth',
-  'Planthopper', 'Scorpion', 'Spider', 'Stick Insect', 'Stink Bug',
-  'Tick', 'True Bug', 'Wasp', 'Water Bug',
+  'Ant', 'Aphid', 'Bee', 'Beetle', 'Bumble Bee', 'Butterfly', 'Caddisfly',
+  'Centipede', 'Cicada', 'Cockroach', 'Crane Fly', 'Cricket', 'Damselfly',
+  'Dragonfly', 'Earwig', 'Fly', 'Grasshopper', 'Harvestman', 'Hawk Moth',
+  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Lacewing', 'Ladybug',
+  'Longhorn Beetle', 'Mantis', 'Mayfly', 'Millipede', 'Moth', 'Orb Weaver',
+  'Planthopper', 'Scarab', 'Scorpion', 'Silk Moth', 'Spider', 'Stag Beetle',
+  'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Tick', 'True Bug',
+  'Wasp', 'Water Bug', 'Weevil', 'Woodlouse',
 ];
 
 // --- Module state ---

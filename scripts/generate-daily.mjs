@@ -95,22 +95,22 @@ const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorh
 const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
 const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
 
-const ORDER_NAMES = {
-  'Coleoptera': 'Beetle', 'Ixodida': 'Tick', 'Araneae': 'Spider',
-  'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman', 'Mantodea': 'Mantis',
-  'Diptera': 'Fly', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
-  'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
-  'Trichoptera': 'Caddisfly',
-};
-
 function getBugs101Name(taxon) {
   if (taxon.order === 'Hymenoptera') {
-    if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
+    if (BEE_FAMILIES.includes(taxon.family)) {
+      if (taxon.genus === 'Apis') return 'Honey Bee';
+      if (taxon.genus === 'Bombus') return 'Bumble Bee';
+      return 'Bee';
+    }
     if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
     return 'Wasp';
   }
   if (taxon.order === 'Lepidoptera') {
-    return BUTTERFLY_FAMILIES.includes(taxon.family) ? 'Butterfly' : 'Moth';
+    if (taxon.family === 'Papilionidae') return 'Swallowtail';
+    if (BUTTERFLY_FAMILIES.includes(taxon.family)) return 'Butterfly';
+    if (taxon.family === 'Sphingidae') return 'Hawk Moth';
+    if (taxon.family === 'Saturniidae') return 'Silk Moth';
+    return 'Moth';
   }
   if (taxon.order === 'Orthoptera') {
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
@@ -127,17 +127,46 @@ function getBugs101Name(taxon) {
     if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
     return 'True Bug';
   }
-  return ORDER_NAMES[taxon.order] || taxon.order_common || taxon.order;
+  if (taxon.order === 'Coleoptera') {
+    if (taxon.family === 'Coccinellidae') return 'Ladybug';
+    if (taxon.family === 'Lucanidae') return 'Stag Beetle';
+    if (taxon.family === 'Scarabaeidae') return 'Scarab';
+    if (taxon.family === 'Cerambycidae') return 'Longhorn Beetle';
+    if (taxon.family === 'Curculionidae') return 'Weevil';
+    return 'Beetle';
+  }
+  if (taxon.order === 'Araneae') {
+    if (taxon.family === 'Salticidae') return 'Jumping Spider';
+    if (taxon.family === 'Theraphosidae') return 'Tarantula';
+    if (taxon.family === 'Araneidae' || taxon.family === 'Nephilidae') return 'Orb Weaver';
+    return 'Spider';
+  }
+  if (taxon.order === 'Diptera') {
+    if (taxon.family === 'Syrphidae') return 'Hover Fly';
+    if (taxon.family === 'Tipulidae' || taxon.family === 'Limoniidae') return 'Crane Fly';
+    return 'Fly';
+  }
+  const names = {
+    'Ixodida': 'Tick', 'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman',
+    'Mantodea': 'Mantis', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
+    'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
+    'Trichoptera': 'Caddisfly', 'Scolopendromorpha': 'Centipede',
+    'Isopoda': 'Woodlouse', 'Julida': 'Millipede',
+  };
+  return names[taxon.order] || taxon.order_common || taxon.order;
 }
 
 // Valid Bugs 101 answer names — must match BUGS101_OPTIONS in daily-ui.js.
 // The pipeline will reject candidates whose getBugs101Name() is not in this set.
 const VALID_BUGS101_NAMES = new Set([
-  'Ant', 'Aphid', 'Bee', 'Beetle', 'Butterfly', 'Caddisfly', 'Cicada',
-  'Cockroach', 'Cricket', 'Damselfly', 'Dragonfly', 'Earwig', 'Fly',
-  'Grasshopper', 'Harvestman', 'Isopods', 'Lacewing', 'Mantis', 'Mayfly', 'Moth',
-  'Planthopper', 'Scorpion', 'Spider', 'Stick Insect', 'Stink Bug',
-  'Tick', 'True Bug', 'Wasp', 'Water Bug',
+  'Ant', 'Aphid', 'Bee', 'Beetle', 'Bumble Bee', 'Butterfly', 'Caddisfly',
+  'Centipede', 'Cicada', 'Cockroach', 'Crane Fly', 'Cricket', 'Damselfly',
+  'Dragonfly', 'Earwig', 'Fly', 'Grasshopper', 'Harvestman', 'Hawk Moth',
+  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Lacewing', 'Ladybug',
+  'Longhorn Beetle', 'Mantis', 'Mayfly', 'Millipede', 'Moth', 'Orb Weaver',
+  'Planthopper', 'Scarab', 'Scorpion', 'Silk Moth', 'Spider', 'Stag Beetle',
+  'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Tick', 'True Bug',
+  'Wasp', 'Water Bug', 'Weevil', 'Woodlouse',
 ]);
 
 // ---------------------------------------------------------------------------

@@ -3,6 +3,79 @@
  * Handles scoring, distractor generation, and session state.
  */
 
+// --- Bugs 101 category mapping ---
+const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
+const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
+const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
+const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
+const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
+const CICADA_FAMILIES = ['Cicadidae'];
+const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
+const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
+const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
+const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
+
+export function getBugs101Name(taxon) {
+  if (taxon.order === 'Hymenoptera') {
+    if (BEE_FAMILIES.includes(taxon.family)) {
+      if (taxon.genus === 'Apis') return 'Honey Bee';
+      if (taxon.genus === 'Bombus') return 'Bumble Bee';
+      return 'Bee';
+    }
+    if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
+    return 'Wasp';
+  }
+  if (taxon.order === 'Lepidoptera') {
+    if (taxon.family === 'Papilionidae') return 'Swallowtail';
+    if (BUTTERFLY_FAMILIES.includes(taxon.family)) return 'Butterfly';
+    if (taxon.family === 'Sphingidae') return 'Hawk Moth';
+    if (taxon.family === 'Saturniidae') return 'Silk Moth';
+    return 'Moth';
+  }
+  if (taxon.order === 'Orthoptera') {
+    if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
+    return 'Grasshopper';
+  }
+  if (taxon.order === 'Odonata') {
+    return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
+  }
+  if (taxon.order === 'Hemiptera') {
+    if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
+    if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
+    if (PLANTHOPPER_FAMILIES.includes(taxon.family)) return 'Planthopper';
+    if (APHID_FAMILIES.includes(taxon.family)) return 'Aphid';
+    if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
+    return 'True Bug';
+  }
+  if (taxon.order === 'Coleoptera') {
+    if (taxon.family === 'Coccinellidae') return 'Ladybug';
+    if (taxon.family === 'Lucanidae') return 'Stag Beetle';
+    if (taxon.family === 'Scarabaeidae') return 'Scarab';
+    if (taxon.family === 'Cerambycidae') return 'Longhorn Beetle';
+    if (taxon.family === 'Curculionidae') return 'Weevil';
+    return 'Beetle';
+  }
+  if (taxon.order === 'Araneae') {
+    if (taxon.family === 'Salticidae') return 'Jumping Spider';
+    if (taxon.family === 'Theraphosidae') return 'Tarantula';
+    if (taxon.family === 'Araneidae' || taxon.family === 'Nephilidae') return 'Orb Weaver';
+    return 'Spider';
+  }
+  if (taxon.order === 'Diptera') {
+    if (taxon.family === 'Syrphidae') return 'Hover Fly';
+    if (taxon.family === 'Tipulidae' || taxon.family === 'Limoniidae') return 'Crane Fly';
+    return 'Fly';
+  }
+  const names = {
+    'Ixodida': 'Tick', 'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman',
+    'Mantodea': 'Mantis', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
+    'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
+    'Trichoptera': 'Caddisfly', 'Scolopendromorpha': 'Centipede',
+    'Isopoda': 'Woodlouse', 'Julida': 'Millipede',
+  };
+  return names[taxon.order] || taxon.order_common || taxon.order;
+}
+
 /**
  * Calculate score based on taxonomic distance between picked and correct taxon.
  * @param {{ species: string, genus: string, family: string, order: string }} picked
@@ -48,26 +121,25 @@ function pickRandomN(arr, n) {
 }
 
 /**
- * Generate 3 distractors for Bugs 101 mode — from DIFFERENT orders.
+ * Generate 3 distractors for Bugs 101 mode — each with a DIFFERENT category name.
  */
 export function generateBugs101Distractors(correct, taxonomy, observations) {
-  const correctOrder = correct.taxon.order;
+  const correctCategory = getBugs101Name(correct.taxon);
   const distractors = [];
-  const usedOrders = new Set([correctOrder]);
+  const usedCategories = new Set([correctCategory]);
 
-  const allOrders = Object.keys(taxonomy.order);
-  const shuffledOrders = shuffle(allOrders);
+  // Build a pool of all observations, shuffled
+  const allIndices = Object.values(taxonomy.order).flat();
+  const shuffled = shuffle(allIndices);
 
-  for (const order of shuffledOrders) {
-    if (usedOrders.has(order)) continue;
+  for (const idx of shuffled) {
     if (distractors.length >= 3) break;
-    const candidates = taxonomy.order[order];
-    if (!candidates || candidates.length === 0) continue;
-    const pick = observations[candidates[Math.floor(Math.random() * candidates.length)]];
-    if (pick) {
-      distractors.push(pick);
-      usedOrders.add(order);
-    }
+    const pick = observations[idx];
+    if (!pick) continue;
+    const category = getBugs101Name(pick.taxon);
+    if (usedCategories.has(category)) continue;
+    distractors.push(pick);
+    usedCategories.add(category);
   }
   return distractors;
 }
@@ -270,7 +342,7 @@ export class SessionState {
     const correct = this._currentCorrect;
     const isBinary = this.setDef.scoring === 'binary';
     const score = isBinary
-      ? (pickedTaxon.order === correct.taxon.order ? 100 : 0)
+      ? (getBugs101Name(pickedTaxon) === getBugs101Name(correct.taxon) ? 100 : 0)
       : calculateScore(pickedTaxon, correct.taxon);
     this.totalScore += score;
     this.questionsAnswered++;

@@ -3,7 +3,7 @@
  * Supports three modes: classic (10 rounds), time_trial (60s), streak (until wrong).
  */
 
-import { SessionState, calculateTimedScore } from './game-engine.js';
+import { SessionState, calculateTimedScore, getBugs101Name } from './game-engine.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
@@ -46,51 +46,7 @@ function tweenCounter(el, target, duration = 500, suffix = '') {
   requestAnimationFrame(step);
 }
 
-// Bugs 101 display name logic
-const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
-const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
-const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
-const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
-const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
-const CICADA_FAMILIES = ['Cicadidae'];
-const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
-const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
-const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
-const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
-
-function getBugs101Name(taxon) {
-  if (taxon.order === 'Hymenoptera') {
-    if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
-    if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
-    return 'Wasp';
-  }
-  if (taxon.order === 'Lepidoptera') {
-    return BUTTERFLY_FAMILIES.includes(taxon.family) ? 'Butterfly' : 'Moth';
-  }
-  if (taxon.order === 'Orthoptera') {
-    if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
-    return 'Grasshopper';
-  }
-  if (taxon.order === 'Odonata') {
-    return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
-  }
-  if (taxon.order === 'Hemiptera') {
-    if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
-    if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
-    if (PLANTHOPPER_FAMILIES.includes(taxon.family)) return 'Planthopper';
-    if (APHID_FAMILIES.includes(taxon.family)) return 'Aphid';
-    if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
-    return 'True Bug';
-  }
-  const names = {
-    'Coleoptera': 'Beetle', 'Ixodida': 'Tick', 'Araneae': 'Spider',
-    'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman', 'Mantodea': 'Mantis',
-    'Diptera': 'Fly', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
-    'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
-    'Trichoptera': 'Caddisfly',
-  };
-  return names[taxon.order] || taxon.order_common || taxon.order;
-}
+// getBugs101Name is imported from game-engine.js
 
 const base = window.__BASE || '';
 
@@ -535,8 +491,8 @@ function handleAnswer(picked, choices, choiceEls) {
   choices.forEach((choice, i) => {
     const el = choiceEls[i];
     if (isBugs101) {
-      if (choice.taxon.order === correct.taxon.order) el.classList.add('correct');
-      else if (choice.taxon.order === picked.taxon.order) el.classList.add('miss');
+      if (getBugs101Name(choice.taxon) === getBugs101Name(correct.taxon)) el.classList.add('correct');
+      else if (getBugs101Name(choice.taxon) === getBugs101Name(picked.taxon)) el.classList.add('miss');
     } else {
       if (choice.taxon.species === correct.taxon.species) {
         el.classList.add('correct');
