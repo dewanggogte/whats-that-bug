@@ -108,106 +108,74 @@ function sfxNoise(ctx, d, g0, g1, t, freq, ftype) { playNoise(getSfxOut(), ctx, 
 
 // ===== Sound Effects =====
 
-/** Celebratory chime — correct answer. Bright Bell with decaying overtones. */
+/** Celebratory chime — correct answer. Double Ping. */
 export function playCorrect() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 1047, 1047, 0.2, 0.01, t, 0.25);
-  sfxNote(ctx, 'sine', 2094, 2094, 0.07, 0.001, t, 0.15);
-  sfxNote(ctx, 'sine', 3141, 3141, 0.03, 0.001, t, 0.08);
+  sfxNote(ctx, 'sine', 1397, 1397, 0.18, 0.01, t, 0.06);
+  sfxNote(ctx, 'sine', 1760, 1760, 0.18, 0.01, t + 0.08, 0.08);
 }
 
-/** Feedback tone — wrong answer. Gavel Strike: two descending tones into a heavy thud. */
+/** Feedback tone — wrong answer. Wobble Down. */
 export function playWrong() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 550, 450, 0.18, 0.01, t, 0.09);
-  sfxNote(ctx, 'sine', 400, 280, 0.18, 0.01, t + 0.08, 0.12);
-  sfxNote(ctx, 'sine', 60, 30, 0.3, 0.001, t + 0.18, 0.15);
-  sfxNoise(ctx, 0.04, 0.06, 0.001, t + 0.18, 500, 'lowpass');
+  sfxNote(ctx, 'sine', 500, 250, 0.15, 0.01, t, 0.3);
+  sfxNote(ctx, 'triangle', 504, 248, 0.06, 0.001, t, 0.3);
+  sfxNote(ctx, 'sine', 496, 252, 0.06, 0.001, t, 0.3);
 }
 
-/** Sparkle flourish — perfect score (100 pts). Sparkle Cascade at 70ms spacing. */
+/** Sparkle flourish — perfect score (100 pts). Disabled. */
 export function playPerfect() {
-  if (muted) return;
-  const ctx = getCtx(); const t = ctx.currentTime;
-  const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];
-  freqs.forEach((f, i) => {
-    sfxNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.07, 0.14);
-  });
 }
 
-/** Clock tick — timer warning. Wood Block tap. */
+/** Clock tick — timer warning. Wood Block tap (boosted). */
 export function playTick() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'triangle', 800, 200, 0.15, 0.001, t, 0.025);
-  sfxNote(ctx, 'sine', 400, 100, 0.05, 0.001, t, 0.03);
+  sfxNote(ctx, 'triangle', 800, 200, 0.35, 0.001, t, 0.025);
+  sfxNote(ctx, 'sine', 400, 100, 0.12, 0.001, t, 0.03);
 }
 
-/** Time's up — timer reached zero. Triple descending beep. */
+/** Time's up — timer reached zero. Flatline Tone. */
 export function playTimesUp() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 660, 660, 0.15, 0.01, t, 0.08);
-  sfxNote(ctx, 'sine', 550, 550, 0.15, 0.01, t + 0.12, 0.08);
-  sfxNote(ctx, 'sine', 440, 440, 0.18, 0.01, t + 0.24, 0.15);
+  sfxNote(ctx, 'sine', 440, 440, 0.18, 0.001, t, 0.5);
 }
 
-/** Streak milestone — Octave Jump. */
+/** Streak milestone. Disabled. */
 export function playStreakMilestone(streak) {
-  if (muted) return;
-  const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'triangle', 440, 440, 0.2, 0.01, t, 0.1);
-  sfxNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t + 0.1, 0.1);
-  sfxNote(ctx, 'triangle', 1760, 1760, 0.25, 0.01, t + 0.2, 0.15);
 }
 
-/** Short fanfare — session end. Resolution Chord (C4+E4+G4+C5). */
+/** Short fanfare — session end. Music Box. */
 export function playSessionEnd() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  [262, 330, 392, 523].forEach((f, i) => {
-    sfxNote(ctx, i % 2 === 0 ? 'sine' : 'triangle', f, f, 0.15, 0.01, t, 0.5);
+  const notes = [784, 659, 523, 392];
+  notes.forEach((f, i) => {
+    sfxNote(ctx, 'sine', f, f, 0.15, 0.01, t + i * 0.12, 0.2);
+    sfxNote(ctx, 'sine', f * 2, f * 2, 0.03, 0.001, t + i * 0.12, 0.1);
   });
 }
 
-/** Game start signal — Cinematic Rise. Sweeping tension into impact chord. */
+/** Game start signal. Disabled. */
 export function playGameStart() {
-  if (muted) return;
-  const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 100, 800, 0.06, 0.15, t, 0.4);
-  sfxNote(ctx, 'triangle', 200, 1600, 0.03, 0.08, t, 0.4);
-  [262, 330, 392, 523].forEach(f => {
-    sfxNote(ctx, 'triangle', f, f, 0.2, 0.01, t + 0.4, 0.3);
-  });
-  sfxNote(ctx, 'sine', 130, 50, 0.2, 0.001, t + 0.4, 0.2);
 }
 
-/** UI interaction click — Soft Tap. */
+/** UI interaction click — Soft Tap (boosted). */
 export function playUIClick() {
   if (muted) return;
   const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 3000, 1000, 0.06, 0.001, t, 0.015);
+  sfxNote(ctx, 'sine', 3000, 1000, 0.15, 0.001, t, 0.015);
 }
 
-/** Question transition — Single Chime. */
+/** Question transition. Disabled. */
 export function playTransition() {
-  if (muted) return;
-  const ctx = getCtx(); const t = ctx.currentTime;
-  sfxNote(ctx, 'sine', 1047, 1047, 0.1, 0.001, t, 0.12);
-  sfxNote(ctx, 'sine', 2094, 2094, 0.03, 0.001, t, 0.08);
 }
 
-/** Streak broken — Crumble. Descending granular breakdown. */
+/** Streak broken. Disabled. */
 export function playStreakBreak() {
-  if (muted) return;
-  const ctx = getCtx(); const t = ctx.currentTime;
-  const steps = [700, 550, 400, 280, 180];
-  steps.forEach((f, i) => {
-    sfxNote(ctx, 'sine', f, f * 0.8, 0.1, 0.001, t + i * 0.06, 0.08);
-    sfxNoise(ctx, 0.03, 0.03, 0.001, t + i * 0.06, f * 2, 'bandpass');
-  });
 }
 
 // ========== BACKGROUND MUSIC ==========
