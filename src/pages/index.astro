@@ -211,7 +211,9 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
 
 <script>
   import { runOnboarding } from '../scripts/onboarding.js';
+  import { maybeShowSupportPrompt } from '../scripts/support-prompt.js';
   runOnboarding();
+  maybeShowSupportPrompt();
 </script>
 
 <script>
