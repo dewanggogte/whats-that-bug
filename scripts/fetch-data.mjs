@@ -373,20 +373,15 @@ function buildSets(observations, taxa) {
     .map((obs, i) => fn(obs) ? i : -1)
     .filter(i => i !== -1);
 
-  const BUGS_101_PER_ORDER = 10;
-  const bugs101ByOrder = new Map();
-  for (let i = 0; i < observations.length; i++) {
-    const order = observations[i].taxon.order;
-    if (!bugs101ByOrder.has(order)) bugs101ByOrder.set(order, []);
-    const arr = bugs101ByOrder.get(order);
-    if (arr.length < BUGS_101_PER_ORDER) arr.push(i);
-  }
+  // Bugs 101 uses the full observation pool — same images as All Bugs,
+  // but players identify by common category (Butterfly, Ladybug, etc.)
+  // instead of exact species.
   sets.bugs_101 = {
     name: 'Bugs 101',
     description: "Identify bugs by type — beetle, spider, butterfly, and more.",
     difficulty: 'beginner',
     scoring: 'binary',
-    observation_ids: [...bugs101ByOrder.values()].flat(),
+    observation_ids: observations.map((_, i) => i),
   };
 
   sets.all_bugs = {
