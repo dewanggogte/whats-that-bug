@@ -369,9 +369,25 @@ function validateDistractors(observations, index) {
 
 function buildSets(observations, taxa) {
   const sets = {};
+
+  // Load blocklist — individual observations flagged for removal via review
+  const blocklistPath = join(DATA_DIR, 'blocklist.json');
+  let blockedIds = new Set();
+  if (existsSync(blocklistPath)) {
+    try {
+      const blocklist = JSON.parse(readFileSync(blocklistPath, 'utf-8'));
+      blockedIds = new Set(blocklist.map(b => b.observation_id));
+      if (blockedIds.size > 0) {
+        console.log(`  Blocklist: ${blockedIds.size} observations excluded`);
+      }
+    } catch (e) {
+      console.warn(`  Warning: could not read blocklist.json: ${e.message}`);
+    }
+  }
+
   const indicesWhere = (fn) => observations
     .map((obs, i) => fn(obs) ? i : -1)
-    .filter(i => i !== -1);
+    .filter(i => i !== -1 && !blockedIds.has(observations[i].id));
 
   // Exclude ick-inducing orders (keep scorpions — they're cool)
   const EXCLUDED_ORDERS = new Set([
@@ -383,6 +399,7 @@ function buildSets(observations, taxa) {
   const mainPool = observations
     .map((obs, i) => ({ obs, i }))
     .filter(({ obs }) => !EXCLUDED_ORDERS.has(obs.taxon.order))
+    .filter(({ obs }) => !blockedIds.has(obs.id))
     .map(({ i }) => i);
 
   sets.bugs_101 = {
@@ -404,11 +421,14 @@ function buildSets(observations, taxa) {
   // Top ~100 most common species, with up to 3 observations each for photo variety
   const BACKYARD_SPECIES_COUNT = 100;
   const BACKYARD_OBS_PER_SPECIES = 3;
-  const withCounts = observations.map((obs, i) => ({
-    index: i,
-    species: obs.taxon.species,
-    count: taxa.get(obs.taxon.id)?.observations_count || 0,
-  }));
+  const withCounts = observations
+    .map((obs, i) => ({
+      index: i,
+      species: obs.taxon.species,
+      count: taxa.get(obs.taxon.id)?.observations_count || 0,
+      blocked: blockedIds.has(obs.id),
+    }))
+    .filter(e => !e.blocked);
   withCounts.sort((a, b) => b.count - a.count);
   const backyardSpeciesSeen = new Set();
   const backyardTopSpecies = [];

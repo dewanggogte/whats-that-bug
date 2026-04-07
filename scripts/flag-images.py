@@ -42,7 +42,11 @@ def load_csv(path):
             # Try to parse data_json if present
             data_json_raw = r.get('data_json', '')
             try:
-                r['_data'] = json.loads(data_json_raw) if data_json_raw else {}
+                parsed = json.loads(data_json_raw) if data_json_raw else {}
+                # Unwrap single-element arrays (rare data quirk)
+                if isinstance(parsed, list):
+                    parsed = parsed[0] if len(parsed) == 1 and isinstance(parsed[0], dict) else {}
+                r['_data'] = parsed
             except Exception:
                 r['_data'] = {}
             rows.append(r)
