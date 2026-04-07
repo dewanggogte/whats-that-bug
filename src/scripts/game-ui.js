@@ -204,17 +204,39 @@ export async function initGame() {
   prefetchedLeaderboards = null;
   preloadRounds();
 
-  // Show rules popup, then start game
-  showRulesPopup(() => {
+  // Show rules popup once per day, then start game
+  const startGame = () => {
     if (session.mode === 'time_trial') {
       startTimeTrial();
     } else {
       startRound();
     }
-  });
+  };
+
+  if (hasSeenRulesToday()) {
+    startGame();
+  } else {
+    showRulesPopup(startGame);
+  }
 }
 
 // ===== RULES POPUP =====
+
+const RULES_SEEN_KEY = 'wtb_rules_seen_date';
+
+function hasSeenRulesToday() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    return localStorage.getItem(RULES_SEEN_KEY) === today;
+  } catch { return false; }
+}
+
+function markRulesSeenToday() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(RULES_SEEN_KEY, today);
+  } catch {}
+}
 
 function getRulesContent() {
   const mode = session.mode;
@@ -287,6 +309,7 @@ function showRulesPopup(onDismiss) {
   const dismiss = () => {
     if (overlay.parentNode) {
       overlay.remove();
+      markRulesSeenToday();
       onDismiss();
     }
   };

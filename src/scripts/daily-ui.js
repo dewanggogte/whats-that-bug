@@ -132,13 +132,33 @@ export async function initDaily() {
       .sort((a, b) => a.common.localeCompare(b.common));
   }
 
-  // Show rules popup, then start game on dismiss
-  showDailyRulesPopup(() => {
+  // Show rules popup once per day, then start game
+  if (hasSeenDailyRulesToday()) {
     renderGame();
-  });
+  } else {
+    showDailyRulesPopup(() => {
+      renderGame();
+    });
+  }
 }
 
 // ===== RULES POPUP =====
+
+const DAILY_RULES_SEEN_KEY = 'wtb_daily_rules_seen_date';
+
+function hasSeenDailyRulesToday() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    return localStorage.getItem(DAILY_RULES_SEEN_KEY) === today;
+  } catch { return false; }
+}
+
+function markDailyRulesSeenToday() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(DAILY_RULES_SEEN_KEY, today);
+  } catch {}
+}
 
 function showDailyRulesPopup(onDismiss) {
   const modeLabel = mode === 'bugs101' ? 'Bugs 101 Daily' : 'All Bugs Daily';
@@ -169,6 +189,7 @@ function showDailyRulesPopup(onDismiss) {
   const dismiss = () => {
     if (overlay.parentNode) {
       overlay.remove();
+      markDailyRulesSeenToday();
       onDismiss();
     }
   };

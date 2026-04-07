@@ -48,10 +48,6 @@ function createSupportModal() {
       <p class="onboarding-detail">
         Help me maintain and keep this site ad-free, your contributions directly help me continue to work on this.
       </p>
-      <p class="support-new-badge">
-        <strong>NEW:</strong> All donations over $10 unlock an exclusive badge and future perks!
-        You'll receive a code via email 1–3 days after donating.
-      </p>
       <a href="${SUPPORT_URL}" target="_blank" rel="noopener noreferrer"
          class="btn btn-primary onboarding-cta support-cta">
         <svg class="support-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
