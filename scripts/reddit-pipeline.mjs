@@ -12,6 +12,7 @@ const CACHE_DIR = join(ROOT, '.cache');
 const STATE_FILE = join(CACHE_DIR, 'reddit-pipeline-state.json');
 const POSTS_DIR = join(__dirname, 'reddit-posts');
 const OBS_FILE = join(ROOT, 'public', 'data', 'observations.json');
+const POSTED_PHOTOS_FILE = join(CACHE_DIR, 'reddit-posted-photos.json');
 
 const API_BASE = 'https://api.inaturalist.org/v1';
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -124,6 +125,33 @@ function saveState(state) {
   writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
+// ---- Posted photos tracking (persists across pipeline resets) ----
+function loadPostedPhotos() {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  if (existsSync(POSTED_PHOTOS_FILE)) {
+    return JSON.parse(readFileSync(POSTED_PHOTOS_FILE, 'utf-8'));
+  }
+  return {}; // { obsId: { count, subreddits: ["r/spiders", ...], lastPosted: "..." } }
+}
+
+function savePostedPhotos(postedPhotos) {
+  writeFileSync(POSTED_PHOTOS_FILE, JSON.stringify(postedPhotos, null, 2));
+}
+
+function recordPostedPhotos(subredditId, observationIds) {
+  const postedPhotos = loadPostedPhotos();
+  for (const obsId of observationIds) {
+    const key = String(obsId);
+    if (!postedPhotos[key]) {
+      postedPhotos[key] = { count: 0, subreddits: [], lastPosted: null };
+    }
+    postedPhotos[key].count++;
+    postedPhotos[key].subreddits.push(`r/${subredditId}`);
+    postedPhotos[key].lastPosted = new Date().toISOString();
+  }
+  savePostedPhotos(postedPhotos);
+}
+
 // ---- CLI helpers ----
 function ask(question) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -173,11 +201,22 @@ async function apiFetch(endpoint, params = {}) {
   for (const [key, val] of Object.entries(params)) {
     url.searchParams.set(key, String(val));
   }
-  const res = await fetch(url.toString(), {
-    headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project; reddit pipeline)' },
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
-  return res.json();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url.toString(), {
+        headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project; reddit pipeline)' },
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
+      return res.json();
+    } catch (e) {
+      if (attempt < 3) {
+        warn(`  Fetch failed (attempt ${attempt}/3): ${e.message}. Retrying in 3s...`);
+        await sleep(3000);
+      } else {
+        throw e;
+      }
+    }
+  }
 }
 
 async function fetchTopObservations(taxonId, perPage, excludeSubtaxon) {
@@ -244,6 +283,9 @@ async function stageFetch(state) {
   heading('Stage 1: Fetch Candidates');
 
   const seenIds = new Set();
+  const postedPhotos = loadPostedPhotos();
+  const previouslyPostedIds = new Set(Object.keys(postedPhotos));
+
   for (const subId of state.targets) {
     const sub = SUBREDDITS.find(s => s.id === subId);
     if (!sub) continue;
@@ -261,12 +303,16 @@ async function stageFetch(state) {
       candidates = candidates.concat(obs);
     }
 
-    // Dedup
+    // Dedup + filter out previously posted photos
+    let skippedPosted = 0;
     candidates = candidates.filter(c => {
       if (seenIds.has(c.id)) return false;
+      if (previouslyPostedIds.has(String(c.id))) { skippedPosted++; return false; }
       seenIds.add(c.id);
       return true;
     });
+
+    if (skippedPosted > 0) log(`  Filtered out ${skippedPosted} previously posted photos`);
 
     state.candidates[subId] = candidates;
     success(`${sub.name}: ${candidates.length} candidates`);
@@ -375,7 +421,7 @@ function generatePostBody(sub, selectedObs) {
     .filter((v, i, a) => a.indexOf(v) === i) // unique
     .join(', ');
 
-  const gameUrl = 'https://whats-that-bug.vercel.app';
+  const gameUrl = 'https://dewanggogte.com/games/bugs/';
   const label = sub.categoryLabel;
 
   let body;
@@ -667,6 +713,7 @@ async function stagePost(state) {
         log('Submitting gallery post...');
         const url = await submitGalleryPost(token, subId, post.title, post.body, assetIds, post.captions, userAgent);
         state.posted[subId] = { url, timestamp: new Date().toISOString(), method: 'api' };
+        recordPostedPhotos(subId, post.images.map(img => img.obs_id));
         saveState(state);
         success(`Posted! ${url}`);
       } catch (e) {
@@ -695,6 +742,7 @@ async function stagePost(state) {
       const done = await ask('  Mark as posted? (y/N): ');
       if (done.toLowerCase() === 'y') {
         state.posted[subId] = { timestamp: new Date().toISOString(), method: 'manual' };
+        recordPostedPhotos(subId, post.images.map(img => img.obs_id));
         saveState(state);
         success('Marked as posted!');
       }
