@@ -493,6 +493,7 @@ function renderRound() {
 }
 
 function handleAnswer(picked, choices, choiceEls) {
+  playUIClick();
   // preloadRounds() calls nextRound() which overwrites _currentCorrect — reset to the displayed round
   session._currentCorrect = currentRound.correct;
   const timeTaken = Date.now() - roundStartTime;

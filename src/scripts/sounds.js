@@ -9,17 +9,12 @@ const MUTE_KEY = 'wtb_muted';
 let audioCtx = null;
 let muted = localStorage.getItem(MUTE_KEY) === 'true';
 
-/** Returns the shared AudioContext, creating it lazily on first use. */
 function getCtx() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-export function isMuted() {
-  return muted;
-}
+export function isMuted() { return muted; }
 
 export function toggleMute() {
   muted = !muted;
@@ -27,125 +22,150 @@ export function toggleMute() {
   return muted;
 }
 
-/**
- * Plays a single oscillator note.
- * @param {AudioContext} ctx
- * @param {string} type - OscillatorType ('sine', 'square', 'triangle', 'sawtooth')
- * @param {number} freqStart - Starting frequency in Hz
- * @param {number} freqEnd   - Ending frequency in Hz (exponential ramp)
- * @param {number} gainStart - Starting gain
- * @param {number} gainEnd   - Ending gain (exponential ramp)
- * @param {number} startTime - AudioContext time to start
- * @param {number} duration  - Duration in seconds
- */
 function playNote(ctx, type, freqStart, freqEnd, gainStart, gainEnd, startTime, duration) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
+  osc.connect(gain); gain.connect(ctx.destination);
   osc.type = type;
   osc.frequency.setValueAtTime(freqStart, startTime);
-  if (freqEnd !== freqStart) {
-    osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
-  }
-
+  if (freqEnd !== freqStart) osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
   gain.gain.setValueAtTime(gainStart, startTime);
-  gain.gain.exponentialRampToValueAtTime(gainEnd, startTime + duration);
-
-  osc.start(startTime);
-  osc.stop(startTime + duration);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  osc.start(startTime); osc.stop(startTime + duration);
 }
 
-/** Celebratory chime — correct answer. Major third chord (C6 + E6) with upward sweep. */
+function playNoise(ctx, duration, gainStart, gainEnd, startTime, filterFreq, filterType) {
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(gainStart, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  if (filterFreq) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType || 'lowpass';
+    filter.frequency.value = filterFreq;
+    source.connect(filter); filter.connect(gain);
+  } else { source.connect(gain); }
+  gain.connect(ctx.destination);
+  source.start(startTime); source.stop(startTime + duration);
+}
+
+/** Celebratory chime — correct answer. Bright Bell with decaying overtones. */
 export function playCorrect() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  // Root note — quick upward sweep
-  playNote(ctx, 'sine', 1047, 1320, 0.2, 0.01, t, 0.18);
-  // Major third — adds warmth
-  playNote(ctx, 'sine', 1318, 1568, 0.15, 0.01, t + 0.03, 0.18);
+  playNote(ctx, 'sine', 1047, 1047, 0.2, 0.01, t, 0.25);
+  playNote(ctx, 'sine', 2094, 2094, 0.07, 0.001, t, 0.15);
+  playNote(ctx, 'sine', 3141, 3141, 0.03, 0.001, t, 0.08);
 }
 
-/** Soft descending tone — wrong answer. */
+/** Feedback tone — wrong answer. Gavel Strike: two descending tones into a heavy thud. */
 export function playWrong() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  playNote(ctx, 'sine', 440, 330, 0.15, 0.01, t, 0.25);
+  playNote(ctx, 'sine', 550, 450, 0.18, 0.01, t, 0.09);
+  playNote(ctx, 'sine', 400, 280, 0.18, 0.01, t + 0.08, 0.12);
+  playNote(ctx, 'sine', 60, 30, 0.3, 0.001, t + 0.18, 0.15);
+  playNoise(ctx, 0.04, 0.06, 0.001, t + 0.18, 500, 'lowpass');
 }
 
-/**
- * Sparkle flourish — perfect score (100 pts).
- * Three-note ascending major arpeggio (C6-E6-G6) with harmonic shimmer.
- */
+/** Sparkle flourish — perfect score (100 pts). Sparkle Cascade at 70ms spacing. */
 export function playPerfect() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  // C6 — root
-  playNote(ctx, 'sine', 1047, 1100, 0.22, 0.01, t, 0.15);
-  // E6 — major third
-  playNote(ctx, 'sine', 1318, 1400, 0.22, 0.01, t + 0.07, 0.15);
-  // G6 — fifth, with shimmer (triangle adds sparkle)
-  playNote(ctx, 'triangle', 1568, 1700, 0.18, 0.01, t + 0.14, 0.22);
-  // High octave shimmer — very soft
-  playNote(ctx, 'sine', 2093, 2200, 0.08, 0.01, t + 0.18, 0.2);
+  const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];
+  freqs.forEach((f, i) => {
+    playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.07, 0.14);
+  });
+}
+
+/** Clock tick — timer warning. Wood Block tap. */
+export function playTick() {
+  if (muted) return;
+  const ctx = getCtx();
+  const t = ctx.currentTime;
+  playNote(ctx, 'triangle', 800, 200, 0.15, 0.001, t, 0.025);
+  playNote(ctx, 'sine', 400, 100, 0.05, 0.001, t, 0.03);
+}
+
+/** Time's up — timer reached zero. Triple descending beep. */
+export function playTimesUp() {
+  if (muted) return;
+  const ctx = getCtx();
+  const t = ctx.currentTime;
+  playNote(ctx, 'sine', 660, 660, 0.15, 0.01, t, 0.08);
+  playNote(ctx, 'sine', 550, 550, 0.15, 0.01, t + 0.12, 0.08);
+  playNote(ctx, 'sine', 440, 440, 0.18, 0.01, t + 0.24, 0.15);
 }
 
 /**
- * 3-note ascending chime — streak milestone.
- * Base frequency rises with streak count (every 5 streaks = higher pitch).
+ * Streak milestone — Octave Jump.
  * @param {number} streak - Current streak count
  */
 export function playStreakMilestone(streak) {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-
-  // Base rises by 50 Hz for every 5-streak increment, capped at a reasonable ceiling
-  const level = Math.min(Math.floor(streak / 5) - 1, 6);
-  const base = 523 + level * 50; // C5 = 523 Hz, rising with level
-
-  playNote(ctx, 'sine', base, base * 1.05, 0.25, 0.01, t, 0.15);
-  playNote(ctx, 'sine', base * 1.25, base * 1.3, 0.25, 0.01, t + 0.12, 0.15);
-  playNote(ctx, 'sine', base * 1.5, base * 1.6, 0.3, 0.01, t + 0.24, 0.2);
+  playNote(ctx, 'triangle', 440, 440, 0.2, 0.01, t, 0.1);
+  playNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t + 0.1, 0.1);
+  playNote(ctx, 'triangle', 1760, 1760, 0.25, 0.01, t + 0.2, 0.15);
 }
 
-/**
- * Short fanfare — session end (classic and time trial wins).
- * C5-E5-G5 (523, 659, 784 Hz) in triangle wave, staggered 150ms each.
- */
+/** Short fanfare — session end. Resolution Chord (C4+E4+G4+C5). */
 export function playSessionEnd() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  playNote(ctx, 'triangle', 523, 523, 0.25, 0.01, t, 0.2);
-  playNote(ctx, 'triangle', 659, 659, 0.25, 0.01, t + 0.15, 0.2);
-  playNote(ctx, 'triangle', 784, 784, 0.3, 0.01, t + 0.3, 0.3);
+  [262, 330, 392, 523].forEach((f, i) => {
+    playNote(ctx, i % 2 === 0 ? 'sine' : 'triangle', f, f, 0.15, 0.01, t, 0.5);
+  });
 }
 
-/**
- * Clock tick — timer warning (fires every second when timeRemaining <= 10).
- * Sharp click/pop using a noise burst, like a mechanical clock.
- */
-export function playTick() {
+/** Game start signal — Cinematic Rise. Sweeping tension into impact chord. */
+export function playGameStart() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
+  playNote(ctx, 'sine', 100, 800, 0.06, 0.15, t, 0.4);
+  playNote(ctx, 'triangle', 200, 1600, 0.03, 0.08, t, 0.4);
+  [262, 330, 392, 523].forEach(f => {
+    playNote(ctx, 'triangle', f, f, 0.2, 0.01, t + 0.4, 0.3);
+  });
+  playNote(ctx, 'sine', 130, 50, 0.2, 0.001, t + 0.4, 0.2);
+}
 
-  // Sharp attack click — high frequency burst that drops fast
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'square';
-  // Start high and drop sharply — creates a "click" rather than a "beep"
-  osc.frequency.setValueAtTime(1800, t);
-  osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);
-  gain.gain.setValueAtTime(0.12, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-  osc.start(t);
-  osc.stop(t + 0.03);
+/** UI interaction click — Soft Tap. */
+export function playUIClick() {
+  if (muted) return;
+  const ctx = getCtx();
+  const t = ctx.currentTime;
+  playNote(ctx, 'sine', 3000, 1000, 0.06, 0.001, t, 0.015);
+}
+
+/** Question transition — Single Chime. */
+export function playTransition() {
+  if (muted) return;
+  const ctx = getCtx();
+  const t = ctx.currentTime;
+  playNote(ctx, 'sine', 1047, 1047, 0.1, 0.001, t, 0.12);
+  playNote(ctx, 'sine', 2094, 2094, 0.03, 0.001, t, 0.08);
+}
+
+/** Streak broken — Crumble. Descending granular breakdown. */
+export function playStreakBreak() {
+  if (muted) return;
+  const ctx = getCtx();
+  const t = ctx.currentTime;
+  const steps = [700, 550, 400, 280, 180];
+  steps.forEach((f, i) => {
+    playNote(ctx, 'sine', f, f * 0.8, 0.1, 0.001, t + i * 0.06, 0.08);
+    playNoise(ctx, 0.03, 0.03, 0.001, t + i * 0.06, f * 2, 'bandpass');
+  });
 }

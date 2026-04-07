@@ -14,6 +14,7 @@ import {
 } from './daily-engine.js';
 import { generateDailyShareText, getDailyFlavor } from './daily-share.js';
 import { copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
+import { playCorrect, playWrong, playUIClick } from './sounds.js';
 import { logDailyStart, logDailyGuess, logDailyComplete } from './feedback.js';
 
 const base = window.__BASE || '';
@@ -454,6 +455,7 @@ function setupSubmit() {
 
 function submitGuess() {
   if (!selectedAnswer || gameOver) return;
+  playUIClick();
 
   const answer = getAnswer();
   const result = validateGuess(selectedAnswer, answer);
@@ -462,10 +464,12 @@ function submitGuess() {
   logDailyGuess(sessionId, guesses.length, selectedAnswer, result.correct, mode, today);
 
   if (result.correct) {
+    playCorrect();
     solved = true;
     gameOver = true;
     finishGame();
   } else {
+    playWrong();
     currentGuess++;
     if (currentGuess >= maxGuesses) {
       // Out of guesses
