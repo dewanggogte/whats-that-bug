@@ -167,10 +167,129 @@ async function stageConfig(state) {
   success(`Targeting ${state.targets.length} subreddits: ${state.targets.map(id => 'r/' + id).join(', ')}`);
 }
 
-// ---- Stage 1: Fetch (placeholder — Task 2) ----
+// ---- Fetch helpers ----
+async function apiFetch(endpoint, params = {}) {
+  const url = new URL(`${API_BASE}${endpoint}`);
+  for (const [key, val] of Object.entries(params)) {
+    url.searchParams.set(key, String(val));
+  }
+  const res = await fetch(url.toString(), {
+    headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project; reddit pipeline)' },
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
+  return res.json();
+}
+
+async function fetchTopObservations(taxonId, perPage, excludeSubtaxon) {
+  log(`  Fetching taxon ${taxonId} (top ${perPage} by faves)...`);
+  const params = {
+    taxon_id: taxonId,
+    quality_grade: 'research',
+    photo_license: 'cc-by,cc-by-sa,cc0',
+    photos: 'true',
+    per_page: perPage,
+    order_by: 'votes',
+  };
+  const data = await apiFetch('/observations', params);
+  await sleep(1100);
+
+  return (data.results || [])
+    .filter(obs => {
+      if (!obs.taxon?.preferred_common_name) return false;
+      if (!obs.photos?.[0]) return false;
+      if (excludeSubtaxon && (obs.taxon.ancestor_ids || []).includes(excludeSubtaxon)) return false;
+      return true;
+    })
+    .map(obs => ({
+      id: obs.id,
+      photo_url: obs.photos[0].url?.replace('square', 'medium'),
+      photo_url_large: obs.photos[0].url?.replace('square', 'large'),
+      photo_url_original: obs.photos[0].url?.replace('square', 'original'),
+      attribution: obs.photos[0].attribution || '(c) Unknown',
+      faves_count: obs.faves_count || 0,
+      taxon: {
+        id: obs.taxon.id,
+        species: obs.taxon.name,
+        common_name: obs.taxon.preferred_common_name,
+      },
+      inat_url: obs.uri || `https://www.inaturalist.org/observations/${obs.id}`,
+    }));
+}
+
+function scanExistingPool(targetTaxa) {
+  if (!existsSync(OBS_FILE)) return [];
+  const pool = JSON.parse(readFileSync(OBS_FILE, 'utf-8'));
+  return pool
+    .sort((a, b) => (b.num_agreements || 0) - (a.num_agreements || 0))
+    .slice(0, 30)
+    .map(obs => ({
+      id: obs.id,
+      photo_url: obs.photo_url,
+      photo_url_large: obs.photo_url?.replace('/medium.', '/large.'),
+      photo_url_original: obs.photo_url?.replace('/medium.', '/original.'),
+      attribution: obs.attribution || '(c) Unknown',
+      faves_count: 0,
+      taxon: {
+        id: obs.taxon?.id,
+        species: obs.taxon?.species,
+        common_name: obs.taxon?.common_name,
+      },
+      inat_url: obs.inat_url || `https://www.inaturalist.org/observations/${obs.id}`,
+      fromExistingPool: true,
+    }));
+}
+
+// ---- Stage 1: Fetch ----
 async function stageFetch(state) {
   heading('Stage 1: Fetch Candidates');
-  log('Not yet implemented');
+
+  const seenIds = new Set();
+  for (const subId of state.targets) {
+    const sub = SUBREDDITS.find(s => s.id === subId);
+    if (!sub) continue;
+
+    if (state.candidates[subId]?.length > 0) {
+      log(`${sub.name}: already have ${state.candidates[subId].length} candidates, skipping`);
+      continue;
+    }
+
+    log(`${sub.name}: fetching from iNaturalist...`);
+    let candidates = [];
+
+    for (const taxon of sub.taxa) {
+      const obs = await fetchTopObservations(taxon.taxon_id, taxon.per_page, taxon.excludeSubtaxon);
+      candidates = candidates.concat(obs);
+    }
+
+    // Dedup
+    candidates = candidates.filter(c => {
+      if (seenIds.has(c.id)) return false;
+      seenIds.add(c.id);
+      return true;
+    });
+
+    state.candidates[subId] = candidates;
+    success(`${sub.name}: ${candidates.length} candidates`);
+    saveState(state);
+  }
+
+  // Also scan existing pool for broad subs
+  const broadSubs = ['NatureIsFuckingLit', 'entomology', 'insects', 'awwnverts'];
+  for (const subId of state.targets.filter(id => broadSubs.includes(id))) {
+    const sub = SUBREDDITS.find(s => s.id === subId);
+    const poolObs = scanExistingPool(sub.taxa)
+      .filter(c => !seenIds.has(c.id));
+    if (poolObs.length > 0) {
+      state.candidates[subId] = [...(state.candidates[subId] || []), ...poolObs];
+      poolObs.forEach(c => seenIds.add(c.id));
+      log(`${sub.name}: added ${poolObs.length} from existing pool`);
+      saveState(state);
+    }
+  }
+
+  state.stage = 'review';
+  saveState(state);
+  success('Fetch complete!');
 }
 
 // ---- Stage 2: Review (placeholder — Task 3) ----
