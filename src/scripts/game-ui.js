@@ -10,6 +10,12 @@ import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
 import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, isMuted, toggleMute } from './sounds.js';
 
+// Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
+let achievementsModule = null;
+import('./achievements.js')
+  .then(m => { achievementsModule = m; })
+  .catch(() => { /* achievements.js not available yet — skip */ });
+
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -17,6 +23,27 @@ function escapeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/**
+ * Animate a number from 0 to target over duration ms.
+ * @param {HTMLElement} el — element whose textContent will be updated
+ * @param {number} target — final number
+ * @param {number} duration — animation duration in ms
+ * @param {string} [suffix=''] — text appended after number (e.g., ' / 1000')
+ */
+function tweenCounter(el, target, duration = 500, suffix = '') {
+  if (!el) return;
+  const start = performance.now();
+  function step(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased) + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 // Bugs 101 display name logic
@@ -149,10 +176,11 @@ export async function initGame() {
 
   let observations, taxonomy, sets;
   try {
-    const [obsRes, taxRes, setsRes] = await Promise.all([
+    const [obsRes, taxRes, setsRes, diffRes] = await Promise.all([
       fetch(`${base}/data/observations.json`),
       fetch(`${base}/data/taxonomy.json`),
       fetch(`${base}/data/sets.json`),
+      fetch(`${base}/data/difficulty.json`).catch(() => ({ ok: false })),
     ]);
 
     if (!obsRes.ok || !taxRes.ok || !setsRes.ok) {
@@ -162,6 +190,7 @@ export async function initGame() {
     observations = await obsRes.json();
     taxonomy = await taxRes.json();
     sets = await setsRes.json();
+    var difficulty = diffRes.ok ? await diffRes.json().catch(() => null) : null;
   } catch (err) {
     container.innerHTML = `<div class="container"><p>Failed to load game data. Please refresh the page to try again.</p><p style="color:var(--text-secondary);font-size:13px;">${escapeHTML(err.message)}</p></div>`;
     return;
@@ -176,7 +205,7 @@ export async function initGame() {
     return;
   }
 
-  session = new SessionState(observations, taxonomy, setDef, currentSetKey);
+  session = new SessionState(observations, taxonomy, setDef, currentSetKey, difficulty);
   logSessionStart(session.sessionId, currentSetKey, session.mode);
   sessionEndSent = false;
   shared = false;
@@ -373,18 +402,41 @@ function renderRound() {
       </div>
     `;
   } else {
+    const streakDisplay = session.currentStreak > 1
+      ? `<span style="color:var(--success);font-weight:600;font-size:0.85rem;margin-left:4px;">${session.currentStreak} streak</span>`
+      : '';
     topBarHTML = `
       <div class="top-bar">
         <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
-        <span>Round ${displayRound} of 10 · ${session.totalScore} pts</span>
+        <span>Round ${displayRound} of 10 · ${session.totalScore} pts ${streakDisplay}</span>
         <span>${session.setDef.name}</span>
       </div>
     `;
   }
 
+  // Progress bar for classic mode
+  let progressHTML = '';
+  if (mode === 'classic') {
+    const segments = [];
+    for (let i = 0; i < 10; i++) {
+      let cls = 'session-progress-segment';
+      if (i < session.history.length) {
+        const h = session.history[i];
+        if (h.score === 100) cls += ' filled';
+        else if (h.score >= 50) cls += ' filled-close';
+        else cls += ' filled-miss';
+      } else if (i === session.history.length) {
+        cls += ' current';
+      }
+      segments.push(`<div class="${cls}"></div>`);
+    }
+    progressHTML = `<div class="session-progress">${segments.join('')}</div>`;
+  }
+
   container.innerHTML = `
     <div class="container" id="game-screen">
       ${topBarHTML}
+      ${progressHTML}
 
       <div class="photo-hero">
         <img src="${escapeHTML(correct.photo_url)}" alt="Mystery bug" loading="eager">
@@ -397,7 +449,7 @@ function renderRound() {
         <span class="round-prompt-location">${escapeHTML(correct.location)}</span>
       </div>
 
-      <div class="choices" id="choices">
+      <div class="choices stagger-in" id="choices">
         ${choices.map((choice, i) => {
           const isBugs101 = session.setDef.scoring === 'binary';
           const displayName = isBugs101 ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
@@ -487,6 +539,15 @@ function handleAnswer(picked, choices, choiceEls) {
     }
   });
 
+  // Shake photo on wrong answer
+  if (score === 0) {
+    const photoHero = container.querySelector('.photo-hero');
+    if (photoHero) {
+      photoHero.classList.add('anim-shake');
+      setTimeout(() => photoHero.classList.remove('anim-shake'), 350);
+    }
+  }
+
   // Log round
   logRoundComplete(
     session.sessionId, displayRound, correct.id,
@@ -494,10 +555,29 @@ function handleAnswer(picked, choices, choiceEls) {
     score, timeTaken, currentSetKey, session.mode
   );
 
+  // Track unique species for milestone tracking
+  if (score === 100) {
+    try {
+      const seen = JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
+      if (!seen.includes(correct.taxon.species)) {
+        seen.push(correct.taxon.species);
+        localStorage.setItem('wtb_species_seen', JSON.stringify(seen));
+      }
+    } catch { /* localStorage full or unavailable */ }
+  }
+
   // Sound feedback based on score
   if (score === 100) { playPerfect(); }
   else if (score > 0) { playCorrect(); }
   else { playWrong(); }
+
+  // Check for achievements
+  if (achievementsModule) {
+    const newAchievements = achievementsModule.checkRoundAchievements(session, { score, correct });
+    for (const ach of newAchievements) {
+      showAchievementToast(ach);
+    }
+  }
 
   // MODE-SPECIFIC POST-ANSWER FLOW
   if (mode === 'time_trial') {
@@ -521,7 +601,7 @@ function handleTimeTrialPostAnswer(score, timeTaken) {
   const popup = container.querySelector('#score-popup');
   if (popup) {
     popup.textContent = `+${score}`;
-    popup.className = `score-popup visible ${score === 0 ? 'miss' : ''}`;
+    popup.className = `score-popup visible anim-float-up ${score === 0 ? 'miss' : ''}`;
   }
 
   // Update score display
@@ -560,7 +640,11 @@ function handleStreakPostAnswer(score, picked, correct) {
 
     // Update streak display
     const streakEl = container.querySelector('.streak-count');
-    if (streakEl) streakEl.textContent = session.currentStreak;
+    if (streakEl) {
+      streakEl.textContent = session.currentStreak;
+      streakEl.classList.add('anim-scale-bounce');
+      setTimeout(() => streakEl.classList.remove('anim-scale-bounce'), 250);
+    }
 
     if (session.currentStreak > 0 && session.currentStreak % 5 === 0) {
       playStreakMilestone(session.currentStreak);
@@ -616,7 +700,7 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
   const badgeClass = score === 100 ? 'badge-success' : score >= 50 ? 'badge-warning' : 'badge-error';
 
   const feedbackHTML = `
-    <div class="feedback-card ${feedbackClass}" style="margin-top: 16px;">
+    <div class="feedback-card ${feedbackClass} anim-slide-up" style="margin-top: 16px;">
       <div class="feedback-title">${feedbackTitle}</div>
       <div class="feedback-body">
         <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
@@ -736,6 +820,100 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
   }
 }
 
+// ===== ACHIEVEMENT TOAST =====
+
+function showAchievementToast(achievement) {
+  const toast = document.createElement('div');
+  toast.className = 'achievement-toast';
+  toast.innerHTML = `
+    <span class="achievement-toast-icon">${achievement.icon}</span>
+    <div class="achievement-toast-text">
+      <span class="achievement-toast-name">${escapeHTML(achievement.name)}</span>
+      <span class="achievement-toast-desc">${escapeHTML(achievement.description)}</span>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+
+// ===== POST-SESSION HELPERS =====
+
+/**
+ * Generate a recommendation message based on session performance.
+ * Returns { text: string, link: string, linkText: string } or null.
+ */
+function getPostSessionRecommendation(totalScore, setKey, mode) {
+  if (setKey === 'bugs_101' && totalScore >= 800) {
+    return {
+      text: "You're crushing Bugs 101!",
+      link: `${base}/play?set=all_bugs`,
+      linkText: 'Try All Bugs →',
+    };
+  }
+
+  if (mode === 'classic' && totalScore >= 700 && !setKey.includes('time_trial')) {
+    return {
+      text: 'Nice score! Think you can do it under pressure?',
+      link: `${base}/play?set=${setKey.replace('bugs_101', 'bugs_101_time_trial').replace('all_bugs', 'time_trial')}`,
+      linkText: 'Try Time Trial →',
+    };
+  }
+
+  if (mode === 'streak') {
+    const bestKey = `best_${setKey}`;
+    const best = parseInt(localStorage.getItem(bestKey) || '0', 10);
+    if (best > 0) {
+      return {
+        text: `Your best streak: ${best}. Go again?`,
+        link: null,
+        linkText: null,
+      };
+    }
+  }
+
+  if (setKey === 'all_bugs' && totalScore < 400) {
+    return {
+      text: 'Try a themed set to focus on one group.',
+      link: `${base}/`,
+      linkText: 'Browse sets →',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Find the "play of the day" — hardest observation the player got right.
+ * Without difficulty data, picks the last correct answer (later rounds trend harder).
+ */
+function getPlayOfTheDay(history) {
+  const correctRounds = history.filter(h => h.score === 100);
+  if (correctRounds.length === 0) return null;
+  const pick = correctRounds[correctRounds.length - 1];
+  return {
+    common_name: pick.correct_taxon.common_name,
+    species: pick.correct_taxon.species,
+  };
+}
+
+/**
+ * Build recommendation HTML block for summary screens.
+ */
+function renderRecommendation(totalScore, setKey, mode) {
+  const rec = getPostSessionRecommendation(totalScore, setKey, mode);
+  if (!rec) return '';
+  return `
+    <div class="recommendation anim-fade-in" style="text-align:center;margin-top:16px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+      <p style="margin-bottom:8px;color:var(--text-secondary);">${escapeHTML(rec.text)}</p>
+      ${rec.link ? `<a href="${escapeHTML(rec.link)}" class="btn btn-outline" style="font-size:0.9rem;">${escapeHTML(rec.linkText)}</a>` : ''}
+    </div>
+  `;
+}
+
 // ===== SUMMARY SCREENS =====
 
 function renderClassicSummary() {
@@ -751,16 +929,33 @@ function renderClassicSummary() {
     localStorage.setItem(storageKey, session.totalScore.toString());
   }
 
+  const speciesCount = (() => {
+    try { return JSON.parse(localStorage.getItem('wtb_species_seen') || '[]').length; }
+    catch { return 0; }
+  })();
+  const speciesLine = speciesCount > 10 ? `<p class="subtitle" style="font-size:0.8rem;">${speciesCount} species identified so far</p>` : '';
+
+  const potd = getPlayOfTheDay(session.history);
+  const potdHTML = potd ? `
+    <p class="anim-fade-in" style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">
+      Best ID: <strong>${escapeHTML(potd.common_name)}</strong> (<em>${escapeHTML(potd.species)}</em>)
+    </p>
+  ` : '';
+  const recHTML = renderRecommendation(session.totalScore, currentSetKey, session.mode);
+
   container.innerHTML = `
     <div class="container">
       <div class="summary">
         <h1>🪲 What's That Bug?</h1>
         <div class="summary-score">${session.totalScore} / 1000</div>
         <div class="summary-breakdown">${exactCount} exact · ${closeCount} close · ${missCount} misses</div>
-        <div class="emoji-grid">${session.history.map(h =>
-          h.score === 100 ? '🟩' : h.score >= 50 ? '🟨' : '🟥'
-        ).join('')}</div>
+        <div class="emoji-grid emoji-stagger">${session.history.map((h, i) => {
+          const emoji = h.score === 100 ? '🟩' : h.score >= 50 ? '🟨' : '🟥';
+          return `<span class="emoji-char" style="animation-delay:${i * 100}ms">${emoji}</span>`;
+        }).join('')}</div>
+        ${potdHTML}
         <p class="subtitle">Best streak: ${session.bestStreak} · Set: ${session.setDef.name}</p>
+        ${speciesLine}
 
         ${renderShareSection(getClassicFlavor(exactCount))}
 
@@ -768,6 +963,7 @@ function renderClassicSummary() {
           <button class="btn btn-outline" id="play-again-btn">Play Again</button>
           <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
+        ${recHTML}
       </div>
 
       ${renderSessionFeedbackForm()}
@@ -777,6 +973,17 @@ function renderClassicSummary() {
   attachShareHandlers(shareText);
   attachPlayAgainHandlers();
   attachSessionFeedbackHandlers();
+
+  // Tween the score counter
+  tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, ' / 1000');
+
+  // Check session-end achievements
+  if (achievementsModule) {
+    const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
+    newAchievements.forEach((ach, i) => {
+      setTimeout(() => showAchievementToast(ach), i * 1500);
+    });
+  }
 }
 
 function renderTimeTrialSummary() {
@@ -791,7 +998,10 @@ function renderTimeTrialSummary() {
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = session.totalScore > prevBest;
 
-  const emojiGrid = session.history.map(h => h.score > 0 ? '🟩' : '🟥').join('');
+  const emojiGrid = session.history.map((h, i) => {
+    const emoji = h.score > 0 ? '🟩' : '🟥';
+    return `<span class="emoji-char" style="animation-delay:${i * 100}ms">${emoji}</span>`;
+  }).join('');
   const accuracy = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
 
   // Calculate average time per correct answer
@@ -848,7 +1058,7 @@ function renderTimeTrialSummary() {
           </div>
         </div>
 
-        <div class="emoji-grid">${emojiGrid}</div>
+        <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
 
         <div class="tt-brackets">
           ${brackets.fast > 0 ? `<span class="tt-bracket tt-bracket-fast">${brackets.fast} blazing</span>` : ''}
@@ -863,6 +1073,7 @@ function renderTimeTrialSummary() {
           <button class="btn btn-outline" id="play-again-btn">Play Again</button>
           <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
+        ${renderRecommendation(session.totalScore, currentSetKey, session.mode)}
       </div>
 
       ${renderSessionFeedbackForm()}
@@ -871,6 +1082,17 @@ function renderTimeTrialSummary() {
     attachShareHandlers(shareText);
     attachPlayAgainHandlers();
     attachSessionFeedbackHandlers();
+
+    // Tween the score counter
+    tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, ' pts');
+
+    // Check session-end achievements
+    if (achievementsModule) {
+      const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
+      newAchievements.forEach((ach, i) => {
+        setTimeout(() => showAchievementToast(ach), i * 1500);
+      });
+    }
   });
 }
 
@@ -883,7 +1105,9 @@ function renderStreakGameOver(picked, correct) {
   const isNewBest = streakCount > prevBest;
 
   // Only green emojis
-  const emojiGrid = Array(streakCount).fill('🟩').join('');
+  const emojiGrid = Array(streakCount).fill(null).map((_, i) =>
+    `<span class="emoji-char" style="animation-delay:${i * 100}ms">🟩</span>`
+  ).join('');
 
   // Streak rank
   let rank, rankClass;
@@ -944,7 +1168,7 @@ function renderStreakGameOver(picked, correct) {
           </div>
         </div>
 
-        <div class="emoji-grid">${emojiGrid}</div>
+        <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
 
         ${renderShareSection(getStreakFlavor(streakCount))}
       </div>
@@ -953,6 +1177,7 @@ function renderStreakGameOver(picked, correct) {
         <button class="btn btn-outline" id="play-again-btn">Play Again</button>
         <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
       </div>
+      ${renderRecommendation(0, currentSetKey, session.mode)}
 
       <div class="feedback-card miss" style="margin-top: 16px;">
         <div class="feedback-title">The one that got away</div>
@@ -972,6 +1197,17 @@ function renderStreakGameOver(picked, correct) {
     attachShareHandlers(shareText);
     attachPlayAgainHandlers();
     attachSessionFeedbackHandlers();
+
+    // Tween the streak counter
+    tweenCounter(container.querySelector('.summary-score'), streakCount, 400, '');
+
+    // Check session-end achievements
+    if (achievementsModule) {
+      const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
+      newAchievements.forEach((ach, i) => {
+        setTimeout(() => showAchievementToast(ach), i * 1500);
+      });
+    }
   });
 }
 
