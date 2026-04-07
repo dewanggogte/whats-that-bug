@@ -373,15 +373,24 @@ function buildSets(observations, taxa) {
     .map((obs, i) => fn(obs) ? i : -1)
     .filter(i => i !== -1);
 
-  // Bugs 101 uses the full observation pool — same images as All Bugs,
-  // but players identify by common category (Butterfly, Ladybug, etc.)
-  // instead of exact species.
+  // Exclude ick-inducing orders (keep scorpions — they're cool)
+  const EXCLUDED_ORDERS = new Set([
+    'Ixodida',            // Ticks
+    'Blattodea',          // Cockroaches
+    'Scolopendromorpha',  // Centipedes
+    'Dermaptera',         // Earwigs
+  ]);
+  const mainPool = observations
+    .map((obs, i) => ({ obs, i }))
+    .filter(({ obs }) => !EXCLUDED_ORDERS.has(obs.taxon.order))
+    .map(({ i }) => i);
+
   sets.bugs_101 = {
     name: 'Bugs 101',
     description: "Identify bugs by type — beetle, spider, butterfly, and more.",
     difficulty: 'beginner',
     scoring: 'binary',
-    observation_ids: observations.map((_, i) => i),
+    observation_ids: mainPool,
   };
 
   sets.all_bugs = {
@@ -389,7 +398,7 @@ function buildSets(observations, taxa) {
     description: "Name the exact species. Partial credit for close guesses.",
     difficulty: 'expert',
     scoring: 'taxonomic',
-    observation_ids: observations.map((_, i) => i),
+    observation_ids: mainPool,
   };
 
   // Top ~100 most common species, with up to 3 observations each for photo variety
