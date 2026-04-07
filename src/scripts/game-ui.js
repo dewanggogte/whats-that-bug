@@ -99,6 +99,7 @@ let timeRemaining = 60;
 const PRELOAD_AHEAD = 3;
 let roundCache = [];
 let displayRound = 0;
+let prefetchedLeaderboards = null;
 
 function preloadRounds() {
   while (roundCache.length < PRELOAD_AHEAD) {
@@ -325,6 +326,14 @@ function startRound() {
   }
 
   displayRound++;
+
+  // At round 8, kick off a background leaderboard prefetch so the end-of-game
+  // check can use cached data instead of waiting on a cold-start.
+  if (displayRound === 8 && isLeaderboardEligible(currentSetKey) && !prefetchedLeaderboards) {
+    fetchLeaderboards()
+      .then(data => { prefetchedLeaderboards = data; })
+      .catch(() => {});
+  }
 
   // Preload the NEXT round's image while the player looks at this one
   preloadRounds();
@@ -655,8 +664,28 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
 
   const dismissSpinner = showLoadingSpinner('Checking leaderboard...');
 
+  // Show a reassuring "Almost there..." message if still waiting at 2 seconds.
+  const almostThereTimer = setTimeout(() => {
+    const msgEl = document.querySelector('.lb-loading-card p');
+    if (msgEl) msgEl.textContent = 'Almost there...';
+  }, 2000);
+
+  // Build the fetch promise — use prefetched data if available, otherwise fetch fresh.
+  const fetchPromise = prefetchedLeaderboards
+    ? Promise.resolve(prefetchedLeaderboards)
+    : fetchLeaderboards();
+
+  // Race the fetch against a 3-second hard timeout.
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Leaderboard check timed out')), 3000)
+  );
+
   try {
-    const allBoards = await fetchLeaderboards();
+    const allBoards = await Promise.race([fetchPromise, timeoutPromise]);
+    clearTimeout(almostThereTimer);
+    // Clear prefetch cache so the next session fetches fresh data.
+    prefetchedLeaderboards = null;
+
     const board = allBoards?.[currentSetKey] || [];
 
     dismissSpinner();
@@ -689,6 +718,7 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
       renderResultsFn();
     }
   } catch (err) {
+    clearTimeout(almostThereTimer);
     console.warn('Leaderboard check failed:', err);
     dismissSpinner();
     renderResultsFn();

@@ -10,17 +10,46 @@ export function isLeaderboardEligible(setKey) {
   return LEADERBOARD_SETS.includes(setKey);
 }
 
+const LB_CACHE_KEY = 'wtb_lb_cache';
+const LB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Fetch all leaderboards from Apps Script.
  * Returns: { bugs_101_time_trial: Entry[], bugs_101_streak: Entry[], time_trial: Entry[], streak: Entry[] }
  * Each Entry: { rank, name, country, score, streak, questions, correct, timestamp }
+ *
+ * Results are cached in sessionStorage for up to 5 minutes to avoid redundant
+ * cold-start delays when the same session hits the leaderboard multiple times.
  */
 export async function fetchLeaderboards() {
   if (!WEBHOOK_URL) return null;
+
+  // Check sessionStorage cache first.
+  try {
+    const cached = sessionStorage.getItem(LB_CACHE_KEY);
+    if (cached) {
+      const { data, ts } = JSON.parse(cached);
+      if (Date.now() - ts < LB_CACHE_TTL_MS) {
+        return data;
+      }
+    }
+  } catch (_) {
+    // sessionStorage unavailable or corrupted — fall through to network fetch.
+  }
+
   const url = `${WEBHOOK_URL}?action=leaderboard`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Leaderboard fetch failed: ${res.status}`);
-  return res.json();
+  const data = await res.json();
+
+  // Persist to sessionStorage for subsequent calls within the same tab session.
+  try {
+    sessionStorage.setItem(LB_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  } catch (_) {
+    // Storage quota exceeded or unavailable — not fatal.
+  }
+
+  return data;
 }
 
 /**
