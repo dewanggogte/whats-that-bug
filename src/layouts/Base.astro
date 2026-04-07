@@ -86,6 +86,22 @@ const resolvedOgType = ogType || 'website';
       <a href="/" class="site-logo">🪲 What's That Bug?</a>
       <nav class="site-nav">
         <a href="/leaderboard">Leaderboard</a>
+        <div class="sound-toggle-wrap">
+          <button id="sound-toggle" aria-label="Sound settings">🔊</button>
+          <div class="sound-panel" id="sound-panel">
+            <div class="sound-panel-row">
+              <label for="sfx-slider">Effects</label>
+              <input type="range" id="sfx-slider" min="0" max="100" step="1">
+              <span class="sound-panel-val" id="sfx-val"></span>
+            </div>
+            <div class="sound-panel-row">
+              <label for="music-slider">Music</label>
+              <input type="range" id="music-slider" min="0" max="100" step="1">
+              <span class="sound-panel-val" id="music-val"></span>
+            </div>
+            <button class="sound-panel-mute" id="sound-mute-btn">Mute all</button>
+          </div>
+        </div>
         <button id="theme-toggle" aria-label="Toggle dark/light mode">🌙</button>
       </nav>
     </div>
@@ -150,6 +166,62 @@ const resolvedOgType = ogType || 'website';
         });
       });
     })();
+  </script>
+
+  <script>
+    import { isMuted, toggleMute, getSfxVolume, getMusicVolume, setSfxVolume, setMusicVolume, stopBgMusic, startBgMusic, isBgMusicPlaying } from '../scripts/sounds.js';
+
+    const soundBtn = document.getElementById('sound-toggle');
+    const soundPanel = document.getElementById('sound-panel');
+    const sfxSlider = document.getElementById('sfx-slider');
+    const musicSlider = document.getElementById('music-slider');
+    const sfxVal = document.getElementById('sfx-val');
+    const musicVal = document.getElementById('music-val');
+    const muteBtn = document.getElementById('sound-mute-btn');
+
+    function updateSoundUI() {
+      const m = isMuted();
+      soundBtn.textContent = m ? '🔇' : '🔊';
+      sfxSlider.value = Math.round(getSfxVolume() * 100);
+      musicSlider.value = Math.round(getMusicVolume() * 100);
+      sfxVal.textContent = sfxSlider.value + '%';
+      musicVal.textContent = musicSlider.value + '%';
+      muteBtn.textContent = m ? 'Unmute' : 'Mute all';
+      sfxSlider.disabled = m;
+      musicSlider.disabled = m;
+    }
+
+    // Toggle panel
+    soundBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      soundPanel?.classList.toggle('open');
+    });
+
+    // Close panel on outside click
+    document.addEventListener('click', (e) => {
+      if (soundPanel?.classList.contains('open') && !soundPanel.contains(e.target) && e.target !== soundBtn) {
+        soundPanel.classList.remove('open');
+      }
+    });
+
+    sfxSlider?.addEventListener('input', () => {
+      setSfxVolume(sfxSlider.value / 100);
+      sfxVal.textContent = sfxSlider.value + '%';
+    });
+
+    musicSlider?.addEventListener('input', () => {
+      setMusicVolume(musicSlider.value / 100);
+      musicVal.textContent = musicSlider.value + '%';
+    });
+
+    muteBtn?.addEventListener('click', () => {
+      const nowMuted = toggleMute();
+      if (nowMuted) stopBgMusic();
+      else if (!isBgMusicPlaying()) startBgMusic();
+      updateSoundUI();
+    });
+
+    updateSoundUI();
   </script>
 
   <script>

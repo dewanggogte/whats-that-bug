@@ -1316,11 +1316,11 @@ a {
 
 /* Animation utility classes */
 .anim-fade-in {
-  animation: animFadeIn var(--transition-normal) ease-out both;
+  animation: animFadeIn 300ms ease-out both;
 }
 
 .anim-slide-up {
-  animation: animSlideUp var(--transition-modal) ease-out both;
+  animation: animSlideUp 340ms ease-out both;
 }
 
 .anim-scale-bounce {
@@ -1338,7 +1338,7 @@ a {
 /* Stagger children — add .stagger-in to parent, children get delayed entry */
 .stagger-in > * {
   opacity: 0;
-  animation: animSlideUp var(--transition-normal) ease-out both;
+  animation: animSlideUp 300ms ease-out both;
 }
 .stagger-in > *:nth-child(1) { animation-delay: 0ms; }
 .stagger-in > *:nth-child(2) { animation-delay: 50ms; }
@@ -2340,29 +2340,86 @@ a {
 }
 
 /* =============================================
-   Mute Toggle
+   Sound Panel (header popup)
    ============================================= */
-.mute-toggle {
-  position: fixed;
-  bottom: 24px;
-  left: 20px;
-  z-index: 90;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: opacity 0.2s;
+.sound-toggle-wrap {
+  position: relative;
 }
 
-.mute-toggle:hover {
-  opacity: 0.8;
+#sound-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sound-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  width: 220px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sound-panel.open {
+  display: flex;
+}
+
+.sound-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sound-panel-row label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  min-width: 52px;
+}
+
+.sound-panel-row input[type="range"] {
+  flex: 1;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sound-panel-row input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sound-panel-val {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+.sound-panel-mute {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text);
+  transition: background var(--transition-fast);
+}
+
+.sound-panel-mute:hover {
+  background: var(--border);
 }
 
 /* =============================================
@@ -2478,7 +2535,7 @@ a {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  animation: animSlideUp var(--transition-normal) ease-out both;
+  animation: animSlideUp 300ms ease-out both;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   max-width: 320px;
 }

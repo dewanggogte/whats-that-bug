@@ -8,7 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
-import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, startBgMusic, stopBgMusic, isMuted, toggleMute } from './sounds.js';
+import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, startBgMusic, stopBgMusic, isMuted } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
 let achievementsModule = null;
@@ -113,21 +113,6 @@ let roundCache = [];
 let displayRound = 0;
 let prefetchedLeaderboards = null;
 
-/** Create the mute toggle once, appended to document.body so it persists across re-renders. */
-function ensureMuteToggle() {
-  if (document.querySelector('.mute-toggle')) return; // already exists
-  const btn = document.createElement('button');
-  btn.className = 'mute-toggle';
-  btn.setAttribute('aria-label', 'Toggle sound');
-  btn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
-  btn.addEventListener('click', () => {
-    const nowMuted = toggleMute();
-    if (nowMuted) stopBgMusic();
-    else startBgMusic();
-    btn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
-  });
-  document.body.appendChild(btn);
-}
 
 function preloadRounds() {
   while (roundCache.length < PRELOAD_AHEAD) {
@@ -475,9 +460,6 @@ function renderRound() {
       </div>
     </div>
   `;
-
-  // Ensure persistent mute toggle exists (outside game container so it survives re-renders)
-  ensureMuteToggle();
 
   // Attach click handlers
   const choiceEls = container.querySelectorAll('.choice');
