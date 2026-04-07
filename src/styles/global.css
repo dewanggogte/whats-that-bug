@@ -2251,3 +2251,109 @@ a {
 .mute-toggle:hover {
   opacity: 0.8;
 }
+
+/* =============================================
+   Onboarding Modals
+   ============================================= */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.34s ease;
+}
+
+.onboarding-overlay.visible {
+  opacity: 1;
+}
+
+.onboarding-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 24px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(16px);
+  transition: transform 0.34s ease;
+}
+
+.onboarding-overlay.visible .onboarding-card {
+  transform: translateY(0);
+}
+
+.onboarding-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.onboarding-text {
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.onboarding-detail {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.onboarding-scoring {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.onboarding-score-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.onboarding-score-row:last-child {
+  border-bottom: none;
+}
+
+.onboarding-pts {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.onboarding-cta {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Mobile: bottom-sheet positioning */
+@media (max-width: 480px) {
+  .onboarding-overlay {
+    align-items: flex-end;
+  }
+
+  .onboarding-card {
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+  }
+
+  .onboarding-overlay.visible .onboarding-card {
+    transform: translateY(0);
+  }
+}
