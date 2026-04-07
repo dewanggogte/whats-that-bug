@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" fill="#eef4ff" stroke="#3b6eb8" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="#f0f6ff" stroke="#6a9ad4" stroke-width="1.5"/>
+  <!-- Calendar body -->
+  <rect x="34" y="34" width="52" height="52" rx="6" fill="white" stroke="#3b6eb8" stroke-width="2"/>
+  <!-- Calendar header -->
+  <rect x="34" y="34" width="52" height="14" rx="6" fill="#3b6eb8"/>
+  <rect x="34" y="42" width="52" height="6" fill="#3b6eb8"/>
+  <!-- Calendar rings -->
+  <rect x="46" y="30" width="4" height="10" rx="2" fill="#6a9ad4"/>
+  <rect x="70" y="30" width="4" height="10" rx="2" fill="#6a9ad4"/>
+  <!-- 7-day checkmarks (grid) -->
+  <text x="43" y="60" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="53" y="60" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="63" y="60" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="73" y="60" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="43" y="74" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="53" y="74" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <text x="63" y="74" font-family="system-ui,sans-serif" font-size="8" fill="#059669">&#10003;</text>
+  <!-- "7" badge -->
+  <circle cx="82" cy="34" r="10" fill="#059669"/>
+  <text x="82" y="38" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="white">7</text>
+  <text x="60" y="108" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="600" fill="#3b6eb8">DAILY DEVOTEE</text>
+</svg>

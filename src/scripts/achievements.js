@@ -19,7 +19,7 @@ const STATS_KEY = 'wtb_player_stats';
  * @typedef {{ id: string, name: string, description: string, rarity: string, icon: string }} Achievement
  */
 
-const ACHIEVEMENT_DEFS = [
+export const ACHIEVEMENT_DEFS = [
   // Session-based
   { id: 'first_flight',    name: 'First Flight',    description: 'Complete your first session',    rarity: 'common',    icon: '🦋', check: 'session' },
   { id: 'bug_scholar',     name: 'Bug Scholar',     description: 'Score 800+ in classic mode',     rarity: 'uncommon',  icon: '🔬', check: 'session' },

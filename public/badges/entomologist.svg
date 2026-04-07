@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" fill="#fef9e2" stroke="#b8953b" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="#fffcf0" stroke="#d4b86a" stroke-width="1.5"/>
+  <!-- Trophy cup -->
+  <path d="M42 40 L42 62 C42 76 50 82 60 84 C70 82 78 76 78 62 L78 40Z" fill="#b8953b" opacity="0.2" stroke="#b8953b" stroke-width="2"/>
+  <!-- Cup inner shine -->
+  <path d="M48 44 L48 60 C48 72 54 78 60 80 C66 78 72 72 72 60 L72 44Z" fill="#d4b86a" opacity="0.3"/>
+  <!-- Handles -->
+  <path d="M42 46 C32 46 28 54 32 62 C34 66 38 66 42 62" stroke="#b8953b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M78 46 C88 46 92 54 88 62 C86 66 82 66 78 62" stroke="#b8953b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Trophy top rim -->
+  <rect x="40" y="38" width="40" height="4" rx="2" fill="#b8953b"/>
+  <!-- Pedestal -->
+  <rect x="54" y="84" width="12" height="6" rx="1" fill="#b8953b" opacity="0.6"/>
+  <rect x="48" y="90" width="24" height="4" rx="2" fill="#b8953b"/>
+  <!-- Star on trophy -->
+  <polygon points="60,50 63,58 72,58 65,64 68,72 60,67 52,72 55,64 48,58 57,58" fill="#d4b86a" opacity="0.7"/>
+  <text x="60" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="600" fill="#b8953b">ENTOMOLOGIST</text>
+</svg>

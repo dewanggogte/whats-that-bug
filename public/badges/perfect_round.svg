@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" fill="#fdf2f8" stroke="#a855f7" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="#fef6ff" stroke="#c084fc" stroke-width="1.5"/>
+  <!-- Diamond / Gem -->
+  <polygon points="60,28 82,50 60,90 38,50" fill="#a855f7" opacity="0.2" stroke="#a855f7" stroke-width="2"/>
+  <!-- Top facets -->
+  <polygon points="60,28 82,50 60,50" fill="#c084fc" opacity="0.5"/>
+  <polygon points="60,28 38,50 60,50" fill="#a855f7" opacity="0.4"/>
+  <!-- Bottom facets -->
+  <polygon points="38,50 60,90 60,50" fill="#a855f7" opacity="0.3"/>
+  <polygon points="82,50 60,90 60,50" fill="#c084fc" opacity="0.25"/>
+  <!-- Highlight -->
+  <polygon points="60,34 50,50 60,50" fill="white" opacity="0.3"/>
+  <!-- Sparkles -->
+  <path d="M88 32 L90 36 L94 38 L90 40 L88 44 L86 40 L82 38 L86 36Z" fill="#c084fc" opacity="0.6"/>
+  <path d="M30 38 L32 42 L36 44 L32 46 L30 50 L28 46 L24 44 L28 42Z" fill="#c084fc" opacity="0.5"/>
+  <path d="M76 72 L77 75 L80 76 L77 77 L76 80 L75 77 L72 76 L75 75Z" fill="#c084fc" opacity="0.5"/>
+  <text x="60" y="108" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="600" fill="#a855f7">PERFECT ROUND</text>
+</svg>

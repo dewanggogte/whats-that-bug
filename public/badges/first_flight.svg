@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" fill="#fef3e2" stroke="#b85a3b" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="#fff8f0" stroke="#d4956a" stroke-width="1.5"/>
+  <!-- Butterfly body -->
+  <ellipse cx="60" cy="62" rx="3" ry="14" fill="#6b3a1f"/>
+  <!-- Left wings -->
+  <path d="M57 55 C45 40 30 42 32 52 C34 62 48 62 57 58Z" fill="#b85a3b" opacity="0.9"/>
+  <path d="M57 65 C48 72 38 78 40 68 C42 60 52 60 57 63Z" fill="#d4956a" opacity="0.85"/>
+  <!-- Right wings -->
+  <path d="M63 55 C75 40 90 42 88 52 C86 62 72 62 63 58Z" fill="#b85a3b" opacity="0.9"/>
+  <path d="M63 65 C72 72 82 78 80 68 C78 60 68 60 63 63Z" fill="#d4956a" opacity="0.85"/>
+  <!-- Wing spots -->
+  <circle cx="44" cy="52" r="3" fill="#fff8f0" opacity="0.5"/>
+  <circle cx="76" cy="52" r="3" fill="#fff8f0" opacity="0.5"/>
+  <!-- Antennae -->
+  <path d="M58 50 C56 42 50 38 48 36" stroke="#6b3a1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M62 50 C64 42 70 38 72 36" stroke="#6b3a1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <circle cx="48" cy="36" r="2" fill="#6b3a1f"/>
+  <circle cx="72" cy="36" r="2" fill="#6b3a1f"/>
+  <!-- Label arc -->
+  <text x="60" y="100" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="600" fill="#b85a3b">FIRST FLIGHT</text>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="56" fill="#eef4ff" stroke="#3b6eb8" stroke-width="3"/>
+  <circle cx="60" cy="60" r="48" fill="#f0f6ff" stroke="#6a9ad4" stroke-width="1.5"/>
+  <!-- Microscope base -->
+  <rect x="40" y="88" width="40" height="4" rx="2" fill="#3b6eb8"/>
+  <rect x="56" y="72" width="8" height="18" rx="2" fill="#4a7dc4"/>
+  <!-- Microscope arm -->
+  <rect x="54" y="52" width="12" height="24" rx="3" fill="#3b6eb8"/>
+  <!-- Eyepiece -->
+  <rect x="52" y="42" width="16" height="12" rx="4" fill="#4a7dc4"/>
+  <rect x="56" y="34" width="8" height="10" rx="3" fill="#3b6eb8"/>
+  <ellipse cx="60" cy="34" rx="6" ry="3" fill="#6a9ad4"/>
+  <!-- Objective lens -->
+  <rect x="57" y="76" width="6" height="8" rx="2" fill="#3b6eb8"/>
+  <circle cx="60" cy="86" r="4" fill="#6a9ad4" stroke="#3b6eb8" stroke-width="1"/>
+  <!-- Stage -->
+  <rect x="44" y="72" width="32" height="3" rx="1.5" fill="#3b6eb8"/>
+  <!-- Light rays from lens -->
+  <line x1="56" y1="86" x2="50" y2="92" stroke="#6a9ad4" stroke-width="1" opacity="0.5"/>
+  <line x1="60" y1="88" x2="60" y2="94" stroke="#6a9ad4" stroke-width="1" opacity="0.5"/>
+  <line x1="64" y1="86" x2="70" y2="92" stroke="#6a9ad4" stroke-width="1" opacity="0.5"/>
+  <!-- Sparkle -->
+  <path d="M82 30 L84 36 L90 38 L84 40 L82 46 L80 40 L74 38 L80 36Z" fill="#6a9ad4" opacity="0.6"/>
+  <text x="60" y="110" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="600" fill="#3b6eb8">BUG SCHOLAR</text>
+</svg>

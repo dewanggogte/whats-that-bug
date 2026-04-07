@@ -217,7 +217,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
 <script>
   // --- Player Stats Card ---
   try {
-    const { getEarnedAchievements, getSpeciesCount } = await import('../scripts/achievements.js');
+    const { getEarnedAchievements, getSpeciesCount, ACHIEVEMENT_DEFS } = await import('../scripts/achievements.js');
     const stats = JSON.parse(localStorage.getItem('wtb_player_stats') || '{}');
     const speciesCount = getSpeciesCount();
     const sessionCount = stats.session_count || 0;
@@ -229,24 +229,19 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       statsCard.className = 'player-stats-card';
       statsCard.innerHTML = `
         <div class="stats-row">
-          <div class="stat-item">
+          <button class="stat-item stat-item-btn" data-modal="sessions">
             <span class="stat-value">${sessionCount}</span>
             <span class="stat-label">sessions</span>
-          </div>
-          <div class="stat-item">
+          </button>
+          <button class="stat-item stat-item-btn" data-modal="species">
             <span class="stat-value">${speciesCount}</span>
             <span class="stat-label">species ID'd</span>
-          </div>
-          <div class="stat-item">
+          </button>
+          <button class="stat-item stat-item-btn" data-modal="badges">
             <span class="stat-value">${achievements.length}</span>
             <span class="stat-label">badges</span>
-          </div>
+          </button>
         </div>
-        ${achievements.length > 0 ? `
-          <div class="stats-badges">
-            ${achievements.map(a => `<span title="${a.name}: ${a.description}">${a.icon}</span>`).join(' ')}
-          </div>
-        ` : ''}
       `;
 
       const container = document.querySelector('.container');
@@ -254,6 +249,182 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       if (firstModeGroup) {
         container.insertBefore(statsCard, firstModeGroup);
       }
+
+      // --- Modal system ---
+      const overlay = document.createElement('div');
+      overlay.className = 'stats-modal-overlay';
+      overlay.innerHTML = `
+        <div class="stats-modal">
+          <div class="stats-modal-header">
+            <h2 class="stats-modal-title"></h2>
+            <button class="stats-modal-close" aria-label="Close">&times;</button>
+          </div>
+          <div class="stats-modal-body"></div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const modalTitle = overlay.querySelector('.stats-modal-title');
+      const modalBody = overlay.querySelector('.stats-modal-body');
+      const closeBtn = overlay.querySelector('.stats-modal-close');
+
+      function openModal(title, html) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = html;
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal() {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      closeBtn.addEventListener('click', closeModal);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+      // --- Sessions modal ---
+      function buildSessionsModal() {
+        const lastPlayed = stats.last_played
+          ? new Date(stats.last_played).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+          : 'Unknown';
+
+        // Gather best scores
+        const scoreKeys = [
+          { key: 'bugs_101', label: 'Bugs 101 Classic' },
+          { key: 'bugs_101_time_trial', label: 'Bugs 101 Time Trial' },
+          { key: 'bugs_101_streak', label: 'Bugs 101 Streak' },
+          { key: 'all_bugs', label: 'All Bugs Classic' },
+          { key: 'time_trial', label: 'All Bugs Time Trial' },
+          { key: 'streak', label: 'All Bugs Streak' },
+          { key: 'backyard_basics', label: 'Backyard Basics' },
+          { key: 'tiny_terrors', label: 'Tiny Terrors' },
+          { key: 'beetles', label: 'Beetles' },
+          { key: 'butterflies_moths', label: 'Butterflies & Moths' },
+          { key: 'spiders', label: 'Spiders' },
+        ];
+
+        const scores = scoreKeys
+          .map(s => ({ ...s, score: localStorage.getItem(`best_${s.key}`) }))
+          .filter(s => s.score);
+
+        return `
+          <div class="sessions-detail">
+            <div class="sessions-summary">
+              <div class="sessions-stat">
+                <span class="sessions-stat-val">${sessionCount}</span>
+                <span class="sessions-stat-lbl">Total Sessions</span>
+              </div>
+              <div class="sessions-stat">
+                <span class="sessions-stat-val">${lastPlayed}</span>
+                <span class="sessions-stat-lbl">Last Played</span>
+              </div>
+              <div class="sessions-stat">
+                <span class="sessions-stat-val">${speciesCount}</span>
+                <span class="sessions-stat-lbl">Unique Species</span>
+              </div>
+            </div>
+            ${scores.length > 0 ? `
+              <h3 class="sessions-section-title">Best Scores</h3>
+              <div class="sessions-scores">
+                ${scores.map(s => `
+                  <div class="sessions-score-row">
+                    <span class="sessions-score-label">${s.label}</span>
+                    <span class="sessions-score-value">${s.score}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : '<p style="color:var(--text-secondary);text-align:center;margin-top:16px;">Play more games to see your best scores here.</p>'}
+          </div>
+        `;
+      }
+
+      // --- Species modal ---
+      async function buildSpeciesModal() {
+        const seenSpecies = JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
+        if (seenSpecies.length === 0) {
+          return '<p style="color:var(--text-secondary);text-align:center;padding:24px;">No species identified yet. Play a game to start your collection!</p>';
+        }
+
+        // Load observations data
+        const basePath = window.__BASE || '';
+        const resp = await fetch(`${basePath}/data/observations.json`);
+        const observations = await resp.json();
+
+        // Build a lookup: species name → best observation (prefer one with wikipedia_summary)
+        const speciesMap = new Map();
+        for (const obs of observations) {
+          const name = obs.taxon?.species;
+          if (!name || !seenSpecies.includes(name)) continue;
+          const existing = speciesMap.get(name);
+          if (!existing || (!existing.wikipedia_summary && obs.wikipedia_summary)) {
+            speciesMap.set(name, obs);
+          }
+        }
+
+        const cards = seenSpecies
+          .filter(name => speciesMap.has(name))
+          .sort()
+          .map(name => {
+            const obs = speciesMap.get(name);
+            const common = obs.taxon?.common_name || '';
+            const summary = obs.wikipedia_summary
+              ? obs.wikipedia_summary.slice(0, 100) + (obs.wikipedia_summary.length > 100 ? '...' : '')
+              : obs.taxon?.order_common || '';
+            return `
+              <div class="species-card">
+                <div class="species-card-img" style="background-image:url('${obs.photo_url}')"></div>
+                <div class="species-card-info">
+                  <span class="species-card-common">${common || name}</span>
+                  <span class="species-card-sci">${name}</span>
+                  <span class="species-card-blurb">${summary}</span>
+                </div>
+              </div>
+            `;
+          });
+
+        return `<div class="species-grid">${cards.join('')}</div>`;
+      }
+
+      // --- Badges modal ---
+      function buildBadgesModal() {
+        const earnedIds = new Set(achievements.map(a => a.id));
+        const rarityLabel = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', very_rare: 'Very Rare', epic: 'Epic', legendary: 'Legendary' };
+        const rarityColor = { common: '#666', uncommon: '#059669', rare: '#3b6eb8', very_rare: '#a855f7', epic: '#c44b2b', legendary: '#b8953b' };
+
+        const cards = ACHIEVEMENT_DEFS.map(def => {
+          const earned = earnedIds.has(def.id);
+          const basePath = window.__BASE || '';
+          return `
+            <div class="badge-card ${earned ? '' : 'badge-locked'}">
+              <img class="badge-card-img" src="${basePath}/badges/${def.id}.svg" alt="${def.name}" width="80" height="80" />
+              <span class="badge-card-name">${def.name}</span>
+              <span class="badge-card-desc">${def.description}</span>
+              <span class="badge-card-rarity" style="color:${rarityColor[def.rarity] || '#666'}">${rarityLabel[def.rarity] || def.rarity}</span>
+            </div>
+          `;
+        });
+
+        return `
+          <div class="badge-summary">${achievements.length} of ${ACHIEVEMENT_DEFS.length} earned</div>
+          <div class="badges-grid">${cards.join('')}</div>
+        `;
+      }
+
+      // --- Click handlers ---
+      statsCard.querySelectorAll('.stat-item-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const modal = btn.dataset.modal;
+          if (modal === 'sessions') {
+            openModal('Your Sessions', buildSessionsModal());
+          } else if (modal === 'species') {
+            openModal('Species Collection', '<p style="text-align:center;padding:24px;color:var(--text-secondary);">Loading species...</p>');
+            const html = await buildSpeciesModal();
+            modalBody.innerHTML = html;
+          } else if (modal === 'badges') {
+            openModal('Badge Collection', buildBadgesModal());
+          }
+        });
+      });
     }
 
     // Species milestone — show once per milestone
@@ -300,6 +471,19 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     gap: 2px;
   }
 
+  .stat-item-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+  }
+  .stat-item-btn:hover {
+    background: var(--bg);
+    border-color: var(--border);
+  }
+
   .stat-value {
     font-size: 1.5rem;
     font-weight: 700;
@@ -309,13 +493,6 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   .stat-label {
     font-size: 0.8rem;
     color: var(--text-secondary);
-  }
-
-  .stats-badges {
-    margin-top: 12px;
-    text-align: center;
-    font-size: 1.3rem;
-    letter-spacing: 4px;
   }
 
   .streak-warning {
@@ -336,6 +513,211 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     margin-bottom: 16px;
     font-size: 0.95rem;
     transition: opacity 500ms ease-out;
+  }
+
+  /* --- Stats Modal --- */
+  .stats-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-modal), visibility var(--transition-modal);
+    padding: 16px;
+  }
+  .stats-modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+  .stats-modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 520px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(12px);
+    transition: transform var(--transition-modal);
+  }
+  .stats-modal-overlay.open .stats-modal {
+    transform: translateY(0);
+  }
+  .stats-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .stats-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .stats-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .stats-modal-close:hover { color: var(--text); }
+  .stats-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* --- Sessions detail --- */
+  .sessions-summary {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .sessions-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sessions-stat-val {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .sessions-stat-lbl {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+  .sessions-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 12px;
+  }
+  .sessions-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sessions-score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+  }
+  .sessions-score-label {
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .sessions-score-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* --- Species grid --- */
+  .species-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .species-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .species-card-img {
+    width: 100%;
+    height: 100px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--photo-bg);
+  }
+  .species-card-info {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .species-card-common {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .species-card-sci {
+    font-size: 0.7rem;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+  .species-card-blurb {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    margin-top: 4px;
+  }
+
+  /* --- Badges grid --- */
+  .badge-summary {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+  .badge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+  }
+  .badge-card-img {
+    width: 72px;
+    height: 72px;
+  }
+  .badge-locked {
+    opacity: 0.35;
+    filter: grayscale(1);
+  }
+  .badge-card-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .badge-card-desc {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+  }
+  .badge-card-rarity {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 </style>
 </Base>
