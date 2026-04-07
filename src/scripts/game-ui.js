@@ -8,7 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
-import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, isMuted, toggleMute } from './sounds.js';
+import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, isMuted, toggleMute } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
 let achievementsModule = null;
@@ -174,7 +174,7 @@ export async function initGame() {
   container = document.getElementById('game-container');
   container.setAttribute('aria-live', 'polite');
 
-  let observations, taxonomy, sets;
+  let observations, taxonomy, sets, difficulty;
   try {
     const [obsRes, taxRes, setsRes, diffRes] = await Promise.all([
       fetch(`${base}/data/observations.json`),
@@ -190,7 +190,7 @@ export async function initGame() {
     observations = await obsRes.json();
     taxonomy = await taxRes.json();
     sets = await setsRes.json();
-    var difficulty = diffRes.ok ? await diffRes.json().catch(() => null) : null;
+    difficulty = diffRes.ok ? await diffRes.json().catch(() => null) : null;
   } catch (err) {
     container.innerHTML = `<div class="container"><p>Failed to load game data. Please refresh the page to try again.</p><p style="color:var(--text-secondary);font-size:13px;">${escapeHTML(err.message)}</p></div>`;
     return;
@@ -219,6 +219,7 @@ export async function initGame() {
 
   // Show rules popup, then start game
   showRulesPopup(() => {
+    playGameStart();
     if (session.mode === 'time_trial') {
       startTimeTrial();
     } else {
@@ -323,6 +324,7 @@ function startTimeTrial() {
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
       timerInterval = null;
+      playTimesUp();
       renderTimeTrialSummary();
     }
   }, 1000);
@@ -342,6 +344,7 @@ function updateTimerDisplay() {
 // ===== GENERIC ROUND =====
 
 function startRound() {
+  if (displayRound > 0) playTransition();
   currentRound = getNextRound();
   if (!currentRound) {
     if (session.mode === 'time_trial') {
@@ -653,6 +656,7 @@ function handleStreakPostAnswer(score, picked, correct) {
     setTimeout(() => startRound(), 500);
   } else {
     // Wrong — flash red, show game over
+    playStreakBreak();
     gameScreen.classList.add('flash-wrong');
     setTimeout(() => renderStreakGameOver(picked, correct), 600);
   }
@@ -825,6 +829,9 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
 function showAchievementToast(achievement) {
   const toast = document.createElement('div');
   toast.className = 'achievement-toast';
+  // Offset vertically so multiple toasts don't overlap
+  const existing = document.querySelectorAll('.achievement-toast:not(.fade-out)').length;
+  toast.style.top = `calc(var(--space-4) + ${existing * 60}px)`;
   toast.innerHTML = `
     <span class="achievement-toast-icon">${achievement.icon}</span>
     <div class="achievement-toast-text">
