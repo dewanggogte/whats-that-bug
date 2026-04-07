@@ -1,0 +1,219 @@
+[
+  {
+    "observation_id": 195924236,
+    "species": "Hierodula transcaucasica",
+    "common_name": "Transcaucasian Giant Mantis",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.618Z"
+  },
+  {
+    "observation_id": 313230270,
+    "species": "Lycorma delicatula",
+    "common_name": "Spotted Lanternfly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 10626898,
+    "species": "Rabdophaga strobiloides",
+    "common_name": "Willow Pinecone Gall Midge",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 151078831,
+    "species": "Argiope australis",
+    "common_name": "Common Garden Orbweb Spider",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 65943356,
+    "species": "Eristalinus aeneus",
+    "common_name": "Common Lagoon Fly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 7094929,
+    "species": "Bombus impatiens",
+    "common_name": "Common Eastern Bumble Bee",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 27082084,
+    "species": "Tetraneura ulmi",
+    "common_name": "Elm Sack Gall Aphid",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 55234539,
+    "species": "Amblyomma maculatum",
+    "common_name": "Gulf Coast Tick",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 105513287,
+    "species": "Macroglossum stellatarum",
+    "common_name": "Eurasian Hummingbird Hawkmoth",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 112375587,
+    "species": "Vanessa itea",
+    "common_name": "Yellow Admiral",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 140984915,
+    "species": "Dermacentor variabilis",
+    "common_name": "American Dog Tick",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 145614906,
+    "species": "Xanthocnemis zealandica",
+    "common_name": "Red Damselfly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 161700304,
+    "species": "Dermacentor variabilis",
+    "common_name": "American Dog Tick",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 193440447,
+    "species": "Oecophylla smaragdina",
+    "common_name": "Asian Weaver Ant",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 213640848,
+    "species": "Bombus pascuorum",
+    "common_name": "Common Carder Bumble Bee",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 236744617,
+    "species": "Phalangium opilio",
+    "common_name": "European Harvestman",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 256433568,
+    "species": "Battus polydamas",
+    "common_name": "Polydamas Swallowtail",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 345633031,
+    "species": "Orthosia gothica",
+    "common_name": "Hebrew Character",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 49112421,
+    "species": "Didymomyia tiliacea",
+    "common_name": "Linden gall midge",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 304617274,
+    "species": "Celticecis pubescens",
+    "common_name": "Hackberry Pubescent Gall Midge",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 1401550,
+    "species": "Scolopendra polymorpha",
+    "common_name": "Common Desert Centipede",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 45449042,
+    "species": "Amblyomma americanum",
+    "common_name": "Lone Star Tick",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 223453509,
+    "species": "Extatosoma tiaratum",
+    "common_name": "Spiny Leaf insect",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 213385567,
+    "species": "Aglais urticae",
+    "common_name": "Small Tortoiseshell",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 93080438,
+    "species": "Eristalis tenax",
+    "common_name": "Common Drone Fly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 128314047,
+    "species": "Opilio canestrinii",
+    "common_name": "Canestrini's Harvestman",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 146027209,
+    "species": "Apis mellifera",
+    "common_name": "Western Honey Bee",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 163007804,
+    "species": "Pyrrhosoma nymphula",
+    "common_name": "Large Red Damselfly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 30900884,
+    "species": "Tipula abdominalis",
+    "common_name": "Giant Crane Fly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 181739077,
+    "species": "Tipula abdominalis",
+    "common_name": "Giant Crane Fly",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  },
+  {
+    "observation_id": 188929838,
+    "species": "Trachelipus rathkii",
+    "common_name": "Rathke's Woodlouse",
+    "reason": "flagged_review",
+    "removed_at": "2026-04-07T20:43:13.621Z"
+  }
+]

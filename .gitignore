@@ -16,3 +16,5 @@ photo_assets/
 older_analytics/
 .worktrees/
 scripts/reddit-posts/
+scripts/flagged-observations.json
+scripts/review-candidates.json
