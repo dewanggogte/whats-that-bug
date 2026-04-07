@@ -858,10 +858,13 @@ function renderTimeTrialSummary() {
           <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
       </div>
+
+      ${renderSessionFeedbackForm()}
     </div>
   `;
     attachShareHandlers(shareText);
     attachPlayAgainHandlers();
+    attachSessionFeedbackHandlers();
   });
 }
 
@@ -956,10 +959,13 @@ function renderStreakGameOver(picked, correct) {
           <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="font-size: 13px;">Learn more →</a>
         </div>
       </div>
+
+      ${renderSessionFeedbackForm()}
     </div>
   `;
     attachShareHandlers(shareText);
     attachPlayAgainHandlers();
+    attachSessionFeedbackHandlers();
   });
 }
 
