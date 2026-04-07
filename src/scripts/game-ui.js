@@ -8,6 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
+import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, isMuted, toggleMute } from './sounds.js';
 
 function escapeHTML(str) {
   return String(str)
@@ -66,22 +67,6 @@ function getBugs101Name(taxon) {
 
 const base = window.__BASE || '';
 
-// Audio — synthesize a short ding using Web Audio API
-let audioCtx = null;
-function playDing() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-  osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime + 0.2);
-}
 
 let session = null;
 let currentRound = null;
@@ -306,6 +291,7 @@ function updateTimerDisplay() {
     timerEl.textContent = `${timeRemaining}s`;
     if (timeRemaining <= 10) {
       timerEl.classList.add('urgent');
+      playTick();
     }
   }
 }
@@ -412,6 +398,17 @@ function renderRound() {
     </div>
   `;
 
+  // Mute toggle button
+  const muteBtn = document.createElement('button');
+  muteBtn.className = 'mute-toggle';
+  muteBtn.setAttribute('aria-label', 'Toggle sound');
+  muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
+  muteBtn.addEventListener('click', () => {
+    const nowMuted = toggleMute();
+    muteBtn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
+  });
+  container.querySelector('.container')?.appendChild(muteBtn);
+
   // Attach click handlers
   const choiceEls = container.querySelectorAll('.choice');
   choiceEls.forEach((el, i) => {
@@ -491,8 +488,10 @@ function handleAnswer(picked, choices, choiceEls) {
     score, timeTaken, currentSetKey, session.mode
   );
 
-  // Ding on correct answer
-  if (score > 0) playDing();
+  // Sound feedback based on score
+  if (score === 100) { playPerfect(); }
+  else if (score > 0) { playCorrect(); }
+  else { playWrong(); }
 
   // MODE-SPECIFIC POST-ANSWER FLOW
   if (mode === 'time_trial') {
@@ -556,6 +555,10 @@ function handleStreakPostAnswer(score, picked, correct) {
     // Update streak display
     const streakEl = container.querySelector('.streak-count');
     if (streakEl) streakEl.textContent = session.currentStreak;
+
+    if (session.currentStreak > 0 && session.currentStreak % 5 === 0) {
+      playStreakMilestone(session.currentStreak);
+    }
 
     setTimeout(() => startRound(), 500);
   } else {
@@ -730,6 +733,7 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
 // ===== SUMMARY SCREENS =====
 
 function renderClassicSummary() {
+  playSessionEnd();
   const exactCount = session.history.filter(h => h.score === 100).length;
   const closeCount = session.history.filter(h => h.score >= 50 && h.score < 100).length;
   const missCount = session.history.filter(h => h.score < 50).length;
@@ -770,6 +774,7 @@ function renderClassicSummary() {
 }
 
 function renderTimeTrialSummary() {
+  playSessionEnd();
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
   const correctCount = session.correctCount;
