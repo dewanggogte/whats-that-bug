@@ -386,10 +386,26 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       }
 
       // --- Badges modal ---
+      function badgeShareText(def) {
+        const rarityLabel = { common: '', uncommon: '', rare: 'Rare ', very_rare: 'Very Rare ', epic: 'Epic ', legendary: 'Legendary ' };
+        const prefix = rarityLabel[def.rarity] || '';
+        return [
+          `I just earned the ${prefix}"${def.name}" badge on What's That Bug!`,
+          '',
+          `${def.icon} ${def.name} — ${def.description}`,
+          '',
+          `${achievements.length}/${ACHIEVEMENT_DEFS.length} badges collected. Can you beat that?`,
+          '',
+          'https://dewanggogte.com/games/bugs/?ref=share',
+        ].join('\n');
+      }
+
       function buildBadgesModal() {
         const earnedIds = new Set(achievements.map(a => a.id));
         const rarityLabel = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', very_rare: 'Very Rare', epic: 'Epic', legendary: 'Legendary' };
         const rarityColor = { common: '#666', uncommon: '#059669', rare: '#3b6eb8', very_rare: '#a855f7', epic: '#c44b2b', legendary: '#b8953b' };
+
+        const shareIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
 
         const cards = ACHIEVEMENT_DEFS.map(def => {
           const earned = earnedIds.has(def.id);
@@ -400,6 +416,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
               <span class="badge-card-name">${def.name}</span>
               <span class="badge-card-desc">${def.description}</span>
               <span class="badge-card-rarity" style="color:${rarityColor[def.rarity] || '#666'}">${rarityLabel[def.rarity] || def.rarity}</span>
+              ${earned ? `<button class="badge-share-btn" data-badge-id="${def.id}" title="Share this badge">${shareIcon} Share</button>` : ''}
             </div>
           `;
         });
@@ -408,6 +425,30 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
           <div class="badge-summary">${achievements.length} of ${ACHIEVEMENT_DEFS.length} earned</div>
           <div class="badges-grid">${cards.join('')}</div>
         `;
+      }
+
+      function attachBadgeShareHandlers() {
+        modalBody.querySelectorAll('.badge-share-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const def = ACHIEVEMENT_DEFS.find(d => d.id === btn.dataset.badgeId);
+            if (!def) return;
+            const text = badgeShareText(def);
+            if (typeof navigator !== 'undefined' && navigator.share) {
+              try { await navigator.share({ text }); } catch {}
+            } else {
+              try {
+                await navigator.clipboard.writeText(text);
+                btn.innerHTML = '&#10003; Copied!';
+              } catch {
+                btn.textContent = 'Failed';
+              }
+              setTimeout(() => {
+                const shareIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+                btn.innerHTML = `${shareIcon} Share`;
+              }, 2000);
+            }
+          });
+        });
       }
 
       // --- Click handlers ---
@@ -422,6 +463,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
             modalBody.innerHTML = html;
           } else if (modal === 'badges') {
             openModal('Badge Collection', buildBadgesModal());
+            attachBadgeShareHandlers();
           }
         });
       });
@@ -718,6 +760,28 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+  }
+  .badge-share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+  .badge-share-btn:hover {
+    background: var(--accent);
+    color: white;
+  }
+  .badge-share-btn svg {
+    flex-shrink: 0;
   }
 </style>
 </Base>
