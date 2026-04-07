@@ -57,12 +57,15 @@ function playNote(ctx, type, freqStart, freqEnd, gainStart, gainEnd, startTime, 
   osc.stop(startTime + duration);
 }
 
-/** Ascending chime — correct answer (same as original playDing). */
+/** Celebratory chime — correct answer. Major third chord (C6 + E6) with upward sweep. */
 export function playCorrect() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  playNote(ctx, 'sine', 880, 1320, 0.3, 0.01, t, 0.2);
+  // Root note — quick upward sweep
+  playNote(ctx, 'sine', 1047, 1320, 0.2, 0.01, t, 0.18);
+  // Major third — adds warmth
+  playNote(ctx, 'sine', 1318, 1568, 0.15, 0.01, t + 0.03, 0.18);
 }
 
 /** Soft descending tone — wrong answer. */
@@ -74,15 +77,21 @@ export function playWrong() {
 }
 
 /**
- * Sparkle flourish — perfect score.
- * Two quick ascending notes: C6 (1047 Hz) then G6 (1568 Hz), staggered 80ms.
+ * Sparkle flourish — perfect score (100 pts).
+ * Three-note ascending major arpeggio (C6-E6-G6) with harmonic shimmer.
  */
 export function playPerfect() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  playNote(ctx, 'sine', 1047, 1200, 0.25, 0.01, t, 0.15);
-  playNote(ctx, 'sine', 1568, 1800, 0.25, 0.01, t + 0.08, 0.2);
+  // C6 — root
+  playNote(ctx, 'sine', 1047, 1100, 0.22, 0.01, t, 0.15);
+  // E6 — major third
+  playNote(ctx, 'sine', 1318, 1400, 0.22, 0.01, t + 0.07, 0.15);
+  // G6 — fifth, with shimmer (triangle adds sparkle)
+  playNote(ctx, 'triangle', 1568, 1700, 0.18, 0.01, t + 0.14, 0.22);
+  // High octave shimmer — very soft
+  playNote(ctx, 'sine', 2093, 2200, 0.08, 0.01, t + 0.18, 0.2);
 }
 
 /**
@@ -118,12 +127,25 @@ export function playSessionEnd() {
 }
 
 /**
- * Subtle tick — timer warning (fires when timeRemaining <= 10).
- * 1000 Hz square wave, very short and quiet.
+ * Clock tick — timer warning (fires every second when timeRemaining <= 10).
+ * Sharp click/pop using a noise burst, like a mechanical clock.
  */
 export function playTick() {
   if (muted) return;
   const ctx = getCtx();
   const t = ctx.currentTime;
-  playNote(ctx, 'square', 1000, 1000, 0.05, 0.001, t, 0.05);
+
+  // Sharp attack click — high frequency burst that drops fast
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'square';
+  // Start high and drop sharply — creates a "click" rather than a "beep"
+  osc.frequency.setValueAtTime(1800, t);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);
+  gain.gain.setValueAtTime(0.12, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+  osc.start(t);
+  osc.stop(t + 0.03);
 }

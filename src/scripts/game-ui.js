@@ -86,6 +86,20 @@ let roundCache = [];
 let displayRound = 0;
 let prefetchedLeaderboards = null;
 
+/** Create the mute toggle once, appended to document.body so it persists across re-renders. */
+function ensureMuteToggle() {
+  if (document.querySelector('.mute-toggle')) return; // already exists
+  const btn = document.createElement('button');
+  btn.className = 'mute-toggle';
+  btn.setAttribute('aria-label', 'Toggle sound');
+  btn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
+  btn.addEventListener('click', () => {
+    const nowMuted = toggleMute();
+    btn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
+  });
+  document.body.appendChild(btn);
+}
+
 function preloadRounds() {
   while (roundCache.length < PRELOAD_AHEAD) {
     const round = session.nextRound();
@@ -398,16 +412,8 @@ function renderRound() {
     </div>
   `;
 
-  // Mute toggle button
-  const muteBtn = document.createElement('button');
-  muteBtn.className = 'mute-toggle';
-  muteBtn.setAttribute('aria-label', 'Toggle sound');
-  muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}';
-  muteBtn.addEventListener('click', () => {
-    const nowMuted = toggleMute();
-    muteBtn.textContent = nowMuted ? '\u{1F507}' : '\u{1F50A}';
-  });
-  container.querySelector('.container')?.appendChild(muteBtn);
+  // Ensure persistent mute toggle exists (outside game container so it survives re-renders)
+  ensureMuteToggle();
 
   // Attach click handlers
   const choiceEls = container.querySelectorAll('.choice');
