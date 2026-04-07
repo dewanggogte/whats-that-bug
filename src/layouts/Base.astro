@@ -220,6 +220,26 @@ const resolvedOgType = ogType || 'website';
     });
 
     updateSoundUI();
+
+    // Start background music on first user interaction (browser autoplay policy
+    // requires a gesture before the AudioContext can produce sound).
+    function tryStartMusic() {
+      if (!isMuted() && !isBgMusicPlaying()) startBgMusic();
+      document.removeEventListener('click', tryStartMusic);
+      document.removeEventListener('keydown', tryStartMusic);
+      document.removeEventListener('touchstart', tryStartMusic);
+    }
+    if (!isMuted()) {
+      document.addEventListener('click', tryStartMusic);
+      document.addEventListener('keydown', tryStartMusic);
+      document.addEventListener('touchstart', tryStartMusic);
+    }
+
+    // Pause / resume music when tab visibility changes (saves CPU when hidden)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopBgMusic();
+      else if (!isMuted()) startBgMusic();
+    });
   </script>
 
   <script>
