@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>General Pool Review</title>
+<style>
+  :root {
+    --bg: #1a1917;
+    --surface: #222120;
+    --text: #e0ddd8;
+    --accent: #d4794e;
+    --border: #2e2c28;
+    --success: #5bc49a;
+    --error: #e05d50;
+    --warning: #d4794e;
+    --muted: #9a9590;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .stats .stat-value {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .stats .stat-value.approved { color: var(--success); }
+  .stats .stat-value.rejected { color: var(--error); }
+  .stats .stat-value.flagged { color: var(--warning); }
+
+  .progress-bar-container {
+    background: var(--border);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  /* ---- Grid ---- */
+  .content {
+    padding: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 1200px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .header { padding: 12px 16px; }
+    .content { padding: 16px; }
+  }
+
+  /* ---- Card ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: opacity 0.3s, border-color 0.15s;
+    position: relative;
+  }
+
+  .card:focus-within,
+  .card.focused {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  .card.reviewed {
+    opacity: 0.4;
+  }
+
+  .card .status-badge {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    z-index: 5;
+  }
+
+  .card.reviewed .status-badge {
+    display: block;
+  }
+
+  .card.status-approved .status-badge { background: var(--success); color: #0d3320; }
+  .card.status-rejected .status-badge { background: var(--error); color: #2d0f0d; }
+  .card.status-flagged .status-badge { background: var(--warning); color: #2d1a0d; }
+
+  .card-image {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+
+  .card-body {
+    padding: 12px;
+  }
+
+  .card-species {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-location {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+  }
+
+  .card-flag-info {
+    font-size: 11px;
+    color: var(--warning);
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: rgba(212, 121, 78, 0.1);
+    border-radius: 4px;
+  }
+
+  .card-flag-info span {
+    margin-right: 10px;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .card-actions .btn {
+    flex: 1;
+    padding: 7px 4px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    transition: filter 0.15s;
+  }
+
+  .card-actions .btn:hover { filter: brightness(0.85); }
+  .card-actions .btn:disabled { opacity: 0.3; cursor: default; filter: none; }
+
+  .btn-approve { background: var(--success); color: #0d3320; }
+  .btn-reject { background: var(--error); color: #fff; }
+  .btn-flag { background: var(--warning); color: #2d1a0d; }
+
+  /* ---- Reason selector ---- */
+  .reason-selector {
+    display: none;
+    margin-top: 8px;
+  }
+
+  .reason-selector.visible {
+    display: block;
+  }
+
+  .reason-selector select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .reason-selector .btn-confirm {
+    width: 100%;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .reason-selector .btn-confirm:hover { filter: brightness(0.85); }
+  .reason-selector .btn-confirm.confirm-reject { background: var(--error); color: #fff; }
+  .reason-selector .btn-confirm.confirm-flag { background: var(--warning); color: #2d1a0d; }
+
+  /* ---- Load more ---- */
+  .load-more-container {
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  .btn-load-more {
+    padding: 12px 40px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn-load-more:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn-load-more:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  /* ---- Toast ---- */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #0d3320;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 100;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.error { background: var(--error); color: #fff; }
+
+  /* ---- Keyboard hint ---- */
+  .keyboard-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 8px 0 0;
+  }
+
+  .keyboard-hint kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font-family: monospace;
+    font-size: 11px;
+    margin: 0 2px;
+  }
+
+  /* ---- Empty state ---- */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--muted);
+  }
+
+  .empty-state h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>General Pool Review</h1>
+    <div class="stats" id="stats">
+      <div>Reviewed: <span class="stat-value" id="stat-reviewed">0</span></div>
+      <div>Approved: <span class="stat-value approved" id="stat-approved">0</span></div>
+      <div>Rejected: <span class="stat-value rejected" id="stat-rejected">0</span></div>
+      <div>Flagged: <span class="stat-value flagged" id="stat-flagged">0</span></div>
+      <div>Remaining: <span class="stat-value" id="stat-remaining">0</span></div>
+    </div>
+  </div>
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="keyboard-hint">
+    Keyboard: <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> navigate cards &middot;
+    <kbd>1</kbd> Approve &middot; <kbd>2</kbd> Reject &middot; <kbd>3</kbd> Flag
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="load-more-container">
+    <button class="btn-load-more" id="load-more" onclick="loadBatch()">Load next batch</button>
+  </div>
+
+  <div id="empty-state" class="empty-state" style="display:none;">
+    <h2>All done!</h2>
+    <p>No more observations to review.</p>
+  </div>
+</div>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+const REASONS = [
+  { value: '', label: 'Select reason...' },
+  { value: 'blurry', label: 'Blurry / low quality' },
+  { value: 'wrong_species', label: 'Wrong species ID' },
+  { value: 'cant_see_bug', label: "Can't see the bug" },
+  { value: 'misleading', label: 'Misleading photo' },
+  { value: 'other', label: 'Other' },
+];
+
+let observations = [];
+let focusedIdx = -1;
+let busy = false;
+
+// ---- Toast ----
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.style.display = 'block';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+// ---- Stats ----
+async function refreshStats() {
+  try {
+    const res = await fetch('/api/general/stats');
+    const data = await res.json();
+    document.getElementById('stat-reviewed').textContent = data.reviewed;
+    document.getElementById('stat-approved').textContent = data.approved;
+    document.getElementById('stat-rejected').textContent = data.rejected;
+    document.getElementById('stat-flagged').textContent = data.flagged;
+    document.getElementById('stat-remaining').textContent = data.remaining;
+
+    const pct = data.total_observations > 0
+      ? (data.reviewed / data.total_observations * 100)
+      : 0;
+    document.getElementById('progress-bar').style.width = pct.toFixed(1) + '%';
+  } catch (e) {
+    console.error('Failed to refresh stats:', e);
+  }
+}
+
+// ---- Load batch ----
+async function loadBatch() {
+  if (busy) return;
+  busy = true;
+  document.getElementById('load-more').disabled = true;
+
+  try {
+    // Remove reviewed cards from DOM
+    const grid = document.getElementById('grid');
+    grid.querySelectorAll('.card.reviewed').forEach(el => el.remove());
+
+    // Also remove from our observations array
+    observations = observations.filter(o => !o._reviewed);
+
+    const res = await fetch('/api/general/batch?size=20&priority=flagged');
+    const data = await res.json();
+
+    if (data.observations.length === 0 && observations.length === 0) {
+      document.getElementById('empty-state').style.display = 'block';
+      document.getElementById('load-more').style.display = 'none';
+      return;
+    }
+
+    // Deduplicate: skip any already in our local list
+    const existingIds = new Set(observations.map(o => o.id));
+    const newObs = data.observations.filter(o => !existingIds.has(o.id));
+
+    for (const obs of newObs) {
+      obs._reviewed = false;
+      observations.push(obs);
+      grid.appendChild(createCard(obs, observations.length - 1));
+    }
+
+    await refreshStats();
+  } catch (e) {
+    toast('Failed to load batch: ' + e.message, true);
+    console.error(e);
+  } finally {
+    busy = false;
+    document.getElementById('load-more').disabled = false;
+  }
+}
+
+// ---- Card creation ----
+function createCard(obs, idx) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.idx = idx;
+  card.dataset.id = obs.id;
+  card.tabIndex = 0;
+
+  // Focus tracking
+  card.addEventListener('focus', () => {
+    focusedIdx = parseInt(card.dataset.idx);
+    document.querySelectorAll('.card.focused').forEach(c => c.classList.remove('focused'));
+    card.classList.add('focused');
+  });
+
+  let flagHTML = '';
+  if (obs.flag_data) {
+    const fd = obs.flag_data;
+    flagHTML = '<div class="card-flag-info">' +
+      '<span>Miss: ' + (fd.miss_rate * 100).toFixed(0) + '%</span>' +
+      '<span>Score: ' + fd.quality_score.toFixed(2) + '</span>' +
+      '<span>N=' + fd.sample_size + '</span>' +
+    '</div>';
+  }
+
+  const species = obs.taxon?.common_name || obs.taxon?.species || 'Unknown';
+  const location = obs.location || 'Unknown location';
+
+  card.innerHTML =
+    '<div class="status-badge"></div>' +
+    '<img class="card-image" src="' + esc(obs.photo_url) + '" alt="' + esc(species) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+    '<div class="card-body">' +
+      '<div class="card-species" title="' + esc(species) + '">' + esc(species) + '</div>' +
+      '<div class="card-location" title="' + esc(location) + '">' + esc(location) + '</div>' +
+      flagHTML +
+      '<div class="card-actions">' +
+        '<button class="btn btn-approve" data-action="approved" title="Approve (1)">Approve</button>' +
+        '<button class="btn btn-reject" data-action="rejected" title="Reject (2)">Reject</button>' +
+        '<button class="btn btn-flag" data-action="flagged" title="Flag (3)">Flag</button>' +
+      '</div>' +
+      '<div class="reason-selector" id="reason-' + obs.id + '">' +
+        '<select>' +
+          REASONS.map(r => '<option value="' + r.value + '">' + r.label + '</option>').join('') +
+        '</select>' +
+        '<button class="btn-confirm">Confirm</button>' +
+      '</div>' +
+    '</div>';
+
+  // Button handlers
+  card.querySelectorAll('.card-actions .btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleAction(obs.id, btn.dataset.action, card);
+    });
+  });
+
+  // Reason confirm handler
+  const reasonSection = card.querySelector('.reason-selector');
+  const confirmBtn = reasonSection.querySelector('.btn-confirm');
+  confirmBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const reason = reasonSection.querySelector('select').value;
+    if (!reason) {
+      toast('Please select a reason', true);
+      return;
+    }
+    submitReview(obs.id, reasonSection._pendingAction, reason, card);
+  });
+
+  return card;
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---- Actions ----
+function handleAction(obsId, action, card) {
+  if (card.classList.contains('reviewed')) return;
+
+  if (action === 'approved') {
+    submitReview(obsId, 'approved', null, card);
+    return;
+  }
+
+  // For reject/flag, show reason selector
+  const reasonSection = card.querySelector('.reason-selector');
+  const confirmBtn = reasonSection.querySelector('.btn-confirm');
+
+  // Toggle if already showing for same action
+  if (reasonSection.classList.contains('visible') && reasonSection._pendingAction === action) {
+    reasonSection.classList.remove('visible');
+    return;
+  }
+
+  reasonSection._pendingAction = action;
+  reasonSection.classList.add('visible');
+  reasonSection.querySelector('select').value = '';
+
+  // Style confirm button
+  confirmBtn.className = 'btn-confirm' + (action === 'rejected' ? ' confirm-reject' : ' confirm-flag');
+  confirmBtn.textContent = action === 'rejected' ? 'Confirm Reject' : 'Confirm Flag';
+}
+
+async function submitReview(obsId, status, reason, card) {
+  if (busy) return;
+  busy = true;
+
+  try {
+    const body = { observation_id: obsId, status };
+    if (reason) body.reason = reason;
+
+    const res = await fetch('/api/general/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    // Mark as reviewed
+    card.classList.add('reviewed', 'status-' + status);
+    card.querySelector('.status-badge').textContent = status;
+
+    // Hide reason selector
+    const reasonSection = card.querySelector('.reason-selector');
+    reasonSection.classList.remove('visible');
+
+    // Disable buttons
+    card.querySelectorAll('.card-actions .btn').forEach(b => b.disabled = true);
+
+    // Mark in our data
+    const obsEntry = observations.find(o => o.id === obsId);
+    if (obsEntry) obsEntry._reviewed = true;
+
+    toast(status.charAt(0).toUpperCase() + status.slice(1) + ': #' + obsId);
+
+    await refreshStats();
+  } catch (e) {
+    toast('Error: ' + e.message, true);
+  } finally {
+    busy = false;
+  }
+}
+
+// ---- Keyboard shortcuts ----
+document.addEventListener('keydown', (e) => {
+  // Only handle if not in a select/input
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+  const cards = document.querySelectorAll('.card:not(.reviewed)');
+  if (cards.length === 0) return;
+
+  // Find currently focused card
+  let focused = document.querySelector('.card.focused:not(.reviewed)');
+  if (!focused && (e.key === '1' || e.key === '2' || e.key === '3')) return;
+
+  if (e.key === '1' && focused) {
+    e.preventDefault();
+    handleAction(parseInt(focused.dataset.id), 'approved', focused);
+  } else if (e.key === '2' && focused) {
+    e.preventDefault();
+    handleAction(parseInt(focused.dataset.id), 'rejected', focused);
+  } else if (e.key === '3' && focused) {
+    e.preventDefault();
+    handleAction(parseInt(focused.dataset.id), 'flagged', focused);
+  }
+});
+
+// ---- Init ----
+loadBatch();
+</script>
+</body>
+</html>

@@ -29,6 +29,8 @@ const DAILY_DIR = join(DATA_DIR, 'daily');
 const MANIFEST_FILE = join(DAILY_DIR, 'manifest.json');
 const CANDIDATES_FILE = join(DAILY_DIR, 'candidates.json');
 const OBS_FILE = join(DATA_DIR, 'observations.json');
+const REVIEWED_OBS_FILE = join(DATA_DIR, 'reviewed-observations.json');
+const FLAGGED_OBS_FILE = join(__dirname, 'flagged-observations.json');
 
 const PORT = parseInt(process.argv[2] || '3333', 10);
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -681,6 +683,190 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  // --- General Pool Review UI ---
+  if (url.pathname === '/general') {
+    const htmlPath = join(__dirname, 'review-general.html');
+    if (existsSync(htmlPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(readFileSync(htmlPath, 'utf-8'));
+    } else {
+      res.writeHead(404);
+      res.end('review-general.html not found');
+    }
+    return;
+  }
+
+  // --- API: GET /api/general/batch ---
+  if (url.pathname === '/api/general/batch' && req.method === 'GET') {
+    try {
+      const size = parseInt(url.searchParams.get('size') || '20', 10);
+
+      // Load all observations
+      const allObs = existsSync(OBS_FILE)
+        ? JSON.parse(readFileSync(OBS_FILE, 'utf-8'))
+        : [];
+
+      // Load review state
+      const reviewState = existsSync(REVIEWED_OBS_FILE)
+        ? JSON.parse(readFileSync(REVIEWED_OBS_FILE, 'utf-8'))
+        : { version: 1, observations: {} };
+
+      // Load flagged observations (optional — may not exist yet)
+      let flaggedMap = new Map();
+      if (existsSync(FLAGGED_OBS_FILE)) {
+        const flaggedArr = JSON.parse(readFileSync(FLAGGED_OBS_FILE, 'utf-8'));
+        for (const f of flaggedArr) {
+          // observation_id in flagged file is a string
+          flaggedMap.set(String(f.observation_id), f);
+        }
+      }
+
+      // Filter to unreviewed
+      const reviewedIds = reviewState.observations || {};
+      const unreviewed = allObs.filter(o => !reviewedIds[String(o.id)]);
+
+      // Sort: flagged first (by quality_score descending), then unflagged
+      unreviewed.sort((a, b) => {
+        const aFlag = flaggedMap.get(String(a.id));
+        const bFlag = flaggedMap.get(String(b.id));
+        // Flagged observations come first
+        if (aFlag && !bFlag) return -1;
+        if (!aFlag && bFlag) return 1;
+        // Among flagged, sort by quality_score descending
+        if (aFlag && bFlag) return (bFlag.quality_score || 0) - (aFlag.quality_score || 0);
+        // Among unflagged, keep original order
+        return 0;
+      });
+
+      // Take the first `size` observations
+      const batch = unreviewed.slice(0, size).map(o => {
+        const flagData = flaggedMap.get(String(o.id));
+        return {
+          id: o.id,
+          photo_url: o.photo_url,
+          taxon: {
+            species: o.taxon?.species || null,
+            common_name: o.taxon?.common_name || null,
+            order: o.taxon?.order || null,
+          },
+          location: o.location || null,
+          attribution: o.attribution || null,
+          flag_data: flagData
+            ? {
+                miss_rate: flagData.miss_rate,
+                quality_score: flagData.quality_score,
+                sample_size: flagData.total || 0,
+              }
+            : null,
+        };
+      });
+
+      const totalReviewed = Object.keys(reviewedIds).length;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        observations: batch,
+        remaining: unreviewed.length - batch.length,
+        total_reviewed: totalReviewed,
+      }));
+    } catch (err) {
+      console.error('Error in /api/general/batch:', err.message);
+      res.writeHead(500);
+      res.end(err.message);
+    }
+    return;
+  }
+
+  // --- API: POST /api/general/review ---
+  if (url.pathname === '/api/general/review' && req.method === 'POST') {
+    let body = '';
+    for await (const chunk of req) body += chunk;
+
+    try {
+      const { observation_id, status, reason } = JSON.parse(body);
+
+      // Validate status
+      const validStatuses = ['approved', 'rejected', 'flagged'];
+      if (!validStatuses.includes(status)) {
+        res.writeHead(400);
+        res.end('Invalid status. Must be one of: ' + validStatuses.join(', '));
+        return;
+      }
+
+      // Validate reason for reject/flag
+      const validReasons = ['blurry', 'wrong_species', 'cant_see_bug', 'misleading', 'other'];
+      if ((status === 'rejected' || status === 'flagged') && reason && !validReasons.includes(reason)) {
+        res.writeHead(400);
+        res.end('Invalid reason. Must be one of: ' + validReasons.join(', '));
+        return;
+      }
+
+      // Load current state
+      const reviewState = existsSync(REVIEWED_OBS_FILE)
+        ? JSON.parse(readFileSync(REVIEWED_OBS_FILE, 'utf-8'))
+        : { version: 1, last_updated: null, observations: {} };
+
+      // Add/update the entry
+      const entry = {
+        status,
+        reviewed_at: new Date().toISOString(),
+      };
+      if (reason) entry.reason = reason;
+
+      reviewState.observations[String(observation_id)] = entry;
+      reviewState.last_updated = new Date().toISOString();
+
+      // Write back
+      writeFileSync(REVIEWED_OBS_FILE, JSON.stringify(reviewState, null, 2));
+
+      const totalReviewed = Object.keys(reviewState.observations).length;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, total_reviewed: totalReviewed }));
+    } catch (err) {
+      console.error('Error in /api/general/review:', err.message);
+      res.writeHead(500);
+      res.end(err.message);
+    }
+    return;
+  }
+
+  // --- API: GET /api/general/stats ---
+  if (url.pathname === '/api/general/stats' && req.method === 'GET') {
+    try {
+      // Count total observations
+      const allObs = existsSync(OBS_FILE)
+        ? JSON.parse(readFileSync(OBS_FILE, 'utf-8'))
+        : [];
+
+      // Load review state
+      const reviewState = existsSync(REVIEWED_OBS_FILE)
+        ? JSON.parse(readFileSync(REVIEWED_OBS_FILE, 'utf-8'))
+        : { version: 1, observations: {} };
+
+      const entries = Object.values(reviewState.observations || {});
+      const reviewed = entries.length;
+      const approved = entries.filter(e => e.status === 'approved').length;
+      const rejected = entries.filter(e => e.status === 'rejected').length;
+      const flagged = entries.filter(e => e.status === 'flagged').length;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        total_observations: allObs.length,
+        reviewed,
+        approved,
+        rejected,
+        flagged,
+        remaining: allObs.length - reviewed,
+      }));
+    } catch (err) {
+      console.error('Error in /api/general/stats:', err.message);
+      res.writeHead(500);
+      res.end(err.message);
+    }
+    return;
+  }
+
   // --- Serve images from public/data/ ---
   if (url.pathname.startsWith('/images/daily/')) {
     const filePath = join(DATA_DIR, url.pathname.replace('/images/', ''));
@@ -704,7 +890,8 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n\u{1FAB2} Daily Challenge Review Server\n`);
-  console.log(`   http://localhost:${PORT}\n`);
+  console.log(`   http://localhost:${PORT}          — Daily challenge review`);
+  console.log(`   http://localhost:${PORT}/general   — General pool review\n`);
   console.log(`   Click the reveal image to set crop center.`);
   console.log(`   Hit "Re-crop" to regenerate crops from the server.`);
   console.log(`   Approve each mode individually. "Replace" picks a new candidate.`);
