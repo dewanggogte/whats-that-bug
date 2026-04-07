@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's That Bug — Sound Browser v2</title>
+<style>
+  :root {
+    --bg: #faf6f1;
+    --surface: #fff;
+    --border: #e8ddd3;
+    --text: #3d2c1e;
+    --text-muted: #8b7560;
+    --terracotta: #c45d3e;
+    --terracotta-light: #f0d5cc;
+    --green: #4a8c5c;
+    --green-light: #d4edda;
+    --red: #c44e4e;
+    --red-light: #f8d7da;
+    --amber: #b8860b;
+    --amber-light: #fff3cd;
+    --blue: #4a7c9c;
+    --blue-light: #d6eaf8;
+    --radius: 10px;
+    --shadow: 0 2px 8px rgba(61,44,30,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5; padding: 0 0 80px;
+  }
+  header {
+    background: var(--terracotta); color: white; padding: 28px 32px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(196,93,62,0.3);
+  }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header p { opacity: 0.85; font-size: 14px; margin-top: 4px; }
+  .header-controls {
+    display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center;
+  }
+  .header-controls button {
+    background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+    color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 500;
+  }
+  .header-controls button:hover { background: rgba(255,255,255,0.3); }
+  .progress-bar {
+    display: flex; align-items: center; gap: 8px; margin-left: auto;
+    font-size: 13px; font-weight: 600;
+  }
+  .progress-track {
+    width: 120px; height: 6px; background: rgba(255,255,255,0.2);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: white; border-radius: 3px; transition: width 0.3s ease;
+  }
+  nav {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 32px; display: flex; gap: 6px; flex-wrap: wrap;
+    position: sticky; top: 108px; z-index: 99;
+  }
+  nav button {
+    background: none; border: 1px solid var(--border); padding: 5px 12px;
+    border-radius: 20px; cursor: pointer; font-size: 12px; color: var(--text-muted);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  nav button:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  nav button.active { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+  nav button .badge {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-left: 4px; vertical-align: middle;
+  }
+  nav button .badge.done { background: var(--green); }
+  nav button .badge.pending { background: var(--amber); }
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+  .category { margin-bottom: 32px; display: none; }
+  .category.visible { display: block; }
+  .category-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .category-header h2 { font-size: 20px; font-weight: 700; }
+  .category-header .status {
+    font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 12px;
+  }
+  .status.pending { background: var(--amber-light); color: var(--amber); }
+  .status.done { background: var(--green-light); color: var(--green); }
+  .category-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+  .sound-card {
+    background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px;
+    transition: all 0.2s; box-shadow: var(--shadow);
+  }
+  .sound-card:hover { border-color: var(--terracotta); }
+  .sound-card.approved { border-color: var(--green); background: var(--green-light); }
+  .sound-card.rejected { opacity: 0.45; border-color: var(--border); }
+  .sound-card.current { border-left: 4px solid var(--blue); }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .card-name .tag {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 1px 6px; border-radius: 4px; background: var(--blue-light); color: var(--blue);
+  }
+  .card-name .tag.new { background: var(--amber-light); color: var(--amber); }
+  .card-desc { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+  .card-tech {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+    color: var(--text-muted); opacity: 0.7; margin-top: 3px;
+  }
+  .card-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .btn {
+    border: none; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 0.15s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .btn-play {
+    background: var(--terracotta); color: white; min-width: 70px; justify-content: center;
+  }
+  .btn-play:hover { background: #b0522f; }
+  .btn-play.playing { background: var(--amber); }
+  .btn-approve { background: var(--green-light); color: var(--green); border: 1px solid var(--green); }
+  .btn-approve:hover { background: var(--green); color: white; }
+  .btn-reject { background: var(--red-light); color: var(--red); border: 1px solid transparent; }
+  .btn-reject:hover { background: var(--red); color: white; }
+  .btn-undo { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-undo:hover { background: var(--bg); }
+  .export-panel {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface);
+    border-top: 2px solid var(--border); padding: 12px 32px;
+    display: flex; align-items: center; justify-content: space-between; z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  }
+  .export-panel .summary { font-size: 14px; color: var(--text-muted); }
+  .export-panel .summary strong { color: var(--text); }
+  .btn-export {
+    background: var(--green); color: white; padding: 10px 24px; border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .btn-export:hover { background: #3d7a4e; }
+  .btn-export:disabled { background: var(--border); cursor: not-allowed; }
+  @media (max-width: 640px) {
+    header { padding: 20px 16px; }
+    nav { padding: 10px 16px; }
+    .container { padding: 16px 12px; }
+    .sound-card { flex-direction: column; align-items: stretch; gap: 10px; }
+    .card-actions { justify-content: flex-end; }
+    .export-panel { padding: 10px 16px; flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>What's That Bug - Sound Browser v2</h1>
+  <p>Audition, approve, or reject sounds for each category. Approved selections will be exported as your new sounds.js.</p>
+  <div class="header-controls">
+    <button onclick="playAllApproved()">Play All Approved</button>
+    <button onclick="resetAll()">Reset All</button>
+    <div class="progress-bar">
+      <span id="progressText">0 / 0</span>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+</header>
+<nav id="categoryNav"></nav>
+<div class="container" id="content"></div>
+<div class="export-panel">
+  <div class="summary" id="exportSummary">Select sounds to get started</div>
+  <button class="btn-export" id="exportBtn" disabled onclick="exportConfig()">Export sounds.js</button>
+</div>
+
+<script>
+// ========== AUDIO ENGINE ==========
+let audioCtx = null;
+let bgDemoInterval = null;
+let bgOscillators = [];
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playNote(ctx, type, freqStart, freqEnd, gainStart, gainEnd, startTime, duration) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, startTime);
+  if (freqEnd !== freqStart) osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
+  gain.gain.setValueAtTime(gainStart, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  osc.start(startTime); osc.stop(startTime + duration);
+}
+
+function playNoise(ctx, duration, gainStart, gainEnd, startTime, filterFreq, filterType) {
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(gainStart, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  if (filterFreq) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType || 'lowpass';
+    filter.frequency.value = filterFreq;
+    source.connect(filter); filter.connect(gain);
+  } else { source.connect(gain); }
+  gain.connect(ctx.destination);
+  source.start(startTime); source.stop(startTime + duration);
+}
+
+function playTick_sharp(ctx, t) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(1800, t);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);
+  gain.gain.setValueAtTime(0.12, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+  osc.start(t); osc.stop(t + 0.03);
+}
+
+function stopBgDemo() {
+  if (bgDemoInterval) { clearInterval(bgDemoInterval); bgDemoInterval = null; }
+  bgOscillators.forEach(o => { try { o.stop(); } catch(e) {} });
+  bgOscillators = [];
+}
+
+// ========== SOUND DEFINITIONS ==========
+const categories = [
+  {
+    id: 'correct',
+    name: 'Correct Answer',
+    desc: 'Played when the player identifies a bug correctly. Should feel rewarding and positive.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'correct_current',
+        name: 'Major Third Chime',
+        tag: 'current',
+        desc: 'Two-note C6+E6 upward sweep. Bright and celebratory.',
+        tech: 'sine: 1047-1320Hz + 1318-1568Hz, 0.18s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1047, 1320, 0.2, 0.01, t, 0.18);
+          playNote(ctx, 'sine', 1318, 1568, 0.15, 0.01, t + 0.03, 0.18);
+        },
+        code: `playNote(ctx, 'sine', 1047, 1320, 0.2, 0.01, t, 0.18);\n  playNote(ctx, 'sine', 1318, 1568, 0.15, 0.01, t + 0.03, 0.18);`
+      },
+      {
+        id: 'correct_bright_bell',
+        name: 'Bright Bell',
+        tag: 'new',
+        desc: 'A resonant bell strike with decaying overtones. Fuller and warmer than the basic ding.',
+        tech: 'sine: 1047Hz + overtones at 2x, 3x, 0.2s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1047, 1047, 0.2, 0.01, t, 0.25);
+          playNote(ctx, 'sine', 2094, 2094, 0.07, 0.001, t, 0.15);
+          playNote(ctx, 'sine', 3141, 3141, 0.03, 0.001, t, 0.08);
+        },
+        code: `playNote(ctx, 'sine', 1047, 1047, 0.2, 0.01, t, 0.25);\n  playNote(ctx, 'sine', 2094, 2094, 0.07, 0.001, t, 0.15);\n  playNote(ctx, 'sine', 3141, 3141, 0.03, 0.001, t, 0.08);`
+      },
+      {
+        id: 'correct_double_ping',
+        name: 'Double Ping',
+        tag: 'new',
+        desc: 'Two quick high-pitched pings, slightly different pitch. Crisp and snappy.',
+        tech: 'sine: 1397Hz then 1760Hz, 0.06s each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1397, 1397, 0.18, 0.01, t, 0.06);
+          playNote(ctx, 'sine', 1760, 1760, 0.18, 0.01, t + 0.08, 0.08);
+        },
+        code: `playNote(ctx, 'sine', 1397, 1397, 0.18, 0.01, t, 0.06);\n  playNote(ctx, 'sine', 1760, 1760, 0.18, 0.01, t + 0.08, 0.08);`
+      },
+      {
+        id: 'correct_chime_ring',
+        name: 'Doorbell Chime',
+        tag: 'new',
+        desc: 'Two-note ding-dong at a pleasant interval. Classic and recognizable.',
+        tech: 'sine: E6 then C6, 0.15s each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1318, 1318, 0.18, 0.01, t, 0.15);
+          playNote(ctx, 'sine', 1047, 1047, 0.18, 0.01, t + 0.13, 0.18);
+        },
+        code: `playNote(ctx, 'sine', 1318, 1318, 0.18, 0.01, t, 0.15);\n  playNote(ctx, 'sine', 1047, 1047, 0.18, 0.01, t + 0.13, 0.18);`
+      },
+      {
+        id: 'correct_arcade_ding',
+        name: 'Arcade Ding',
+        tag: 'new',
+        desc: 'Retro arcade correct sound. Square wave gives it that 8-bit charm.',
+        tech: 'square: B5 then E6, 0.05s each, quick',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'square', 988, 988, 0.1, 0.01, t, 0.05);
+          playNote(ctx, 'square', 1318, 1318, 0.12, 0.01, t + 0.06, 0.07);
+        },
+        code: `playNote(ctx, 'square', 988, 988, 0.1, 0.01, t, 0.05);\n  playNote(ctx, 'square', 1318, 1318, 0.12, 0.01, t + 0.06, 0.07);`
+      },
+      {
+        id: 'correct_marimba',
+        name: 'Marimba Hit',
+        tag: 'new',
+        desc: 'Warm wooden mallet strike. Triangle wave for that rounded, organic tone.',
+        tech: 'triangle: A5 + sine overtone, 0.18s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t, 0.18);
+          playNote(ctx, 'sine', 1760, 1760, 0.06, 0.001, t, 0.1);
+        },
+        code: `playNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t, 0.18);\n  playNote(ctx, 'sine', 1760, 1760, 0.06, 0.001, t, 0.1);`
+      },
+      {
+        id: 'correct_crystal',
+        name: 'Crystal Tap',
+        tag: 'new',
+        desc: 'Glass-like tap with shimmering overtone trail. Bright and delicate.',
+        tech: 'sine: 1568Hz + 3136Hz + 4700Hz, fast decay',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1568, 1568, 0.15, 0.01, t, 0.15);
+          playNote(ctx, 'sine', 3136, 3100, 0.05, 0.001, t, 0.1);
+          playNote(ctx, 'sine', 4700, 4650, 0.02, 0.001, t, 0.06);
+        },
+        code: `playNote(ctx, 'sine', 1568, 1568, 0.15, 0.01, t, 0.15);\n  playNote(ctx, 'sine', 3136, 3100, 0.05, 0.001, t, 0.1);\n  playNote(ctx, 'sine', 4700, 4650, 0.02, 0.001, t, 0.06);`
+      },
+      {
+        id: 'correct_reward_coin',
+        name: 'Reward Coin',
+        tag: 'new',
+        desc: 'Like a coin collect but with a trailing shimmer. More polished than basic coin.',
+        tech: 'sine+triangle: B5->E6 with overtone tail',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 988, 1318, 0.15, 0.01, t, 0.08);
+          playNote(ctx, 'triangle', 1318, 1400, 0.12, 0.01, t + 0.06, 0.12);
+          playNote(ctx, 'sine', 2636, 2636, 0.04, 0.001, t + 0.08, 0.1);
+        },
+        code: `playNote(ctx, 'sine', 988, 1318, 0.15, 0.01, t, 0.08);\n  playNote(ctx, 'triangle', 1318, 1400, 0.12, 0.01, t + 0.06, 0.12);\n  playNote(ctx, 'sine', 2636, 2636, 0.04, 0.001, t + 0.08, 0.1);`
+      }
+    ]
+  },
+  {
+    id: 'wrong',
+    name: 'Wrong Answer',
+    desc: 'Played on incorrect guesses. Should signal "wrong" without being punishing or annoying.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'wrong_current',
+        name: 'Gentle Slide Down',
+        tag: 'current',
+        desc: 'Soft descending sine tone. Subtle and non-punishing.',
+        tech: 'sine: 440-330Hz, 0.25s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 440, 330, 0.15, 0.01, t, 0.25);
+        },
+        code: `playNote(ctx, 'sine', 440, 330, 0.15, 0.01, t, 0.25);`
+      },
+      {
+        id: 'wrong_heavy_drop',
+        name: 'Heavy Two-Tone Thud',
+        tag: 'new',
+        desc: 'Intense two descending notes followed by a low percussive thud. Heavier version of two-tone drop.',
+        tech: 'sine: 494-460Hz, 466-330Hz + thud at 80Hz, 0.35s total',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // First tone - heavier
+          playNote(ctx, 'sine', 494, 460, 0.2, 0.01, t, 0.12);
+          playNote(ctx, 'triangle', 494, 460, 0.08, 0.01, t, 0.12);
+          // Second tone - drops lower
+          playNote(ctx, 'sine', 466, 300, 0.2, 0.01, t + 0.1, 0.18);
+          playNote(ctx, 'triangle', 466, 300, 0.08, 0.01, t + 0.1, 0.18);
+          // Low thud impact
+          playNote(ctx, 'sine', 80, 40, 0.25, 0.001, t + 0.22, 0.12);
+        },
+        code: `// First tone - heavier\n  playNote(ctx, 'sine', 494, 460, 0.2, 0.01, t, 0.12);\n  playNote(ctx, 'triangle', 494, 460, 0.08, 0.01, t, 0.12);\n  // Second tone - drops lower\n  playNote(ctx, 'sine', 466, 300, 0.2, 0.01, t + 0.1, 0.18);\n  playNote(ctx, 'triangle', 466, 300, 0.08, 0.01, t + 0.1, 0.18);\n  // Low thud impact\n  playNote(ctx, 'sine', 80, 40, 0.25, 0.001, t + 0.22, 0.12);`
+      },
+      {
+        id: 'wrong_heavy_drop_v2',
+        name: 'Heavy Drop + Double Thud',
+        tag: 'new',
+        desc: 'Two-tone descend with two staggered low thuds. Even heavier feel.',
+        tech: 'sine: 520-440Hz, 440-280Hz + double thud',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 520, 440, 0.22, 0.01, t, 0.1);
+          playNote(ctx, 'sine', 440, 280, 0.22, 0.01, t + 0.08, 0.16);
+          // Double thud
+          playNote(ctx, 'sine', 100, 35, 0.22, 0.001, t + 0.2, 0.1);
+          playNote(ctx, 'sine', 70, 30, 0.18, 0.001, t + 0.27, 0.12);
+        },
+        code: `playNote(ctx, 'sine', 520, 440, 0.22, 0.01, t, 0.1);\n  playNote(ctx, 'sine', 440, 280, 0.22, 0.01, t + 0.08, 0.16);\n  // Double thud\n  playNote(ctx, 'sine', 100, 35, 0.22, 0.001, t + 0.2, 0.1);\n  playNote(ctx, 'sine', 70, 30, 0.18, 0.001, t + 0.27, 0.12);`
+      },
+      {
+        id: 'wrong_heavy_drop_v3',
+        name: 'Gavel Strike',
+        tag: 'new',
+        desc: 'Two tones dropping into a single authoritative thud. Like a judge\'s gavel.',
+        tech: 'sine: 550-450, 400-280 + heavy thud 60Hz',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 550, 450, 0.18, 0.01, t, 0.09);
+          playNote(ctx, 'sine', 400, 280, 0.18, 0.01, t + 0.08, 0.12);
+          // Heavy gavel thud
+          playNote(ctx, 'sine', 60, 30, 0.3, 0.001, t + 0.18, 0.15);
+          playNoise(ctx, 0.04, 0.06, 0.001, t + 0.18, 500, 'lowpass');
+        },
+        code: `playNote(ctx, 'sine', 550, 450, 0.18, 0.01, t, 0.09);\n  playNote(ctx, 'sine', 400, 280, 0.18, 0.01, t + 0.08, 0.12);\n  // Heavy gavel thud\n  playNote(ctx, 'sine', 60, 30, 0.3, 0.001, t + 0.18, 0.15);\n  playNoise(ctx, 0.04, 0.06, 0.001, t + 0.18, 500, 'lowpass');`
+      },
+      {
+        id: 'wrong_minor',
+        name: 'Minor Chord Stab',
+        tag: 'maybe',
+        desc: 'Quick minor chord hit. Unmistakably "wrong" but musical, not annoying.',
+        tech: 'triangle: A4+C5+Eb5, 0.18s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'triangle', 440, 420, 0.12, 0.01, t, 0.18);
+          playNote(ctx, 'triangle', 523, 500, 0.1, 0.01, t, 0.18);
+          playNote(ctx, 'triangle', 622, 590, 0.08, 0.01, t, 0.18);
+        },
+        code: `playNote(ctx, 'triangle', 440, 420, 0.12, 0.01, t, 0.18);\n  playNote(ctx, 'triangle', 523, 500, 0.1, 0.01, t, 0.18);\n  playNote(ctx, 'triangle', 622, 590, 0.08, 0.01, t, 0.18);`
+      }
+    ]
+  },
+  {
+    id: 'perfect',
+    name: 'Perfect Score',
+    desc: 'Played on a 100-point perfect identification. Should feel special and rare.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'perfect_current',
+        name: 'Sparkle Arpeggio',
+        tag: 'current',
+        desc: 'C6-E6-G6 arpeggio with high shimmer. 4-note ascending sparkle flourish.',
+        tech: 'sine+triangle: C6-E6-G6-C7, staggered',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1047, 1100, 0.22, 0.01, t, 0.15);
+          playNote(ctx, 'sine', 1318, 1400, 0.22, 0.01, t + 0.07, 0.15);
+          playNote(ctx, 'triangle', 1568, 1700, 0.18, 0.01, t + 0.14, 0.22);
+          playNote(ctx, 'sine', 2093, 2200, 0.08, 0.01, t + 0.18, 0.2);
+        },
+        code: `playNote(ctx, 'sine', 1047, 1100, 0.22, 0.01, t, 0.15);\n  playNote(ctx, 'sine', 1318, 1400, 0.22, 0.01, t + 0.07, 0.15);\n  playNote(ctx, 'triangle', 1568, 1700, 0.18, 0.01, t + 0.14, 0.22);\n  playNote(ctx, 'sine', 2093, 2200, 0.08, 0.01, t + 0.18, 0.2);`
+      },
+      {
+        id: 'perfect_extended_fanfare',
+        name: 'Extended Fanfare (7 notes)',
+        tag: 'new',
+        desc: 'C5-E5-G5-C6-E6-G6-C7. The mini fanfare you liked, extended with two more ascending notes.',
+        tech: 'triangle: 7-note major arpeggio, 100ms apart',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const notes = [523, 659, 784, 1047, 1318, 1568, 2093];
+          notes.forEach((f, i) => {
+            playNote(ctx, 'triangle', f, f * 1.02, 0.2, 0.01, t + i * 0.1, 0.2);
+          });
+        },
+        code: `const notes = [523, 659, 784, 1047, 1318, 1568, 2093];\n  notes.forEach((f, i) => {\n    playNote(ctx, 'triangle', f, f * 1.02, 0.2, 0.01, t + i * 0.1, 0.2);\n  });`
+      },
+      {
+        id: 'perfect_fanfare_shimmer',
+        name: 'Extended Fanfare + Shimmer',
+        tag: 'new',
+        desc: 'Same 7-note fanfare but with added high-frequency shimmer on the last 3 notes.',
+        tech: 'triangle+sine: 7-note arpeggio with overtone shimmer',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const notes = [523, 659, 784, 1047, 1318, 1568, 2093];
+          notes.forEach((f, i) => {
+            playNote(ctx, 'triangle', f, f * 1.02, 0.2, 0.01, t + i * 0.1, 0.2);
+            if (i >= 4) {
+              playNote(ctx, 'sine', f * 2, f * 2.05, 0.06, 0.001, t + i * 0.1, 0.15);
+            }
+          });
+        },
+        code: `const notes = [523, 659, 784, 1047, 1318, 1568, 2093];\n  notes.forEach((f, i) => {\n    playNote(ctx, 'triangle', f, f * 1.02, 0.2, 0.01, t + i * 0.1, 0.2);\n    if (i >= 4) {\n      playNote(ctx, 'sine', f * 2, f * 2.05, 0.06, 0.001, t + i * 0.1, 0.15);\n    }\n  });`
+      },
+      {
+        id: 'perfect_cascade_50',
+        name: 'Sparkle Cascade (50ms)',
+        tag: 'new',
+        desc: 'Rapid ascending chromatic sparkles at 50ms spacing. Slower than original, more deliberate.',
+        tech: 'sine: 8-note ascending, 50ms each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];
+          freqs.forEach((f, i) => {
+            playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.05, 0.1);
+          });
+        },
+        code: `const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];\n  freqs.forEach((f, i) => {\n    playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.05, 0.1);\n  });`
+      },
+      {
+        id: 'perfect_cascade_60',
+        name: 'Sparkle Cascade (60ms)',
+        tag: 'new',
+        desc: 'Ascending sparkles at 60ms spacing. Each note rings out a bit more.',
+        tech: 'sine: 8-note ascending, 60ms each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];
+          freqs.forEach((f, i) => {
+            playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.06, 0.12);
+          });
+        },
+        code: `const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];\n  freqs.forEach((f, i) => {\n    playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.06, 0.12);\n  });`
+      },
+      {
+        id: 'perfect_cascade_70',
+        name: 'Sparkle Cascade (70ms)',
+        tag: 'new',
+        desc: 'Ascending sparkles at 70ms spacing. Most deliberate, each note clearly heard.',
+        tech: 'sine: 8-note ascending, 70ms each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];
+          freqs.forEach((f, i) => {
+            playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.07, 0.14);
+          });
+        },
+        code: `const freqs = [1047, 1175, 1319, 1480, 1568, 1760, 1976, 2093];\n  freqs.forEach((f, i) => {\n    playNote(ctx, 'sine', f, f * 1.01, 0.12 + i * 0.01, 0.001, t + i * 0.07, 0.14);\n  });`
+      }
+    ]
+  },
+  {
+    id: 'tick',
+    name: 'Timer Tick',
+    desc: 'Fires every second when 10s or less remain. Press Play to hear 5 ticks in sequence (1/sec).',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'tick_current',
+        name: 'Sharp Click (sequence)',
+        tag: 'current',
+        desc: 'Square-wave high-to-low burst. Mechanical clock feel. Plays 5 times to demo the vibe.',
+        tech: 'square: 1800-200Hz, 0.03s, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            const t = ctx.currentTime + i * 0.8;
+            playTick_sharp(ctx, t);
+          }
+        },
+        code: `const osc = ctx.createOscillator();\n  const gain = ctx.createGain();\n  osc.connect(gain); gain.connect(ctx.destination);\n  osc.type = 'square';\n  osc.frequency.setValueAtTime(1800, t);\n  osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);\n  gain.gain.setValueAtTime(0.12, t);\n  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);\n  osc.start(t); osc.stop(t + 0.03);`
+      },
+      {
+        id: 'tick_soft',
+        name: 'Soft Tick (sequence)',
+        tag: 'new',
+        desc: 'Quieter, rounder click. Less aggressive, more like a wall clock. 5 ticks demo.',
+        tech: 'sine: 1200-300Hz, 0.02s, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            playNote(ctx, 'sine', 1200, 300, 0.08, 0.001, ctx.currentTime + i * 0.8, 0.02);
+          }
+        },
+        code: `playNote(ctx, 'sine', 1200, 300, 0.08, 0.001, t, 0.02);`
+      },
+      {
+        id: 'tick_woodblock',
+        name: 'Wood Block (sequence)',
+        tag: 'new',
+        desc: 'Hollow wood-like tap. Organic and warm. 5 ticks demo.',
+        tech: 'triangle: 800-200Hz, 0.025s, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            const t = ctx.currentTime + i * 0.8;
+            playNote(ctx, 'triangle', 800, 200, 0.15, 0.001, t, 0.025);
+            playNote(ctx, 'sine', 400, 100, 0.05, 0.001, t, 0.03);
+          }
+        },
+        code: `playNote(ctx, 'triangle', 800, 200, 0.15, 0.001, t, 0.025);\n  playNote(ctx, 'sine', 400, 100, 0.05, 0.001, t, 0.03);`
+      },
+      {
+        id: 'tick_digital',
+        name: 'Digital Pip (sequence)',
+        tag: 'new',
+        desc: 'Short sine pulse at a fixed pitch. Clean and modern. 5 ticks demo.',
+        tech: 'sine: 880Hz, 0.03s, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            playNote(ctx, 'sine', 880, 880, 0.1, 0.001, ctx.currentTime + i * 0.8, 0.03);
+          }
+        },
+        code: `playNote(ctx, 'sine', 880, 880, 0.1, 0.001, t, 0.03);`
+      },
+      {
+        id: 'tick_drip',
+        name: 'Water Drip (sequence)',
+        tag: 'new',
+        desc: 'Subtle drip-like blip. Organic, non-mechanical feel. 5 ticks demo.',
+        tech: 'sine: 2400-600Hz, 0.04s, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            playNote(ctx, 'sine', 2400, 600, 0.1, 0.001, ctx.currentTime + i * 0.8, 0.04);
+          }
+        },
+        code: `playNote(ctx, 'sine', 2400, 600, 0.1, 0.001, t, 0.04);`
+      },
+      {
+        id: 'tick_escalating',
+        name: 'Escalating Click (sequence)',
+        tag: 'new',
+        desc: 'Ticks that get slightly higher pitched and louder. Builds tension naturally. 5 ticks demo.',
+        tech: 'square: 1400-2200Hz rising pitch, x5',
+        play: () => {
+          const ctx = getCtx();
+          for (let i = 0; i < 5; i++) {
+            const t = ctx.currentTime + i * 0.8;
+            const pitch = 1400 + i * 150;
+            const vol = 0.08 + i * 0.015;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(pitch, t);
+            osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);
+            gain.gain.setValueAtTime(vol, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+            osc.start(t); osc.stop(t + 0.03);
+          }
+        },
+        code: `// Pitch and volume escalate with remaining time\n  const urgency = Math.max(0, 10 - timeRemaining);\n  const pitch = 1400 + urgency * 150;\n  const vol = 0.08 + urgency * 0.015;\n  const osc = ctx.createOscillator();\n  const gain = ctx.createGain();\n  osc.connect(gain); gain.connect(ctx.destination);\n  osc.type = 'square';\n  osc.frequency.setValueAtTime(pitch, t);\n  osc.frequency.exponentialRampToValueAtTime(200, t + 0.015);\n  gain.gain.setValueAtTime(vol, t);\n  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);\n  osc.start(t); osc.stop(t + 0.03);`
+      }
+    ]
+  },
+  {
+    id: 'timesup',
+    name: "Time's Up",
+    desc: 'Played when the timer reaches zero. Distinct from tick -- signals finality.',
+    preApproved: 'timesup_triple',
+    sounds: [
+      {
+        id: 'timesup_triple',
+        name: 'Triple Beep',
+        tag: 'approved',
+        desc: 'Three quick descending beeps. Clear "done" signal without being harsh.',
+        tech: 'sine: 660, 550, 440Hz, 0.08s each',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 660, 660, 0.15, 0.01, t, 0.08);
+          playNote(ctx, 'sine', 550, 550, 0.15, 0.01, t + 0.12, 0.08);
+          playNote(ctx, 'sine', 440, 440, 0.18, 0.01, t + 0.24, 0.15);
+        },
+        code: `playNote(ctx, 'sine', 660, 660, 0.15, 0.01, t, 0.08);\n  playNote(ctx, 'sine', 550, 550, 0.15, 0.01, t + 0.12, 0.08);\n  playNote(ctx, 'sine', 440, 440, 0.18, 0.01, t + 0.24, 0.15);`
+      },
+      {
+        id: 'timesup_buzzer',
+        name: 'Soft Buzzer',
+        tag: 'maybe',
+        desc: 'Short game-show style buzzer.',
+        tech: 'sawtooth: 220-150Hz, 0.35s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sawtooth', 220, 150, 0.12, 0.001, t, 0.35);
+        },
+        code: `playNote(ctx, 'sawtooth', 220, 150, 0.12, 0.001, t, 0.35);`
+      },
+      {
+        id: 'timesup_gong',
+        name: 'Mini Gong',
+        tag: 'maybe',
+        desc: 'Low resonant tone with slow decay.',
+        tech: 'sine: 196Hz + 294Hz, 0.6s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 196, 196, 0.2, 0.001, t, 0.6);
+          playNote(ctx, 'sine', 294, 290, 0.08, 0.001, t, 0.5);
+          playNote(ctx, 'triangle', 392, 380, 0.04, 0.001, t, 0.4);
+        },
+        code: `playNote(ctx, 'sine', 196, 196, 0.2, 0.001, t, 0.6);\n  playNote(ctx, 'sine', 294, 290, 0.08, 0.001, t, 0.5);\n  playNote(ctx, 'triangle', 392, 380, 0.04, 0.001, t, 0.4);`
+      }
+    ]
+  },
+  {
+    id: 'streak',
+    name: 'Streak Milestone',
+    desc: 'Played every 5 correct answers in streak mode. Should escalate with streak count.',
+    preApproved: 'streak_octave',
+    sounds: [
+      {
+        id: 'streak_octave',
+        name: 'Octave Jump',
+        tag: 'approved',
+        desc: 'Two bold octave jumps. Simple but impactful.',
+        tech: 'triangle: 440-880-1760Hz, quick jumps',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'triangle', 440, 440, 0.2, 0.01, t, 0.1);
+          playNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t + 0.1, 0.1);
+          playNote(ctx, 'triangle', 1760, 1760, 0.25, 0.01, t + 0.2, 0.15);
+        },
+        code: `playNote(ctx, 'triangle', 440, 440, 0.2, 0.01, t, 0.1);\n  playNote(ctx, 'triangle', 880, 880, 0.22, 0.01, t + 0.1, 0.1);\n  playNote(ctx, 'triangle', 1760, 1760, 0.25, 0.01, t + 0.2, 0.15);`
+      },
+      {
+        id: 'streak_current',
+        name: 'Rising Chime',
+        tag: 'current',
+        desc: '3-note ascending pattern. Base pitch rises with streak level.',
+        tech: 'sine: base+25%+50%, pitch rises per 5 streaks',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const base = 573;
+          playNote(ctx, 'sine', base, base * 1.05, 0.25, 0.01, t, 0.15);
+          playNote(ctx, 'sine', base * 1.25, base * 1.3, 0.25, 0.01, t + 0.12, 0.15);
+          playNote(ctx, 'sine', base * 1.5, base * 1.6, 0.3, 0.01, t + 0.24, 0.2);
+        },
+        code: `const level = Math.min(Math.floor(streak / 5) - 1, 6);\n  const base = 523 + level * 50;\n  playNote(ctx, 'sine', base, base * 1.05, 0.25, 0.01, t, 0.15);\n  playNote(ctx, 'sine', base * 1.25, base * 1.3, 0.25, 0.01, t + 0.12, 0.15);\n  playNote(ctx, 'sine', base * 1.5, base * 1.6, 0.3, 0.01, t + 0.24, 0.2);`
+      }
+    ]
+  },
+  {
+    id: 'sessionend',
+    name: 'Session End',
+    desc: 'Played when a game session completes. Should feel like a satisfying conclusion.',
+    preApproved: 'sessionend_resolve',
+    sounds: [
+      {
+        id: 'sessionend_resolve',
+        name: 'Resolution Chord',
+        tag: 'approved',
+        desc: 'Full major chord played simultaneously. Grand and final.',
+        tech: 'sine+triangle: C4+E4+G4+C5, 0.5s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          [262, 330, 392, 523].forEach((f, i) => {
+            playNote(ctx, i % 2 === 0 ? 'sine' : 'triangle', f, f, 0.15, 0.01, t, 0.5);
+          });
+        },
+        code: `[262, 330, 392, 523].forEach((f, i) => {\n    playNote(ctx, i % 2 === 0 ? 'sine' : 'triangle', f, f, 0.15, 0.01, t, 0.5);\n  });`
+      },
+      {
+        id: 'sessionend_current',
+        name: 'Triangle Fanfare',
+        tag: 'current',
+        desc: 'C5-E5-G5 triangle chord, staggered.',
+        tech: 'triangle: 523-659-784Hz, 150ms apart',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'triangle', 523, 523, 0.25, 0.01, t, 0.2);
+          playNote(ctx, 'triangle', 659, 659, 0.25, 0.01, t + 0.15, 0.2);
+          playNote(ctx, 'triangle', 784, 784, 0.3, 0.01, t + 0.3, 0.3);
+        },
+        code: `playNote(ctx, 'triangle', 523, 523, 0.25, 0.01, t, 0.2);\n  playNote(ctx, 'triangle', 659, 659, 0.25, 0.01, t + 0.15, 0.2);\n  playNote(ctx, 'triangle', 784, 784, 0.3, 0.01, t + 0.3, 0.3);`
+      }
+    ]
+  },
+  {
+    id: 'gamestart',
+    name: 'Game Start',
+    desc: 'Played when a new game session begins. All new options -- previous ones were rejected.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'gamestart_battle_horn',
+        name: 'Battle Horn',
+        tag: 'new',
+        desc: 'Low brass-like attack that swells up. Feels epic and adventurous.',
+        tech: 'sawtooth: 130-260Hz swell + triangle: 260Hz sustain',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sawtooth', 130, 260, 0.08, 0.18, t, 0.25);
+          playNote(ctx, 'triangle', 260, 260, 0.18, 0.01, t + 0.2, 0.3);
+          playNote(ctx, 'sine', 390, 392, 0.08, 0.01, t + 0.25, 0.25);
+        },
+        code: `playNote(ctx, 'sawtooth', 130, 260, 0.08, 0.18, t, 0.25);\n  playNote(ctx, 'triangle', 260, 260, 0.18, 0.01, t + 0.2, 0.3);\n  playNote(ctx, 'sine', 390, 392, 0.08, 0.01, t + 0.25, 0.25);`
+      },
+      {
+        id: 'gamestart_drum_intro',
+        name: 'Drum Roll Kick',
+        tag: 'new',
+        desc: 'Quick drum roll leading into a kick impact. Percussive and energetic.',
+        tech: 'noise bursts + sine kick',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Snare roll
+          for (let i = 0; i < 6; i++) {
+            playNoise(ctx, 0.03, 0.04 + i * 0.01, 0.001, t + i * 0.04, 3000, 'highpass');
+          }
+          // Kick hit
+          playNote(ctx, 'sine', 160, 40, 0.3, 0.001, t + 0.28, 0.15);
+          // Crash
+          playNoise(ctx, 0.2, 0.1, 0.001, t + 0.28, 6000, 'highpass');
+        },
+        code: `// Snare roll\n  for (let i = 0; i < 6; i++) {\n    playNoise(ctx, 0.03, 0.04 + i * 0.01, 0.001, t + i * 0.04, 3000, 'highpass');\n  }\n  // Kick + crash\n  playNote(ctx, 'sine', 160, 40, 0.3, 0.001, t + 0.28, 0.15);\n  playNoise(ctx, 0.2, 0.1, 0.001, t + 0.28, 6000, 'highpass');`
+      },
+      {
+        id: 'gamestart_cinematic',
+        name: 'Cinematic Rise',
+        tag: 'new',
+        desc: 'Building tension sweep that resolves in a bold hit. Movie trailer energy.',
+        tech: 'sine sweep 100-800Hz + impact chord',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Rising tension
+          playNote(ctx, 'sine', 100, 800, 0.06, 0.15, t, 0.4);
+          playNote(ctx, 'triangle', 200, 1600, 0.03, 0.08, t, 0.4);
+          // Impact chord
+          [262, 330, 392, 523].forEach(f => {
+            playNote(ctx, 'triangle', f, f, 0.2, 0.01, t + 0.4, 0.3);
+          });
+          playNote(ctx, 'sine', 130, 50, 0.2, 0.001, t + 0.4, 0.2);
+        },
+        code: `// Rising tension\n  playNote(ctx, 'sine', 100, 800, 0.06, 0.15, t, 0.4);\n  playNote(ctx, 'triangle', 200, 1600, 0.03, 0.08, t, 0.4);\n  // Impact chord\n  [262, 330, 392, 523].forEach(f => {\n    playNote(ctx, 'triangle', f, f, 0.2, 0.01, t + 0.4, 0.3);\n  });\n  playNote(ctx, 'sine', 130, 50, 0.2, 0.001, t + 0.4, 0.2);`
+      },
+      {
+        id: 'gamestart_quest',
+        name: 'Quest Begin',
+        tag: 'new',
+        desc: 'Fantasy RPG-style start. Ascending 4th interval with a heroic resolve.',
+        tech: 'triangle: G4-C5 perfect 4th, then C major chord',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Perfect 4th leap (hero motif)
+          playNote(ctx, 'triangle', 392, 392, 0.2, 0.01, t, 0.15);
+          playNote(ctx, 'triangle', 523, 523, 0.22, 0.01, t + 0.15, 0.15);
+          // Resolve to chord
+          playNote(ctx, 'triangle', 523, 523, 0.18, 0.01, t + 0.35, 0.25);
+          playNote(ctx, 'sine', 659, 659, 0.12, 0.01, t + 0.35, 0.25);
+          playNote(ctx, 'sine', 784, 784, 0.1, 0.01, t + 0.35, 0.25);
+        },
+        code: `// Perfect 4th leap\n  playNote(ctx, 'triangle', 392, 392, 0.2, 0.01, t, 0.15);\n  playNote(ctx, 'triangle', 523, 523, 0.22, 0.01, t + 0.15, 0.15);\n  // Resolve to chord\n  playNote(ctx, 'triangle', 523, 523, 0.18, 0.01, t + 0.35, 0.25);\n  playNote(ctx, 'sine', 659, 659, 0.12, 0.01, t + 0.35, 0.25);\n  playNote(ctx, 'sine', 784, 784, 0.1, 0.01, t + 0.35, 0.25);`
+      },
+      {
+        id: 'gamestart_electric',
+        name: 'Electric Surge',
+        tag: 'new',
+        desc: 'Quick electronic power-on with buzzy attack. Tech/modern feel.',
+        tech: 'sawtooth sweep + sine resolve',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Electric buzz
+          playNote(ctx, 'sawtooth', 80, 600, 0.08, 0.12, t, 0.15);
+          // Power stabilize
+          playNote(ctx, 'sine', 600, 523, 0.15, 0.01, t + 0.12, 0.2);
+          playNote(ctx, 'triangle', 1047, 1047, 0.1, 0.01, t + 0.18, 0.15);
+        },
+        code: `// Electric buzz\n  playNote(ctx, 'sawtooth', 80, 600, 0.08, 0.12, t, 0.15);\n  // Power stabilize\n  playNote(ctx, 'sine', 600, 523, 0.15, 0.01, t + 0.12, 0.2);\n  playNote(ctx, 'triangle', 1047, 1047, 0.1, 0.01, t + 0.18, 0.15);`
+      }
+    ]
+  },
+  {
+    id: 'uiclick',
+    name: 'UI Click',
+    desc: 'Played on button taps and option selections. Must be very subtle.',
+    preApproved: 'uiclick_tap',
+    sounds: [
+      {
+        id: 'uiclick_tap',
+        name: 'Soft Tap',
+        tag: 'approved',
+        desc: 'Barely audible click. Like tapping glass with a fingernail.',
+        tech: 'sine: 3000-1000Hz, 0.015s, very low gain',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 3000, 1000, 0.06, 0.001, t, 0.015);
+        },
+        code: `playNote(ctx, 'sine', 3000, 1000, 0.06, 0.001, t, 0.015);`
+      },
+      {
+        id: 'uiclick_pop',
+        name: 'Micro Pop',
+        tag: 'maybe',
+        desc: 'Tiny pop sound.',
+        tech: 'sine: 600-2000-600Hz, 0.02s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 600, 2000, 0.08, 0.01, t, 0.01);
+          playNote(ctx, 'sine', 2000, 600, 0.04, 0.001, t + 0.01, 0.015);
+        },
+        code: `playNote(ctx, 'sine', 600, 2000, 0.08, 0.01, t, 0.01);\n  playNote(ctx, 'sine', 2000, 600, 0.04, 0.001, t + 0.01, 0.015);`
+      }
+    ]
+  },
+  {
+    id: 'transition',
+    name: 'Question Transition',
+    desc: 'Played between questions/rounds. Should feel like moving forward.',
+    preApproved: 'transition_chime',
+    sounds: [
+      {
+        id: 'transition_chime',
+        name: 'Single Chime',
+        tag: 'approved',
+        desc: 'One clean note. Like a meditation bell between rounds.',
+        tech: 'sine: 1047Hz, 0.12s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sine', 1047, 1047, 0.1, 0.001, t, 0.12);
+          playNote(ctx, 'sine', 2094, 2094, 0.03, 0.001, t, 0.08);
+        },
+        code: `playNote(ctx, 'sine', 1047, 1047, 0.1, 0.001, t, 0.12);\n  playNote(ctx, 'sine', 2094, 2094, 0.03, 0.001, t, 0.08);`
+      },
+      {
+        id: 'transition_whoosh',
+        name: 'Soft Whoosh',
+        tag: 'maybe',
+        desc: 'Filtered noise sweep. Like a page turning in the wind.',
+        tech: 'noise: bandpass sweep, 0.15s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNoise(ctx, 0.15, 0.08, 0.001, t, 2000, 'bandpass');
+        },
+        code: `playNoise(ctx, 0.15, 0.08, 0.001, t, 2000, 'bandpass');`
+      }
+    ]
+  },
+  {
+    id: 'streakbreak',
+    name: 'Streak Break',
+    desc: 'Played when a streak ends. All new options -- previous ones were rejected.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'streakbreak_shockwave',
+        name: 'Shockwave',
+        tag: 'new',
+        desc: 'Low impact hit that radiates outward. Like a shockwave rippling through.',
+        tech: 'sine: 300-30Hz + noise burst, 0.3s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Impact
+          playNote(ctx, 'sine', 300, 30, 0.25, 0.001, t, 0.2);
+          // Ripple
+          playNote(ctx, 'triangle', 600, 100, 0.08, 0.001, t + 0.02, 0.25);
+          playNoise(ctx, 0.08, 0.06, 0.001, t, 2000, 'bandpass');
+        },
+        code: `// Impact\n  playNote(ctx, 'sine', 300, 30, 0.25, 0.001, t, 0.2);\n  // Ripple\n  playNote(ctx, 'triangle', 600, 100, 0.08, 0.001, t + 0.02, 0.25);\n  playNoise(ctx, 0.08, 0.06, 0.001, t, 2000, 'bandpass');`
+      },
+      {
+        id: 'streakbreak_crack',
+        name: 'Crack & Fall',
+        tag: 'new',
+        desc: 'Sharp crack followed by a descending whine. Like something breaking apart.',
+        tech: 'noise crack + sine descend 800-100Hz',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Crack
+          playNoise(ctx, 0.04, 0.15, 0.001, t, 5000, 'highpass');
+          // Falling tone
+          playNote(ctx, 'sine', 800, 100, 0.12, 0.001, t + 0.03, 0.35);
+        },
+        code: `// Crack\n  playNoise(ctx, 0.04, 0.15, 0.001, t, 5000, 'highpass');\n  // Falling tone\n  playNote(ctx, 'sine', 800, 100, 0.12, 0.001, t + 0.03, 0.35);`
+      },
+      {
+        id: 'streakbreak_snap',
+        name: 'Chain Snap',
+        tag: 'new',
+        desc: 'Metallic snap with resonant ring. Like a taut chain breaking.',
+        tech: 'square burst + triangle ring at 400Hz',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          // Snap
+          playNote(ctx, 'square', 3000, 400, 0.12, 0.001, t, 0.03);
+          // Ring out
+          playNote(ctx, 'triangle', 400, 380, 0.1, 0.001, t + 0.02, 0.25);
+          playNote(ctx, 'sine', 800, 750, 0.04, 0.001, t + 0.02, 0.2);
+        },
+        code: `// Snap\n  playNote(ctx, 'square', 3000, 400, 0.12, 0.001, t, 0.03);\n  // Ring out\n  playNote(ctx, 'triangle', 400, 380, 0.1, 0.001, t + 0.02, 0.25);\n  playNote(ctx, 'sine', 800, 750, 0.04, 0.001, t + 0.02, 0.2);`
+      },
+      {
+        id: 'streakbreak_crumble',
+        name: 'Crumble',
+        tag: 'new',
+        desc: 'Descending granular breakdown. Like blocks tumbling down.',
+        tech: 'staggered descending sine bursts + noise',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          const steps = [700, 550, 400, 280, 180];
+          steps.forEach((f, i) => {
+            playNote(ctx, 'sine', f, f * 0.8, 0.1, 0.001, t + i * 0.06, 0.08);
+            playNoise(ctx, 0.03, 0.03, 0.001, t + i * 0.06, f * 2, 'bandpass');
+          });
+        },
+        code: `const steps = [700, 550, 400, 280, 180];\n  steps.forEach((f, i) => {\n    playNote(ctx, 'sine', f, f * 0.8, 0.1, 0.001, t + i * 0.06, 0.08);\n    playNoise(ctx, 0.03, 0.03, 0.001, t + i * 0.06, f * 2, 'bandpass');\n  });`
+      },
+      {
+        id: 'streakbreak_buzz_drop',
+        name: 'Buzz Drop',
+        tag: 'new',
+        desc: 'Short buzz that drops into silence. Electronic, decisive break.',
+        tech: 'sawtooth: 300-60Hz, 0.25s',
+        play: () => {
+          const ctx = getCtx(), t = ctx.currentTime;
+          playNote(ctx, 'sawtooth', 300, 60, 0.1, 0.001, t, 0.25);
+          playNote(ctx, 'sine', 150, 30, 0.12, 0.001, t + 0.05, 0.2);
+        },
+        code: `playNote(ctx, 'sawtooth', 300, 60, 0.1, 0.001, t, 0.25);\n  playNote(ctx, 'sine', 150, 30, 0.12, 0.001, t + 0.05, 0.2);`
+      }
+    ]
+  },
+  {
+    id: 'bgmusic',
+    name: 'Background Music',
+    desc: 'Ambient loops during gameplay. All new options -- should be engaging with beats, not just relaxing.',
+    preApproved: null,
+    sounds: [
+      {
+        id: 'bgmusic_chill_beat',
+        name: 'Chill Beat',
+        tag: 'new',
+        desc: 'Lo-fi hip hop with kick, hat, and melodic chords. Laid back but keeps energy.',
+        tech: 'Drum pattern + chord progression, 90 BPM',
+        isMusic: true,
+        play: () => { playBgDemo('chill_beat'); },
+        code: '// Chill beat loop -- see bgmusic implementation'
+      },
+      {
+        id: 'bgmusic_synthwave',
+        name: 'Synthwave Drive',
+        tag: 'new',
+        desc: 'Retro 80s synth with driving arpeggios and bass. Energetic but not overwhelming.',
+        tech: 'Arpeggio + bass + pad, 110 BPM',
+        isMusic: true,
+        play: () => { playBgDemo('synthwave'); },
+        code: '// Synthwave drive loop -- see bgmusic implementation'
+      },
+      {
+        id: 'bgmusic_electro_groove',
+        name: 'Electro Groove',
+        tag: 'new',
+        desc: 'Electronic beats with funky bass line and synth stabs. Quiz show energy.',
+        tech: 'Drum machine + bass + synth, 105 BPM',
+        isMusic: true,
+        play: () => { playBgDemo('electro_groove'); },
+        code: '// Electro groove loop -- see bgmusic implementation'
+      },
+      {
+        id: 'bgmusic_focus_beats',
+        name: 'Focus Beats',
+        tag: 'new',
+        desc: 'Study beats with gentle drums, warm bass, and subtle melody. Engaging but not distracting.',
+        tech: 'Soft drums + bass + rhodes-like keys, 85 BPM',
+        isMusic: true,
+        play: () => { playBgDemo('focus_beats'); },
+        code: '// Focus beats loop -- see bgmusic implementation'
+      },
+      {
+        id: 'bgmusic_none',
+        name: 'No Music',
+        tag: 'new',
+        desc: 'Skip background music entirely.',
+        tech: 'none',
+        isMusic: true,
+        play: () => { stopBgDemo(); },
+        code: '// No background music'
+      }
+    ]
+  }
+];
+
+// ========== BG MUSIC DEMOS ==========
+function playBgDemo(style) {
+  stopBgDemo();
+  const ctx = getCtx();
+
+  if (style === 'chill_beat') {
+    const bpm = 90;
+    const beatMs = 60000 / bpm / 2; // 8th notes
+    let step = 0;
+    const chords = [
+      [262, 330, 392], // C
+      [294, 370, 440], // Dm
+      [220, 277, 330], // Am
+      [247, 311, 392], // G/B
+    ];
+
+    function tick() {
+      const t = ctx.currentTime;
+      const beat = step % 8;
+      const chordIdx = Math.floor((step % 32) / 8);
+      const chord = chords[chordIdx];
+
+      // Kick on 0, 4
+      if (beat === 0 || beat === 4) {
+        playNote(ctx, 'sine', 150, 40, 0.2, 0.001, t, 0.12);
+      }
+      // Hi-hat on every 8th
+      playNoise(ctx, 0.03, 0.04, 0.001, t, 8000, 'highpass');
+      // Snare on 2, 6
+      if (beat === 2 || beat === 6) {
+        playNoise(ctx, 0.08, 0.08, 0.001, t, 3000, 'highpass');
+        playNote(ctx, 'sine', 200, 120, 0.06, 0.001, t, 0.05);
+      }
+      // Chord pad on beat 0 of each chord
+      if (beat === 0) {
+        chord.forEach(f => {
+          playNote(ctx, 'triangle', f, f, 0.04, 0.001, t, beatMs * 8 / 1000);
+        });
+      }
+      // Bass on 0, 3, 4, 7
+      if (beat === 0 || beat === 3 || beat === 4 || beat === 7) {
+        playNote(ctx, 'sine', chord[0] / 2, chord[0] / 2, 0.1, 0.01, t, beatMs * 2 / 1000);
+      }
+      step++;
+    }
+    tick();
+    bgDemoInterval = setInterval(tick, beatMs);
+    setTimeout(stopBgDemo, 15000);
+  }
+
+  if (style === 'synthwave') {
+    const bpm = 110;
+    const beatMs = 60000 / bpm / 4; // 16th notes
+    let step = 0;
+    const arpNotes = [262, 330, 392, 523, 392, 330]; // C arpeggio
+
+    function tick() {
+      const t = ctx.currentTime;
+      const beat16 = step % 16;
+      const bar = Math.floor(step / 16) % 4;
+
+      // Kick on quarter notes
+      if (beat16 % 4 === 0) {
+        playNote(ctx, 'sine', 120, 35, 0.22, 0.001, t, 0.12);
+      }
+      // Hi-hat on 8ths
+      if (beat16 % 2 === 0) {
+        playNoise(ctx, 0.02, 0.03, 0.001, t, 10000, 'highpass');
+      }
+      // Snare on beats 2 and 4
+      if (beat16 === 4 || beat16 === 12) {
+        playNoise(ctx, 0.06, 0.08, 0.001, t, 4000, 'highpass');
+        playNote(ctx, 'sine', 250, 150, 0.05, 0.001, t, 0.04);
+      }
+      // Arpeggio (every 16th)
+      const noteIdx = step % arpNotes.length;
+      const baseNote = bar < 2 ? 0 : (bar === 2 ? -3 : -5); // chord changes via transposition
+      const freq = arpNotes[noteIdx] * Math.pow(2, baseNote / 12);
+      playNote(ctx, 'sawtooth', freq, freq, 0.04, 0.001, t, beatMs / 1000 * 0.8);
+      // Bass on quarter notes
+      if (beat16 % 4 === 0) {
+        const bassFreqs = [131, 131, 110, 117]; // C, C, A, Bb
+        playNote(ctx, 'sawtooth', bassFreqs[bar], bassFreqs[bar], 0.08, 0.01, t, beatMs * 4 / 1000);
+      }
+      step++;
+    }
+    tick();
+    bgDemoInterval = setInterval(tick, beatMs);
+    setTimeout(stopBgDemo, 15000);
+  }
+
+  if (style === 'electro_groove') {
+    const bpm = 105;
+    const beatMs = 60000 / bpm / 4; // 16th notes
+    let step = 0;
+
+    function tick() {
+      const t = ctx.currentTime;
+      const beat16 = step % 16;
+      const bar = Math.floor(step / 16) % 4;
+
+      // Four-on-the-floor kick
+      if (beat16 % 4 === 0) {
+        playNote(ctx, 'sine', 140, 35, 0.22, 0.001, t, 0.1);
+      }
+      // Offbeat hi-hat
+      if (beat16 % 4 === 2) {
+        playNoise(ctx, 0.025, 0.04, 0.001, t, 9000, 'highpass');
+      }
+      // Closed hat on 16ths (quiet)
+      if (beat16 % 2 === 0) {
+        playNoise(ctx, 0.015, 0.015, 0.001, t, 12000, 'highpass');
+      }
+      // Clap/snare on 2 and 4
+      if (beat16 === 4 || beat16 === 12) {
+        playNoise(ctx, 0.07, 0.1, 0.001, t, 2500, 'highpass');
+      }
+      // Funky bass pattern
+      const bassPattern = [1,0,0,1, 0,0,1,0, 1,0,0,0, 1,0,1,0];
+      const bassNotes = [131, 131, 147, 131]; // C, C, D, C
+      if (bassPattern[beat16]) {
+        playNote(ctx, 'square', bassNotes[bar], bassNotes[bar], 0.06, 0.01, t, beatMs * 1.5 / 1000);
+        playNote(ctx, 'sine', bassNotes[bar], bassNotes[bar], 0.08, 0.01, t, beatMs * 1.5 / 1000);
+      }
+      // Synth stab on certain beats
+      if ((beat16 === 0 && bar === 0) || (beat16 === 6) || (beat16 === 12 && bar === 2)) {
+        [523, 659, 784].forEach(f => {
+          playNote(ctx, 'square', f, f, 0.03, 0.001, t, beatMs * 2 / 1000);
+        });
+      }
+      step++;
+    }
+    tick();
+    bgDemoInterval = setInterval(tick, beatMs);
+    setTimeout(stopBgDemo, 15000);
+  }
+
+  if (style === 'focus_beats') {
+    const bpm = 85;
+    const beatMs = 60000 / bpm / 2; // 8th notes
+    let step = 0;
+    const chords = [
+      [349, 440, 523], // F
+      [330, 392, 494], // Em
+      [262, 330, 392], // C
+      [294, 370, 440], // Dm
+    ];
+
+    function tick() {
+      const t = ctx.currentTime;
+      const beat = step % 8;
+      const chordIdx = Math.floor((step % 32) / 8);
+      const chord = chords[chordIdx];
+
+      // Soft kick
+      if (beat === 0 || beat === 4) {
+        playNote(ctx, 'sine', 120, 40, 0.15, 0.001, t, 0.1);
+      }
+      // Brush-like hat
+      if (beat % 2 === 0) {
+        playNoise(ctx, 0.04, 0.025, 0.001, t, 7000, 'highpass');
+      }
+      // Soft snare
+      if (beat === 2 || beat === 6) {
+        playNoise(ctx, 0.06, 0.04, 0.001, t, 2000, 'highpass');
+      }
+      // Rhodes-like keys (bell tone via sine + triangle)
+      if (beat === 0 || beat === 3 || beat === 5) {
+        const noteIdx = beat === 0 ? 0 : (beat === 3 ? 1 : 2);
+        const f = chord[noteIdx];
+        playNote(ctx, 'sine', f, f, 0.06, 0.001, t, beatMs * 3 / 1000);
+        playNote(ctx, 'triangle', f * 2, f * 2, 0.015, 0.001, t, beatMs * 2 / 1000);
+      }
+      // Walking bass
+      const bassOctave = chord[beat % 3] / 2;
+      if (beat === 0 || beat === 2 || beat === 4 || beat === 6) {
+        playNote(ctx, 'triangle', bassOctave, bassOctave, 0.08, 0.01, t, beatMs * 2 / 1000);
+      }
+      step++;
+    }
+    tick();
+    bgDemoInterval = setInterval(tick, beatMs);
+    setTimeout(stopBgDemo, 15000);
+  }
+}
+
+// ========== STATE ==========
+const state = {};
+const rejections = {};
+
+// Pre-approve from previous session
+categories.forEach(c => {
+  if (c.preApproved) state[c.id] = c.preApproved;
+});
+
+function getApprovedCount() { return Object.keys(state).length; }
+
+function updateProgress() {
+  const total = categories.length;
+  const done = getApprovedCount();
+  document.getElementById('progressText').textContent = `${done} / ${total}`;
+  document.getElementById('progressFill').style.width = `${(done / total) * 100}%`;
+  const remaining = total - done;
+  document.getElementById('exportSummary').innerHTML = done === 0
+    ? 'Select sounds to get started'
+    : `<strong>${done}</strong> approved, <strong>${remaining}</strong> remaining`;
+  document.getElementById('exportBtn').disabled = done === 0;
+  categories.forEach(c => {
+    const btn = document.querySelector(`[data-cat="${c.id}"] .badge`);
+    if (btn) btn.className = 'badge ' + (state[c.id] ? 'done' : 'pending');
+  });
+}
+
+// ========== RENDER ==========
+let activeCategory = categories[0].id;
+
+function renderNav() {
+  document.getElementById('categoryNav').innerHTML = categories.map(c => `
+    <button data-cat="${c.id}" class="${c.id === activeCategory ? 'active' : ''}" onclick="switchCategory('${c.id}')">
+      ${c.name}
+      <span class="badge ${state[c.id] ? 'done' : 'pending'}"></span>
+    </button>
+  `).join('');
+}
+
+function switchCategory(id) {
+  activeCategory = id;
+  stopBgDemo();
+  renderNav();
+  renderContent();
+}
+
+function renderContent() {
+  const container = document.getElementById('content');
+  container.innerHTML = categories.map(cat => {
+    if (cat.id !== activeCategory) return '';
+    const rejs = rejections[cat.id] || new Set();
+    const cards = cat.sounds.map(s => {
+      const isApproved = state[cat.id] === s.id;
+      const isRejected = rejs.has(s.id);
+      let cls = 'sound-card';
+      if (isApproved) cls += ' approved';
+      else if (isRejected) cls += ' rejected';
+      if (s.tag === 'current') cls += ' current';
+      return `
+        <div class="${cls}" id="card-${s.id}">
+          <div class="card-info">
+            <div class="card-name">
+              ${s.name}
+              <span class="tag ${s.tag === 'current' ? '' : s.tag === 'approved' ? '' : 'new'}">${s.tag}</span>
+              ${isApproved ? '<span style="color:var(--green);font-size:14px;">Approved</span>' : ''}
+              ${isRejected ? '<span style="color:var(--text-muted);font-size:12px;">Rejected</span>' : ''}
+            </div>
+            <div class="card-desc">${s.desc}</div>
+            <div class="card-tech">${s.tech}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-play" onclick="playSound('${s.id}')">${s.isMusic ? 'Play 15s' : 'Play'}</button>
+            ${isApproved
+              ? `<button class="btn btn-undo" onclick="undoApproval('${cat.id}')">Undo</button>`
+              : isRejected
+                ? `<button class="btn btn-undo" onclick="undoRejection('${cat.id}', '${s.id}')">Undo</button>`
+                : `<button class="btn btn-approve" onclick="approve('${cat.id}', '${s.id}')">Approve</button>
+                   <button class="btn btn-reject" onclick="reject('${cat.id}', '${s.id}')">Reject</button>`}
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="category visible">
+        <div class="category-header">
+          <h2>${cat.name}</h2>
+          <span class="status ${state[cat.id] ? 'done' : 'pending'}">${state[cat.id] ? 'Done' : 'Pending'}</span>
+        </div>
+        <p class="category-desc">${cat.desc}</p>
+        ${cards}
+      </div>`;
+  }).join('');
+}
+
+function playSound(soundId) {
+  for (const cat of categories) {
+    const sound = cat.sounds.find(s => s.id === soundId);
+    if (sound) {
+      if (!sound.isMusic) stopBgDemo();
+      sound.play();
+      const btn = document.querySelector(`#card-${soundId} .btn-play`);
+      if (btn) {
+        btn.classList.add('playing');
+        const orig = btn.textContent;
+        btn.textContent = 'Playing...';
+        setTimeout(() => { btn.classList.remove('playing'); btn.textContent = orig; }, sound.isMusic ? 2000 : 600);
+      }
+      return;
+    }
+  }
+}
+
+function approve(catId, soundId) {
+  state[catId] = soundId;
+  if (rejections[catId]) rejections[catId].delete(soundId);
+  updateProgress(); renderContent();
+  const nextIncomplete = categories.find(c => !state[c.id] && c.id !== catId);
+  if (nextIncomplete) setTimeout(() => switchCategory(nextIncomplete.id), 400);
+}
+
+function reject(catId, soundId) {
+  if (!rejections[catId]) rejections[catId] = new Set();
+  rejections[catId].add(soundId);
+  renderContent();
+}
+
+function undoApproval(catId) { delete state[catId]; updateProgress(); renderContent(); }
+function undoRejection(catId, soundId) { if (rejections[catId]) rejections[catId].delete(soundId); renderContent(); }
+
+function resetAll() {
+  Object.keys(state).forEach(k => delete state[k]);
+  Object.keys(rejections).forEach(k => delete rejections[k]);
+  categories.forEach(c => { if (c.preApproved) state[c.id] = c.preApproved; });
+  stopBgDemo(); updateProgress(); renderContent(); renderNav();
+}
+
+function playAllApproved() {
+  stopBgDemo();
+  const approved = categories.filter(c => state[c.id]).map(c => c.sounds.find(s => s.id === state[c.id])).filter(s => s && !s.isMusic);
+  let delay = 0;
+  approved.forEach(s => { setTimeout(() => s.play(), delay); delay += 800; });
+}
+
+function exportConfig() {
+  const lines = [`/**
+ * sounds.js -- Synthesized sound effects via Web Audio API.
+ * All sounds are generated procedurally; no audio files required.
+ * Mute state is persisted to localStorage under the key \\\`wtb_muted\\\`.
+ *
+ * Generated by Sound Browser on ${new Date().toISOString().split('T')[0]}
+ */
+
+const MUTE_KEY = 'wtb_muted';
+
+let audioCtx = null;
+let muted = localStorage.getItem(MUTE_KEY) === 'true';
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+export function isMuted() { return muted; }
+
+export function toggleMute() {
+  muted = !muted;
+  localStorage.setItem(MUTE_KEY, muted.toString());
+  return muted;
+}
+
+function playNote(ctx, type, freqStart, freqEnd, gainStart, gainEnd, startTime, duration) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freqStart, startTime);
+  if (freqEnd !== freqStart) osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
+  gain.gain.setValueAtTime(gainStart, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  osc.start(startTime); osc.stop(startTime + duration);
+}
+
+function playNoise(ctx, duration, gainStart, gainEnd, startTime, filterFreq, filterType) {
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(gainStart, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(gainEnd, 0.001), startTime + duration);
+  if (filterFreq) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType || 'lowpass';
+    filter.frequency.value = filterFreq;
+    source.connect(filter); filter.connect(gain);
+  } else { source.connect(gain); }
+  gain.connect(ctx.destination);
+  source.start(startTime); source.stop(startTime + duration);
+}
+`];
+
+  const fnMap = {
+    correct: 'playCorrect', wrong: 'playWrong', perfect: 'playPerfect',
+    tick: 'playTick', timesup: 'playTimesUp', streak: 'playStreakMilestone',
+    sessionend: 'playSessionEnd', gamestart: 'playGameStart', uiclick: 'playUIClick',
+    transition: 'playTransition', streakbreak: 'playStreakBreak', bgmusic: null
+  };
+  const fnDescs = {
+    correct: 'Celebratory chime -- correct answer.',
+    wrong: 'Feedback tone -- wrong answer.',
+    perfect: 'Sparkle flourish -- perfect score (100 pts).',
+    tick: 'Clock tick -- timer warning.',
+    timesup: "Time's up -- timer reached zero.",
+    streak: 'Streak milestone.',
+    sessionend: 'Short fanfare -- session end.',
+    gamestart: 'Game start signal.',
+    uiclick: 'UI interaction click.',
+    transition: 'Question transition sound.',
+    streakbreak: 'Streak broken -- wrong answer in streak mode.',
+  };
+
+  categories.forEach(cat => {
+    const fnName = fnMap[cat.id];
+    if (!fnName) return;
+    const approvedId = state[cat.id];
+    const sound = approvedId ? cat.sounds.find(s => s.id === approvedId) : cat.sounds[0];
+    if (!sound) return;
+    const isStreak = cat.id === 'streak';
+    lines.push(`/** ${fnDescs[cat.id] || cat.name} -- ${sound.name} */`);
+    lines.push(`export function ${fnName}(${isStreak ? 'streak' : ''}) {`);
+    lines.push(`  if (muted) return;`);
+    lines.push(`  const ctx = getCtx();`);
+    lines.push(`  const t = ctx.currentTime;`);
+    if (isStreak) {
+      lines.push(`  const level = Math.min(Math.floor(streak / 5) - 1, 6);`);
+      lines.push(`  const base = 523 + level * 50;`);
+    }
+    lines.push(`  ${sound.code}`);
+    lines.push(`}\n`);
+  });
+
+  const output = lines.join('\n');
+  navigator.clipboard.writeText(output).then(() => {
+    const btn = document.getElementById('exportBtn');
+    btn.textContent = 'Copied to clipboard!';
+    setTimeout(() => { btn.textContent = 'Export sounds.js'; }, 2000);
+  }).catch(() => {
+    const blob = new Blob([output], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'sounds.js'; a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+renderNav(); renderContent(); updateProgress();
+</script>
+</body>
+</html>
