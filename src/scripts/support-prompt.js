@@ -40,13 +40,13 @@ function createSupportModal() {
           <circle cx="28" cy="40" r="3" fill="var(--accent)" opacity="0.25"/>
         </svg>
       </div>
-      <h2 class="onboarding-title">You're keeping the bugs alive!</h2>
+      <h2 class="onboarding-title">Help keep the bugs alive!</h2>
       <p class="onboarding-text">
-        I built this game in spring 2022 and have created <strong>1,200+ daily games</strong> since.
-        It brings me a lot of joy that people play every day, and I plan to keep going as long as you do.
+        I built this game this year and it has been played <strong>over 2,000 times</strong> since!
+        It brings me a lot of joy that people play this every day, and I want to keep making it better.
       </p>
       <p class="onboarding-detail">
-        This site is ad-free and earns no revenue. Donations help me maintain it (and my sanity!).
+        Help me maintain and keep this site ad-free, your contributions directly help me continue to work on this.
       </p>
       <p class="support-new-badge">
         <strong>NEW:</strong> All donations over $10 unlock an exclusive badge and future perks!
@@ -62,7 +62,7 @@ function createSupportModal() {
           <path d="M10.5 7c0-1.5 1-2.5 0-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
           <path d="M13 8c0-1.5 1-2.5 0-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
         </svg>
-        Buy me a coffee on Ko-fi
+        Buy me a coffee
       </a>
       <button class="support-dismiss">Maybe later</button>
     </div>
