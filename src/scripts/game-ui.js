@@ -8,7 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
-import { playCorrect, playWrong, playPerfect, playStreakMilestone, playSessionEnd, playTick, playTimesUp, playGameStart, playUIClick, playTransition, playStreakBreak, startBgMusic, stopBgMusic, isMuted } from './sounds.js';
+import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, startBgMusic, stopBgMusic, isMuted } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
 let achievementsModule = null;
@@ -212,7 +212,6 @@ export async function initGame() {
 
   // Show rules popup, then start game
   showRulesPopup(() => {
-    playGameStart();
     startBgMusic();
     if (session.mode === 'time_trial') {
       startTimeTrial();
@@ -338,7 +337,6 @@ function updateTimerDisplay() {
 // ===== GENERIC ROUND =====
 
 function startRound() {
-  if (displayRound > 0) playTransition();
   currentRound = getNextRound();
   if (!currentRound) {
     if (session.mode === 'time_trial') {
@@ -562,8 +560,7 @@ function handleAnswer(picked, choices, choiceEls) {
   }
 
   // Sound feedback based on score
-  if (score === 100) { playPerfect(); }
-  else if (score > 0) { playCorrect(); }
+  if (score > 0) { playCorrect(); }
   else { playWrong(); }
 
   // Check for achievements
@@ -641,14 +638,9 @@ function handleStreakPostAnswer(score, picked, correct) {
       setTimeout(() => streakEl.classList.remove('anim-scale-bounce'), 250);
     }
 
-    if (session.currentStreak > 0 && session.currentStreak % 5 === 0) {
-      playStreakMilestone(session.currentStreak);
-    }
-
     setTimeout(() => startRound(), 500);
   } else {
     // Wrong — flash red, show game over
-    playStreakBreak();
     gameScreen.classList.add('flash-wrong');
     setTimeout(() => renderStreakGameOver(picked, correct), 600);
   }

@@ -125,9 +125,6 @@ export function playWrong() {
   sfxNote(ctx, 'sine', 496, 252, 0.06, 0.001, t, 0.3);
 }
 
-/** Sparkle flourish — perfect score (100 pts). Disabled. */
-export function playPerfect() {
-}
 
 /** Clock tick — timer warning. Wood Block tap (boosted). */
 export function playTick() {
@@ -144,10 +141,6 @@ export function playTimesUp() {
   sfxNote(ctx, 'sine', 440, 440, 0.18, 0.001, t, 0.5);
 }
 
-/** Streak milestone. Disabled. */
-export function playStreakMilestone(streak) {
-}
-
 /** Short fanfare — session end. Music Box. */
 export function playSessionEnd() {
   if (muted) return;
@@ -159,10 +152,6 @@ export function playSessionEnd() {
   });
 }
 
-/** Game start signal. Disabled. */
-export function playGameStart() {
-}
-
 /** UI interaction click — Soft Tap (boosted). */
 export function playUIClick() {
   if (muted) return;
@@ -170,13 +159,6 @@ export function playUIClick() {
   sfxNote(ctx, 'sine', 3000, 1000, 0.15, 0.001, t, 0.015);
 }
 
-/** Question transition. Disabled. */
-export function playTransition() {
-}
-
-/** Streak broken. Disabled. */
-export function playStreakBreak() {
-}
 
 // ========== BACKGROUND MUSIC ==========
 
