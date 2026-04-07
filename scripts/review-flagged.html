@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flagged Image Review</title>
+<style>
+  :root {
+    --bg: #1a1917;
+    --surface: #222120;
+    --text: #e0ddd8;
+    --accent: #d4794e;
+    --border: #2e2c28;
+    --success: #5bc49a;
+    --error: #e05d50;
+    --warning: #d4794e;
+    --muted: #9a9590;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header h1 { font-size: 20px; font-weight: 700; }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .stats .stat-value { color: var(--text); font-weight: 600; }
+  .stats .stat-value.kept { color: var(--success); }
+  .stats .stat-value.removed { color: var(--error); }
+  .stats .stat-value.pending { color: var(--warning); }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .header-actions select, .header-actions input {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .header-actions input { width: 200px; }
+
+  .btn-export {
+    padding: 8px 20px;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    margin-left: auto;
+  }
+
+  .btn-export:hover { background: var(--accent); color: var(--bg); }
+
+  .progress-bar-container {
+    background: var(--border);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  /* ---- Feedback banner ---- */
+  .feedback-banner {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+
+  .feedback-banner summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .feedback-list {
+    margin-top: 8px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .feedback-list li {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 4px 8px;
+    background: rgba(212, 121, 78, 0.06);
+    border-radius: 4px;
+  }
+
+  .feedback-list .feedback-type {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  /* ---- Content ---- */
+  .content { padding: 24px; }
+
+  .keyboard-hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 0 0 16px;
+  }
+
+  .keyboard-hint kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    font-family: monospace;
+    font-size: 11px;
+    margin: 0 2px;
+  }
+
+  /* ---- Grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 1400px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ---- Card ---- */
+  .card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: opacity 0.3s, border-color 0.15s;
+    position: relative;
+  }
+
+  .card:focus-within, .card.focused { border-color: var(--accent); outline: none; }
+  .card.decided { opacity: 0.5; }
+  .card.decided:hover { opacity: 0.8; }
+  .card.hidden { display: none; }
+
+  .status-badge {
+    display: none;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    z-index: 5;
+  }
+
+  .card.decided .status-badge { display: block; }
+  .card.status-keep .status-badge { background: var(--success); color: #0d3320; }
+  .card.status-remove .status-badge { background: var(--error); color: #fff; }
+
+  .card-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+    cursor: pointer;
+  }
+
+  .card-image:hover { filter: brightness(1.1); }
+
+  .card-body { padding: 12px; }
+
+  .card-species {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-scientific {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-taxonomy {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .card-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .flag-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .flag-pill.reports { background: rgba(224, 93, 80, 0.2); color: var(--error); }
+  .flag-pill.miss-rate { background: rgba(212, 121, 78, 0.2); color: var(--warning); }
+  .flag-pill.stat-flag { background: rgba(212, 121, 78, 0.15); color: var(--warning); }
+  .flag-pill.user-report { background: rgba(224, 93, 80, 0.15); color: var(--error); }
+  .flag-pill.attempts { background: rgba(154, 149, 144, 0.2); color: var(--muted); }
+
+  .card-links {
+    margin-bottom: 8px;
+  }
+
+  .card-links a {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .card-links a:hover { text-decoration: underline; }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .card-actions .btn {
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: filter 0.15s;
+  }
+
+  .card-actions .btn:hover { filter: brightness(0.85); }
+
+  .btn-keep { background: var(--success); color: #0d3320; }
+  .btn-remove { background: var(--error); color: #fff; }
+  .btn-undo {
+    background: var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px;
+  }
+
+  /* ---- Lightbox ---- */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .lightbox.open { display: flex; }
+
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 8px;
+    object-fit: contain;
+  }
+
+  /* ---- Toast ---- */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--success);
+    color: #0d3320;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 200;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    display: none;
+  }
+
+  .toast.error { background: var(--error); color: #fff; }
+
+  /* ---- Empty ---- */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--muted);
+  }
+
+  .empty-state h2 { font-size: 24px; margin-bottom: 8px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Flagged Image Review</h1>
+    <div class="stats">
+      <div>Total: <span class="stat-value" id="stat-total">0</span></div>
+      <div>Keep: <span class="stat-value kept" id="stat-kept">0</span></div>
+      <div>Remove: <span class="stat-value removed" id="stat-removed">0</span></div>
+      <div>Pending: <span class="stat-value pending" id="stat-pending">0</span></div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <select id="filter-source" onchange="applyFilters()">
+      <option value="all">All sources</option>
+      <option value="user_report">User reports only</option>
+      <option value="statistical_flag">Statistical flags only</option>
+      <option value="both">Both sources</option>
+    </select>
+    <select id="filter-status" onchange="applyFilters()">
+      <option value="all">All statuses</option>
+      <option value="pending">Pending only</option>
+      <option value="keep">Kept only</option>
+      <option value="remove">Removed only</option>
+    </select>
+    <select id="sort-by" onchange="applySort()">
+      <option value="priority">Sort: Priority (default)</option>
+      <option value="reports">Sort: Report count</option>
+      <option value="miss_rate">Sort: Miss rate</option>
+      <option value="quality_score">Sort: Quality score</option>
+      <option value="attempts">Sort: Total attempts</option>
+    </select>
+    <input type="text" id="search" placeholder="Search species..." oninput="applyFilters()">
+    <button class="btn-export" onclick="exportBlocklist()">Export Blocklist JSON</button>
+  </div>
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+  </div>
+</div>
+
+<div class="feedback-banner">
+  <details>
+    <summary>Player feedback mentioning image quality (<span id="feedback-count">0</span> entries)</summary>
+    <ul class="feedback-list" id="feedback-list"></ul>
+  </details>
+</div>
+
+<div class="content">
+  <div class="keyboard-hint">
+    Keyboard: <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> navigate &middot;
+    <kbd>K</kbd> Keep &middot; <kbd>R</kbd> Remove &middot;
+    <kbd>U</kbd> Undo &middot; <kbd>Space</kbd> Enlarge photo
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div id="empty-state" class="empty-state" style="display:none;">
+    <h2>All reviewed!</h2>
+    <p>Every flagged observation has been decided.</p>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="Full size">
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// Data is loaded from review-candidates.json via fetch (same directory)
+let DATA = { candidates: [], feedback_issues: [] };
+let decisions = {}; // obs_id -> 'keep' | 'remove'
+
+// Persist decisions in localStorage
+const STORAGE_KEY = 'wtb_flagged_review_decisions';
+function loadDecisions() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) decisions = JSON.parse(saved);
+  } catch {}
+}
+function saveDecisions() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(decisions));
+}
+
+// ---- Toast ----
+function toast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { el.style.display = 'none'; }, 2000);
+}
+
+// ---- Lightbox ----
+function openLightbox(url) {
+  // Show the original (large) version by swapping medium -> original
+  const largeUrl = url.replace('/medium.', '/original.').replace('/small.', '/original.');
+  document.getElementById('lightbox-img').src = largeUrl;
+  document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+// ---- Stats ----
+function updateStats() {
+  const total = DATA.candidates.length;
+  const kept = Object.values(decisions).filter(d => d === 'keep').length;
+  const removed = Object.values(decisions).filter(d => d === 'remove').length;
+  const pending = total - kept - removed;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-kept').textContent = kept;
+  document.getElementById('stat-removed').textContent = removed;
+  document.getElementById('stat-pending').textContent = pending;
+
+  const pct = total > 0 ? ((kept + removed) / total * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct.toFixed(1) + '%';
+}
+
+// ---- Render ----
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function createCard(c) {
+  const card = document.createElement('div');
+  const oid = String(c.observation_id);
+  card.className = 'card';
+  card.dataset.id = oid;
+  card.tabIndex = 0;
+
+  // Apply existing decision
+  const decision = decisions[oid];
+  if (decision) {
+    card.classList.add('decided', 'status-' + decision);
+  }
+
+  // Flag pills
+  let pills = '';
+  if (c.report_count > 0) {
+    pills += `<span class="flag-pill reports">${c.report_count} report${c.report_count > 1 ? 's' : ''}</span>`;
+  }
+  if (c.sources.includes('statistical_flag')) {
+    pills += `<span class="flag-pill stat-flag">stat flagged</span>`;
+  }
+  if (c.miss_rate != null) {
+    pills += `<span class="flag-pill miss-rate">${(c.miss_rate * 100).toFixed(0)}% miss</span>`;
+  }
+  if (c.total_attempts != null) {
+    pills += `<span class="flag-pill attempts">${c.total_attempts} plays</span>`;
+  }
+
+  const name = c.common_name || c.species || 'Unknown';
+  const sci = c.species || '';
+  const taxonomy = [c.order, c.family].filter(Boolean).join(' > ');
+  const badgeText = decision || '';
+
+  card.innerHTML =
+    `<div class="status-badge">${esc(badgeText)}</div>` +
+    `<img class="card-image" src="${esc(c.photo_url)}" alt="${esc(name)}" loading="lazy" ` +
+      `onerror="this.style.background='var(--border)';this.alt='Failed to load'" ` +
+      `onclick="openLightbox('${esc(c.photo_url)}')" title="Click to enlarge">` +
+    `<div class="card-body">` +
+      `<div class="card-species" title="${esc(name)}">${esc(name)}</div>` +
+      `<div class="card-scientific" title="${esc(sci)}">${esc(sci)}</div>` +
+      `<div class="card-taxonomy">${esc(taxonomy)}</div>` +
+      `<div class="card-flags">${pills}</div>` +
+      `<div class="card-links">` +
+        `<a href="${esc(c.inat_url)}" target="_blank" rel="noopener">iNaturalist #${c.observation_id}</a>` +
+      `</div>` +
+      `<div class="card-actions">` +
+        `<button class="btn btn-keep" onclick="decide('${oid}','keep',this)" title="Keep (K)">Keep</button>` +
+        `<button class="btn btn-remove" onclick="decide('${oid}','remove',this)" title="Remove (R)">Remove</button>` +
+      `</div>` +
+      (decision ? `<div style="text-align:center;margin-top:4px;"><button class="btn-undo" onclick="undoDecision('${oid}',this)" title="Undo (U)">Undo</button></div>` : '') +
+    `</div>`;
+
+  // Focus tracking
+  card.addEventListener('focus', () => {
+    document.querySelectorAll('.card.focused').forEach(el => el.classList.remove('focused'));
+    card.classList.add('focused');
+  });
+
+  return card;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (const c of DATA.candidates) {
+    grid.appendChild(createCard(c));
+  }
+  updateStats();
+}
+
+// ---- Decisions ----
+function decide(obsId, action, btn) {
+  decisions[obsId] = action;
+  saveDecisions();
+
+  const card = document.querySelector(`.card[data-id="${obsId}"]`);
+  if (card) {
+    card.classList.add('decided', 'status-' + action);
+    card.classList.remove('status-keep', 'status-remove');
+    card.classList.add('status-' + action);
+    card.querySelector('.status-badge').textContent = action;
+
+    // Add undo button if not present
+    if (!card.querySelector('.btn-undo')) {
+      const undoDiv = document.createElement('div');
+      undoDiv.style.cssText = 'text-align:center;margin-top:4px;';
+      undoDiv.innerHTML = `<button class="btn-undo" onclick="undoDecision('${obsId}',this)" title="Undo (U)">Undo</button>`;
+      card.querySelector('.card-body').appendChild(undoDiv);
+    }
+  }
+
+  toast(action === 'keep' ? 'Kept' : 'Marked for removal');
+  updateStats();
+
+  // Auto-advance focus to next pending card
+  const cards = [...document.querySelectorAll('.card:not(.decided):not(.hidden)')];
+  if (cards.length > 0) {
+    cards[0].focus();
+  }
+}
+
+function undoDecision(obsId, btn) {
+  delete decisions[obsId];
+  saveDecisions();
+
+  const card = document.querySelector(`.card[data-id="${obsId}"]`);
+  if (card) {
+    card.classList.remove('decided', 'status-keep', 'status-remove');
+    card.querySelector('.status-badge').textContent = '';
+    const undoDiv = btn.closest('div');
+    if (undoDiv) undoDiv.remove();
+  }
+
+  toast('Decision undone');
+  updateStats();
+}
+
+// ---- Filters & Sort ----
+function applyFilters() {
+  const sourceFilter = document.getElementById('filter-source').value;
+  const statusFilter = document.getElementById('filter-status').value;
+  const search = document.getElementById('search').value.toLowerCase().trim();
+
+  document.querySelectorAll('.card').forEach(card => {
+    const oid = card.dataset.id;
+    const c = DATA.candidates.find(x => String(x.observation_id) === oid);
+    if (!c) return;
+
+    let show = true;
+
+    // Source filter
+    if (sourceFilter === 'user_report') show = c.sources.includes('user_report');
+    else if (sourceFilter === 'statistical_flag') show = c.sources.includes('statistical_flag');
+    else if (sourceFilter === 'both') show = c.sources.includes('user_report') && c.sources.includes('statistical_flag');
+
+    // Status filter
+    const decision = decisions[oid];
+    if (statusFilter === 'pending') show = show && !decision;
+    else if (statusFilter === 'keep') show = show && decision === 'keep';
+    else if (statusFilter === 'remove') show = show && decision === 'remove';
+
+    // Search
+    if (search) {
+      const haystack = [c.common_name, c.species, c.order, c.family].join(' ').toLowerCase();
+      show = show && haystack.includes(search);
+    }
+
+    card.classList.toggle('hidden', !show);
+  });
+}
+
+function applySort() {
+  const sortBy = document.getElementById('sort-by').value;
+  const grid = document.getElementById('grid');
+  const cards = [...grid.querySelectorAll('.card')];
+
+  const getCandidate = (card) =>
+    DATA.candidates.find(c => String(c.observation_id) === card.dataset.id);
+
+  cards.sort((a, b) => {
+    const ca = getCandidate(a);
+    const cb = getCandidate(b);
+    if (!ca || !cb) return 0;
+
+    switch (sortBy) {
+      case 'reports': return (cb.report_count || 0) - (ca.report_count || 0);
+      case 'miss_rate': return (cb.miss_rate || 0) - (ca.miss_rate || 0);
+      case 'quality_score': return (cb.quality_score || 0) - (ca.quality_score || 0);
+      case 'attempts': return (cb.total_attempts || 0) - (ca.total_attempts || 0);
+      default: // priority (original order)
+        return DATA.candidates.indexOf(ca) - DATA.candidates.indexOf(cb);
+    }
+  });
+
+  for (const card of cards) grid.appendChild(card);
+}
+
+// ---- Export ----
+function exportBlocklist() {
+  const removed = DATA.candidates
+    .filter(c => decisions[String(c.observation_id)] === 'remove')
+    .map(c => ({
+      observation_id: c.observation_id,
+      species: c.species,
+      common_name: c.common_name,
+      reason: 'flagged_review',
+      removed_at: new Date().toISOString(),
+    }));
+
+  if (removed.length === 0) {
+    toast('No observations marked for removal yet', true);
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(removed, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'blocklist.json';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  toast(`Exported ${removed.length} observations to blocklist.json`);
+}
+
+// ---- Keyboard shortcuts ----
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+
+  if (e.key === 'Escape') {
+    closeLightbox();
+    return;
+  }
+
+  const focused = document.querySelector('.card.focused');
+  if (!focused) return;
+  const oid = focused.dataset.id;
+
+  if (e.key === 'k' || e.key === 'K') {
+    e.preventDefault();
+    decide(oid, 'keep');
+  } else if (e.key === 'r' || e.key === 'R') {
+    e.preventDefault();
+    decide(oid, 'remove');
+  } else if (e.key === 'u' || e.key === 'U') {
+    e.preventDefault();
+    undoDecision(oid, focused.querySelector('.btn-undo'));
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    const c = DATA.candidates.find(x => String(x.observation_id) === oid);
+    if (c) openLightbox(c.photo_url);
+  }
+});
+
+// ---- Feedback panel ----
+function renderFeedback() {
+  const list = document.getElementById('feedback-list');
+  document.getElementById('feedback-count').textContent = DATA.feedback_issues.length;
+
+  for (const fi of DATA.feedback_issues) {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="feedback-type">${esc(fi.type)}</span>${esc(fi.text)}`;
+    list.appendChild(li);
+  }
+}
+
+// ---- Init ----
+async function init() {
+  loadDecisions();
+
+  try {
+    const res = await fetch('review-candidates.json');
+    DATA = await res.json();
+  } catch (e) {
+    // Try embedded data as fallback
+    toast('Could not load review-candidates.json — serve this directory with a local server', true);
+    return;
+  }
+
+  renderGrid();
+  renderFeedback();
+
+  // Focus first pending card
+  const first = document.querySelector('.card:not(.decided)');
+  if (first) first.focus();
+}
+
+init();
+</script>
+</body>
+</html>
