@@ -186,6 +186,7 @@ export async function initGame() {
   // Pre-generate first few rounds and start loading their images
   roundCache = [];
   displayRound = 0;
+  prefetchedLeaderboards = null;
   preloadRounds();
 
   // Show rules popup, then start game
@@ -719,6 +720,7 @@ async function handleLeaderboardCheck(score, streak, renderResultsFn) {
     }
   } catch (err) {
     clearTimeout(almostThereTimer);
+    prefetchedLeaderboards = null;
     console.warn('Leaderboard check failed:', err);
     dismissSpinner();
     renderResultsFn();
