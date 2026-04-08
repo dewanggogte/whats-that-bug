@@ -451,12 +451,71 @@ function buildSets(observations, taxa) {
     .filter(({ obs }) => !blockedIds.has(obs.id))
     .map(({ i }) => i);
 
+  // Bugs 101 category mapping — duplicated from src/scripts/game-engine.js:getBugs101Name().
+  // Keep in sync: changes to category names here must be mirrored there and vice versa.
+  const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
+  const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
+  const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
+  const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
+  const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
+  function getBugs101Category(taxon) {
+    if (taxon.order === 'Hymenoptera') {
+      if (BEE_FAMILIES.includes(taxon.family)) return 'Bee';
+      if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
+      return 'Wasp';
+    }
+    if (taxon.order === 'Lepidoptera') {
+      if (BUTTERFLY_FAMILIES.includes(taxon.family)) return 'Butterfly';
+      return 'Moth';
+    }
+    if (taxon.order === 'Orthoptera') {
+      if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
+      return 'Grasshopper';
+    }
+    if (taxon.order === 'Odonata') {
+      return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
+    }
+    if (taxon.order === 'Coleoptera') return 'Beetle';
+    if (taxon.order === 'Araneae') return 'Spider';
+    if (taxon.order === 'Diptera') return 'Fly';
+    if (taxon.order === 'Hemiptera') return 'True Bug';
+    if (taxon.order === 'Scorpiones') return 'Scorpion';
+    if (taxon.order === 'Mantodea') return 'Mantis';
+    if (taxon.order === 'Opiliones') return 'Harvestman';
+    if (taxon.order === 'Phasmida') return 'Stick Insect';
+    return taxon.order_common || taxon.order;
+  }
+
+  // bugs_101: category-level caps at 8% so no single category dominates.
+  const BUGS_101_CATEGORY_CAP = 0.08;
+  const maxPerCategory = Math.floor(mainPool.length * BUGS_101_CATEGORY_CAP);
+  const categoryCounts = {};
+  const bugs101Ids = [];
+  // Prefer featured observations when capping
+  const mainPoolSorted = [...mainPool].sort((a, b) => {
+    const aFeat = observations[a].featured ? 0 : 1;
+    const bFeat = observations[b].featured ? 0 : 1;
+    return aFeat - bFeat;
+  });
+  for (const i of mainPoolSorted) {
+    const cat = getBugs101Category(observations[i].taxon);
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    if (categoryCounts[cat] <= maxPerCategory) {
+      bugs101Ids.push(i);
+    }
+  }
+  console.log(`  Bugs 101 category caps (max ${maxPerCategory} per category):`);
+  for (const [cat, count] of Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])) {
+    const kept = Math.min(count, maxPerCategory);
+    if (count > maxPerCategory) console.log(`    ${cat}: ${count} → ${kept}`);
+  }
+
   sets.bugs_101 = {
     name: 'Bugs 101',
     description: "Identify bugs by type — beetle, spider, butterfly, and more.",
     difficulty: 'beginner',
     scoring: 'binary',
-    observation_ids: mainPool,
+    observation_ids: bugs101Ids,
   };
 
   sets.all_bugs = {
