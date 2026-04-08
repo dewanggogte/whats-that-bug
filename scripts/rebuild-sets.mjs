@@ -148,12 +148,33 @@ function main() {
     observation_ids: indicesWhere(o => o.taxon.class === 'Arachnida'),
   };
 
+  // Eye Candy: cap icky taxa so the set stays beautiful
+  const EYE_CANDY_ORDER_CAPS = { 'Araneae': 4, 'Scorpiones': 3 };
+  const EYE_CANDY_FAMILY_CAPS = { 'Formicidae': 2, 'Acrididae': 3 };
+  const featuredIndices = indicesWhere(o => o.featured === true);
+  const ecOrderCounts = {};
+  const ecFamilyCounts = {};
+  const eyeCandyIds = [];
+  for (const i of featuredIndices) {
+    const obs = observations[i];
+    const order = obs.taxon.order;
+    const family = obs.taxon.family;
+    if (EYE_CANDY_FAMILY_CAPS[family] !== undefined) {
+      ecFamilyCounts[family] = (ecFamilyCounts[family] || 0) + 1;
+      if (ecFamilyCounts[family] > EYE_CANDY_FAMILY_CAPS[family]) continue;
+    }
+    if (EYE_CANDY_ORDER_CAPS[order] !== undefined) {
+      ecOrderCounts[order] = (ecOrderCounts[order] || 0) + 1;
+      if (ecOrderCounts[order] > EYE_CANDY_ORDER_CAPS[order]) continue;
+    }
+    eyeCandyIds.push(i);
+  }
   sets.eye_candy = {
     name: 'Eye Candy',
     description: "The most beautiful bug photos on iNaturalist.",
     difficulty: 'themed',
     scoring: 'taxonomic',
-    observation_ids: indicesWhere(o => o.featured === true),
+    observation_ids: eyeCandyIds,
   };
 
   // Tiny Terrors: match by taxonomy names since observations.json lacks ancestor_ids.
