@@ -11,7 +11,7 @@ const SFX_VOL_KEY = 'wtb_sfx_volume';
 const MUSIC_VOL_KEY = 'wtb_music_volume';
 
 let audioCtx = null;
-let muted = localStorage.getItem(MUTE_KEY) === 'true';
+let muted = localStorage.getItem(MUTE_KEY) !== 'false';
 let sfxVolume = parseFloat(localStorage.getItem(SFX_VOL_KEY) ?? '0.8');
 let musicVolume = parseFloat(localStorage.getItem(MUSIC_VOL_KEY) ?? '0.5');
 
