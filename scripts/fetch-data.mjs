@@ -146,9 +146,15 @@ async function apiFetch(endpoint, params = {}) {
       const res = await fetch(url.toString(), {
         headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project)' },
       });
-      if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
+      if (!res.ok) {
+        const err = new Error(`API error ${res.status}: ${url.toString()}`);
+        err.status = res.status;
+        throw err;
+      }
       return res.json();
     } catch (e) {
+      // Don't retry 403/404 — these are hard limits, not transient errors
+      if (e.status === 403 || e.status === 404) throw e;
       if (attempt < 3) {
         console.warn(`  Fetch failed (attempt ${attempt}/3): ${e.message}. Retrying in 3s...`);
         await sleep(3000);
@@ -163,7 +169,8 @@ async function fetchObservations(taxonId, placeId, count, orderBy = 'random') {
   const observations = [];
   let fetched = 0;
   let page = 1;
-  const maxPages = Math.max(10, Math.ceil(count / 10)); // safety: stop after N pages with diminishing returns
+  // iNaturalist caps at 10,000 results (50 pages × 200 per_page). Pages beyond 50 return 403.
+  const maxPages = Math.min(50, Math.max(10, Math.ceil(count / 10)));
 
   while (fetched < count && page <= maxPages) {
     const perPage = Math.min(200, count - fetched);
