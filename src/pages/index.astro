@@ -9,6 +9,7 @@ const THEMED_SETS = [
   { key: 'beetles', icon: '🪲' },
   { key: 'butterflies_moths', icon: '🦋' },
   { key: 'spiders', icon: '🕷️' },
+  { key: 'eye_candy', icon: '📸' },
 ];
 
 const themedGroup = THEMED_SETS.map(({ key, icon }) => {
@@ -129,7 +130,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     const bestKeys = [
       'bugs_101_time_trial', 'bugs_101_streak', 'bugs_101',
       'time_trial', 'streak', 'all_bugs',
-      'backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders',
+      'backyard_basics', 'tiny_terrors', 'beetles', 'butterflies_moths', 'spiders', 'eye_candy',
     ];
     // Best scores are shown inline on mode buttons via data attributes
     document.querySelectorAll('.mode-btn[data-key], .themed-btn[data-key]').forEach(el => {
@@ -303,6 +304,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
           { key: 'beetles', label: 'Beetles' },
           { key: 'butterflies_moths', label: 'Butterflies & Moths' },
           { key: 'spiders', label: 'Spiders' },
+          { key: 'eye_candy', label: 'Eye Candy' },
         ];
 
         const scores = scoreKeys
