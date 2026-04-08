@@ -1,11 +1,9 @@
 /**
- * Onboarding — sequential modal flow for first-time visitors.
- * Shows welcome + scoring explanation on first visit only.
- * Uses localStorage flags to avoid repeating.
+ * Onboarding — welcome modal for first-time visitors.
+ * Uses localStorage flag to avoid repeating.
  */
 
 const SEEN_WELCOME = 'wtb_seen_welcome';
-const SEEN_SCORING = 'wtb_seen_scoring';
 
 function hasSeen(key) {
   try { return localStorage.getItem(key) === '1'; } catch { return true; }
@@ -56,7 +54,7 @@ function createModal(content, onDismiss) {
   return dismiss;
 }
 
-function showWelcome(onDone) {
+function showWelcome() {
   createModal(`
     <h2 class="onboarding-title">What's That Bug?</h2>
     <p class="onboarding-text">See a bug. Guess its name. Learn something new.</p>
@@ -64,39 +62,15 @@ function showWelcome(onDone) {
     <button class="btn btn-primary onboarding-cta">Let's play</button>
   `, () => {
     markSeen(SEEN_WELCOME);
-    if (onDone) setTimeout(onDone, 360);
-  });
-}
-
-function showScoring(onDone) {
-  createModal(`
-    <h2 class="onboarding-title">How scoring works</h2>
-    <div class="onboarding-scoring">
-      <div class="onboarding-score-row"><span>Exact species</span><span class="onboarding-pts">100 pts</span></div>
-      <div class="onboarding-score-row"><span>Same genus</span><span class="onboarding-pts">75 pts</span></div>
-      <div class="onboarding-score-row"><span>Same family</span><span class="onboarding-pts">50 pts</span></div>
-      <div class="onboarding-score-row"><span>Same order</span><span class="onboarding-pts">25 pts</span></div>
-    </div>
-    <p class="onboarding-detail">New here? Start with Bugs 101 — it's easier.</p>
-    <button class="btn btn-primary onboarding-cta">Got it</button>
-  `, () => {
-    markSeen(SEEN_SCORING);
-    if (onDone) onDone();
   });
 }
 
 /**
  * Run the onboarding sequence. Call from index.astro on page load.
- * Only shows modals that haven't been seen before.
+ * Only shows the welcome modal if it hasn't been seen before.
  */
 export function runOnboarding() {
   if (!hasSeen(SEEN_WELCOME)) {
-    showWelcome(() => {
-      if (!hasSeen(SEEN_SCORING)) {
-        showScoring();
-      }
-    });
-  } else if (!hasSeen(SEEN_SCORING)) {
-    showScoring();
+    showWelcome();
   }
 }
