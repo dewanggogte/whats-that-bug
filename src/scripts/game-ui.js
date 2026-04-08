@@ -824,11 +824,6 @@ function showAchievementToast(achievement) {
 // ===== MILESTONE CELEBRATIONS =====
 
 function showMilestoneToast(milestone) {
-  const gameScreen = container.querySelector('#game-screen');
-  if (!gameScreen) return;
-
-  gameScreen.style.position = 'relative';
-
   const toast = document.createElement('div');
   toast.className = 'milestone-toast';
   toast.innerHTML = `
@@ -837,7 +832,7 @@ function showMilestoneToast(milestone) {
       <div class="milestone-toast-fires">${milestone.streak} in a row!</div>
     </div>
   `;
-  gameScreen.appendChild(toast);
+  document.body.appendChild(toast);
 
   const duration = milestone.tier === 'banner' ? 2500 : 2000;
   setTimeout(() => {
@@ -856,15 +851,10 @@ function showMilestonePulse() {
 }
 
 function showMilestoneBanner(milestone) {
-  const gameScreen = container.querySelector('#game-screen');
-  if (!gameScreen) return;
-
-  gameScreen.style.position = 'relative';
-
   const banner = document.createElement('div');
   banner.className = 'milestone-banner-flash';
   banner.textContent = `${milestone.label} ${milestoneFireEmoji(milestone.fires)}`;
-  gameScreen.appendChild(banner);
+  document.body.appendChild(banner);
 
   setTimeout(() => banner.remove(), 2600);
 }

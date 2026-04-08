@@ -2621,10 +2621,10 @@ a {
    Streak Milestone Toast
    ============================================= */
 .milestone-toast {
-  position: absolute;
+  position: fixed;
   top: var(--space-4);
   right: var(--space-4);
-  z-index: 100;
+  z-index: 300;
   background: linear-gradient(135deg, #5c3a1e, #7a4a28);
   border: 1px solid #a0603a;
   border-radius: var(--radius-sm);
@@ -2676,11 +2676,11 @@ a {
 
 /* Full-width banner for 25+ milestones */
 .milestone-banner-flash {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 99;
+  z-index: 299;
   text-align: center;
   padding: var(--space-3) var(--space-4);
   font-weight: 700;
