@@ -31,6 +31,10 @@ function normalRandom(mean, stddev, min, max) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Track mouse position so moveMouse can interpolate from where we actually are
+let currentMouseX = 0;
+let currentMouseY = 0;
+
 // ── Typing ───────────────────────────────────────────────────────────────────
 
 /**
@@ -50,6 +54,8 @@ export async function slowType(page, selector, text) {
       await sleep(randInt(40, 120));
     }
   }
+  // Brief pause after finishing typing, like a real person reviewing input
+  await humanDelay(100, 300);
 }
 
 // ── Clicking ─────────────────────────────────────────────────────────────────
@@ -75,6 +81,8 @@ export async function slowClick(page, selector) {
   await page.mouse.down();
   await sleep(randInt(50, 150));
   await page.mouse.up();
+  // Brief pause after clicking, like a person waiting for feedback
+  await humanDelay(200, 500);
 }
 
 /**
@@ -82,19 +90,23 @@ export async function slowClick(page, selector) {
  * several small steps with slight randomness, approximating a bezier curve.
  */
 async function moveMouse(page, targetX, targetY) {
+  const startX = currentMouseX;
+  const startY = currentMouseY;
   const steps = randInt(3, 6);
   for (let i = 1; i <= steps; i++) {
     // Linear interpolation with small jitter
     const progress = i / steps;
     // Ease-out: decelerate as we approach the target
     const eased = 1 - Math.pow(1 - progress, 2);
-    const x = targetX * eased + randInt(-2, 2);
-    const y = targetY * eased + randInt(-2, 2);
+    const x = startX + (targetX - startX) * eased + randInt(-2, 2);
+    const y = startY + (targetY - startY) * eased + randInt(-2, 2);
     await page.mouse.move(x, y);
     await sleep(randInt(10, 30));
   }
   // Final precise move to target
   await page.mouse.move(targetX, targetY);
+  currentMouseX = targetX;
+  currentMouseY = targetY;
 }
 
 // ── Delays ───────────────────────────────────────────────────────────────────
@@ -119,7 +131,9 @@ export async function humanDelay(min, max) {
  */
 export async function randomScroll(page) {
   if (Math.random() > 0.3) return; // 70% of the time, do nothing
-  const distance = randInt(50, 200);
+  let distance = randInt(50, 200);
+  const direction = Math.random() < 0.5 ? 1 : -1;
+  distance *= direction;
   await page.mouse.wheel(0, distance);
   await sleep(randInt(200, 500));
 }
@@ -143,6 +157,11 @@ export async function tabBehavior(page) {
   const scrollAmount = randInt(100, 300);
   await page.mouse.wheel(0, scrollAmount);
   await sleep(randInt(300, 600));
+
+  // Scroll back up by a similar amount (natural reading behavior)
+  const scrollBack = randInt(80, scrollAmount);
+  await page.mouse.wheel(0, -scrollBack);
+  await sleep(randInt(200, 400));
 
   // Occasionally hover a random element (simulates visual scanning)
   if (Math.random() < 0.2) {
