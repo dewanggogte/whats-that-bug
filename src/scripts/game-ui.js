@@ -164,6 +164,15 @@ export async function initGame() {
   prefetchedLeaderboards = null;
   preloadRounds();
 
+  // Prefetch leaderboard data at session start so the end-of-game check
+  // doesn't depend on a cold Google Apps Script response within 3 seconds.
+  // This is critical for streak mode where games often end before round 8.
+  if (isLeaderboardEligible(currentSetKey)) {
+    fetchLeaderboards()
+      .then(data => { prefetchedLeaderboards = data; })
+      .catch(() => {});
+  }
+
   // Show rules popup once per day, then start game
   const startGame = () => {
     if (session.mode === 'time_trial') {
@@ -327,14 +336,6 @@ function startRound() {
   }
 
   displayRound++;
-
-  // At round 8, kick off a background leaderboard prefetch so the end-of-game
-  // check can use cached data instead of waiting on a cold-start.
-  if (displayRound === 8 && isLeaderboardEligible(currentSetKey) && !prefetchedLeaderboards) {
-    fetchLeaderboards()
-      .then(data => { prefetchedLeaderboards = data; })
-      .catch(() => {});
-  }
 
   // Preload the NEXT round's image while the player looks at this one
   preloadRounds();
