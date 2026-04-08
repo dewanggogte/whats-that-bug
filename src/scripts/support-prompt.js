@@ -1,6 +1,6 @@
 /**
  * Support / Ko-fi prompt.
- * Shows a modal after the player has completed 3+ sessions.
+ * Shows a modal after the player has completed 10+ sessions.
  * - "Maybe later" snoozes for 7 days.
  * - Clicking Ko-fi link snoozes for 30 days and marks as donor.
  * - Returning donors see a shorter thank-you variant.
@@ -141,7 +141,7 @@ function showReturningDonorPrompt() {
  */
 export function maybeShowSupportPrompt() {
   if (!shouldShow()) return;
-  if (getSessionCount() < 3) return;
+  if (getSessionCount() < 10) return;
 
   // Small delay so it doesn't collide with onboarding
   setTimeout(() => {
