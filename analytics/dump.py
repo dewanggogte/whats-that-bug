@@ -63,7 +63,7 @@ def load_env():
 class UmamiClient:
     """Thin wrapper around the Umami Cloud REST API (v2)."""
 
-    BASE_URL = "https://api.umami.is"
+    BASE_URL = "https://api.umami.is/v1"
 
     def __init__(self, api_key: str, website_id: str):
         self.api_key = api_key
@@ -76,6 +76,7 @@ class UmamiClient:
         req = Request(url)
         req.add_header("x-umami-api-key", self.api_key)
         req.add_header("Accept", "application/json")
+        req.add_header("User-Agent", "WhatsThatBug-Analytics/1.0")
         try:
             with urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read())
@@ -88,22 +89,22 @@ class UmamiClient:
             raise
 
     def stats(self, start_ms: int, end_ms: int) -> dict:
-        return self._get(f"/api/websites/{self.website_id}/stats", {
+        return self._get(f"/websites/{self.website_id}/stats", {
             "startAt": start_ms, "endAt": end_ms,
         })
 
     def pageviews(self, start_ms: int, end_ms: int, unit: str = "day") -> dict:
-        return self._get(f"/api/websites/{self.website_id}/pageviews", {
+        return self._get(f"/websites/{self.website_id}/pageviews", {
             "startAt": start_ms, "endAt": end_ms, "unit": unit,
         })
 
     def metrics(self, start_ms: int, end_ms: int, metric_type: str) -> list:
-        return self._get(f"/api/websites/{self.website_id}/metrics", {
+        return self._get(f"/websites/{self.website_id}/metrics", {
             "startAt": start_ms, "endAt": end_ms, "type": metric_type,
         })
 
     def events(self, start_ms: int, end_ms: int, unit: str = "day") -> list:
-        return self._get(f"/api/websites/{self.website_id}/events", {
+        return self._get(f"/websites/{self.website_id}/events", {
             "startAt": start_ms, "endAt": end_ms, "unit": unit,
         })
 
@@ -172,7 +173,24 @@ def dump_umami(api_key: str, website_id: str, start_ms: int, end_ms: int):
     print("  Fetching events...")
     try:
         ev = client.events(start_ms, end_ms, unit="day")
-        ev_rows = [{"event": item["x"], "date": item["t"], "count": item["y"]} for item in ev]
+        # v1 API returns {"data": [...]} with individual event records
+        items = ev.get("data", []) if isinstance(ev, dict) else ev
+        ev_rows = []
+        for item in items:
+            if isinstance(item, dict):
+                ev_rows.append({
+                    "timestamp": item.get("createdAt", ""),
+                    "event_name": item.get("eventName", ""),
+                    "event_type": item.get("eventType", ""),
+                    "url_path": item.get("urlPath", ""),
+                    "url_query": item.get("urlQuery", ""),
+                    "referrer_domain": item.get("referrerDomain", ""),
+                    "country": item.get("country", ""),
+                    "city": item.get("city", ""),
+                    "device": item.get("device", ""),
+                    "os": item.get("os", ""),
+                    "browser": item.get("browser", ""),
+                })
         write_csv(UMAMI_DIR / "events.csv", ev_rows)
     except Exception as e:
         print(f"  (events endpoint failed: {e} — skipping)")
