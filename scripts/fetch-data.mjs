@@ -74,7 +74,8 @@ const MAX_ORDER_SHARE = 0.15; // default cap: 15% of total
 const MIN_ORDER_SHARE = 0.03; // boost under-represented orders to at least 3%
 // Per-order overrides for groups that are unpleasant in large doses
 const ORDER_CAP_OVERRIDES = {
-  'Lepidoptera': 0.25,       // butterflies & moths — popular, visually diverse
+  'Lepidoptera': 0.18,       // butterflies & moths — popular but was dominating Bugs 101 at 28%
+  'Odonata': 0.10,           // dragonflies — beautiful but overrepresented from featured fetch
   'Blattodea': 0.01,         // cockroaches — visceral disgust
   'Ixodida': 0.02,           // ticks — engorged close-ups are unsettling
   'Araneae': 0.10,           // spiders — arachnophobia, but a draw (bumped for r/spiders traction)
@@ -419,16 +420,34 @@ function buildSets(observations, taxa) {
     .map((obs, i) => fn(obs) ? i : -1)
     .filter(i => i !== -1 && !blockedIds.has(observations[i].id));
 
-  // Exclude ick-inducing orders (keep scorpions — they're cool)
-  const EXCLUDED_ORDERS = new Set([
+  // Ick-free main pool — pleasant taxa only for Bugs 101 / All Bugs.
+  // Icky observations stay in the dataset for Tiny Terrors and themed sets.
+  const ICK_ORDERS = new Set([
     'Ixodida',            // Ticks
     'Blattodea',          // Cockroaches
     'Scolopendromorpha',  // Centipedes
     'Dermaptera',         // Earwigs
+    'Siphonaptera',       // Fleas
+    'Zygentoma',          // Silverfish
   ]);
+  const ICK_CLASSES = new Set([
+    'Chilopoda',          // All centipedes
+    'Diplopoda',          // All millipedes
+  ]);
+  const ICK_FAMILIES = new Set([
+    'Culicidae',          // Mosquitoes (Diptera)
+    'Cimicidae',          // Bed bugs (Hemiptera)
+    'Aphididae',          // Aphids (Hemiptera)
+    'Dermestidae',        // Carpet beetles (Coleoptera)
+  ]);
+  function isIcky(obs) {
+    const t = obs.taxon;
+    return ICK_ORDERS.has(t.order) || ICK_CLASSES.has(t.class) || ICK_FAMILIES.has(t.family);
+  }
+  // Also exclude Isopoda (woodlice/pillbugs)
   const mainPool = observations
     .map((obs, i) => ({ obs, i }))
-    .filter(({ obs }) => !EXCLUDED_ORDERS.has(obs.taxon.order))
+    .filter(({ obs }) => !isIcky(obs) && obs.taxon.order !== 'Isopoda')
     .filter(({ obs }) => !blockedIds.has(obs.id))
     .map(({ i }) => i);
 
