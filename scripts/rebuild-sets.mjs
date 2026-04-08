@@ -148,6 +148,14 @@ function main() {
     observation_ids: indicesWhere(o => o.taxon.class === 'Arachnida'),
   };
 
+  sets.eye_candy = {
+    name: 'Eye Candy',
+    description: "The most beautiful bug photos on iNaturalist.",
+    difficulty: 'themed',
+    scoring: 'taxonomic',
+    observation_ids: indicesWhere(o => o.featured === true),
+  };
+
   // Tiny Terrors: match by taxonomy names since observations.json lacks ancestor_ids.
   // These correspond to the TINY_TERRORS_TAXA IDs in fetch-data.mjs.
   const TERROR_ORDERS = new Set([

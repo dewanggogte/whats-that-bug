@@ -14,12 +14,12 @@ const INSECTA_TAXON_ID = 47158;
 const ARACHNIDA_TAXON_ID = 47119;
 
 const REGIONS = [
-  { name: 'North America', place_id: 97394, target: 1800 },
-  { name: 'Europe',        place_id: 97391, target: 1250 },
-  { name: 'Asia',          place_id: 97395, target: 750 },
-  { name: 'South America', place_id: 97389, target: 500 },
-  { name: 'Oceania',       place_id: 97392, target: 350 },
-  { name: 'Africa',        place_id: 97393, target: 350 },
+  { name: 'North America', place_id: 97394, target: 2500 },
+  { name: 'Europe',        place_id: 97391, target: 1750 },
+  { name: 'Asia',          place_id: 97395, target: 1050 },
+  { name: 'South America', place_id: 97389, target: 700 },
+  { name: 'Oceania',       place_id: 97392, target: 500 },
+  { name: 'Africa',        place_id: 97393, target: 500 },
 ];
 
 // Household and backyard pests — taxon IDs verified against iNaturalist API.
@@ -55,6 +55,19 @@ const TINY_TERRORS_TAXA = [
 ];
 const TINY_TERRORS_PER_TAXON = 30;
 
+// Top-favorited observations for visual quality — supplements the random
+// samples with community-loved photos. Fetched via order_by=votes.
+const FEATURED_TAXA = [
+  { name: 'Spiders',                 taxon_id: 47118, count: 100 },
+  { name: 'Butterflies & Moths',     taxon_id: 47157, count: 100 },
+  { name: 'Dragonflies & Damselflies', taxon_id: 47792, count: 60 },
+  { name: 'Beetles',                 taxon_id: 47208, count: 60 },
+  { name: 'Bees & Wasps',            taxon_id: 47201, count: 60 },
+  { name: 'Mantises',                taxon_id: 48112, count: 40 },
+  { name: 'Grasshoppers & Crickets', taxon_id: 47651, count: 40 },
+  { name: 'Scorpions',               taxon_id: 48894, count: 30 },
+];
+
 // Order-level balancing: no single order should dominate the dataset,
 // and every order should have enough observations for variety.
 const MAX_ORDER_SHARE = 0.15; // default cap: 15% of total
@@ -64,7 +77,7 @@ const ORDER_CAP_OVERRIDES = {
   'Lepidoptera': 0.25,       // butterflies & moths — popular, visually diverse
   'Blattodea': 0.01,         // cockroaches — visceral disgust
   'Ixodida': 0.02,           // ticks — engorged close-ups are unsettling
-  'Araneae': 0.06,           // spiders — arachnophobia, but still a draw
+  'Araneae': 0.10,           // spiders — arachnophobia, but a draw (bumped for r/spiders traction)
   'Scolopendromorpha': 0.02, // centipedes — many-legged nightmares
 };
 const ORDER_TAXON_IDS = {
@@ -128,14 +141,25 @@ async function apiFetch(endpoint, params = {}) {
   for (const [key, val] of Object.entries(params)) {
     url.searchParams.set(key, val);
   }
-  const res = await fetch(url.toString(), {
-    headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project)' },
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
-  return res.json();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url.toString(), {
+        headers: { 'User-Agent': 'WhatsThatBugGame/1.0 (educational project)' },
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}: ${url.toString()}`);
+      return res.json();
+    } catch (e) {
+      if (attempt < 3) {
+        console.warn(`  Fetch failed (attempt ${attempt}/3): ${e.message}. Retrying in 3s...`);
+        await sleep(3000);
+      } else {
+        throw e;
+      }
+    }
+  }
 }
 
-async function fetchObservations(taxonId, placeId, count) {
+async function fetchObservations(taxonId, placeId, count, orderBy = 'random') {
   const observations = [];
   let fetched = 0;
   let page = 1;
@@ -152,7 +176,7 @@ async function fetchObservations(taxonId, placeId, count) {
         photos: 'true',
         per_page: perPage,
         page: page,
-        order_by: 'random',
+        order_by: orderBy,
       };
       if (placeId) params.place_id = placeId;
       const data = await apiFetch('/observations', params);
@@ -185,8 +209,7 @@ async function fetchObservations(taxonId, placeId, count) {
         if (fetched >= count) break;
       }
     } catch (err) {
-      console.warn(`  Warning: API error on page ${page}: ${err.message}`);
-      break;
+      console.warn(`  Warning: API error on page ${page}: ${err.message}. Skipping page.`);
     }
     page++;
     await sleep(1100);
@@ -479,6 +502,14 @@ function buildSets(observations, taxa) {
     observation_ids: indicesWhere(o => o.taxon.class === 'Arachnida'),
   };
 
+  sets.eye_candy = {
+    name: 'Eye Candy',
+    description: "The most beautiful bug photos on iNaturalist.",
+    difficulty: 'themed',
+    scoring: 'taxonomic',
+    observation_ids: indicesWhere(o => o.featured === true),
+  };
+
   const terrorTaxonIds = new Set(TINY_TERRORS_TAXA);
   sets.tiny_terrors = {
     name: 'Tiny Terrors',
@@ -521,6 +552,16 @@ async function main() {
     const pestObs = await fetchObservations(taxonId, null, TINY_TERRORS_PER_TAXON);
     console.log(`  Taxon ${taxonId}: got ${pestObs.length} observations`);
     allObservations = allObservations.concat(pestObs);
+  }
+
+  // Top-favorited observations — the most beautiful photos on iNaturalist.
+  // These supplement the random samples with visually striking, high-engagement photos.
+  console.log(`\nFetching top-favorited observations (${FEATURED_TAXA.length} taxa)...`);
+  for (const { name, taxon_id, count } of FEATURED_TAXA) {
+    const featObs = await fetchObservations(taxon_id, null, count, 'votes');
+    for (const obs of featObs) obs.featured = true;
+    console.log(`  ${name}: got ${featObs.length} top-faved observations`);
+    allObservations = allObservations.concat(featObs);
   }
 
   const seen = new Set();
