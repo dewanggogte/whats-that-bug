@@ -228,6 +228,7 @@ export class SessionState {
     this.history = [];
     this._usedObservationIds = new Set();
     this._currentCorrect = null;
+    this._recentCategories = [];
     this.questionsAnswered = 0;
     this.correctCount = 0;
     this.currentStreak = 0;
@@ -274,6 +275,15 @@ export class SessionState {
       available = [...this._pool];
     }
     if (available.length === 0) return null;
+
+    // Bugs 101: avoid repeating categories from the last 3 rounds
+    if (this.setDef.scoring === 'binary' && this._recentCategories.length > 0) {
+      const recentSet = new Set(this._recentCategories);
+      const freshCategory = available.filter(obs => !recentSet.has(getBugs101Name(obs.taxon)));
+      if (freshCategory.length > 0) {
+        available = freshCategory;
+      }
+    }
 
     // Pick observation based on difficulty curve (classic only, when difficulty data exists)
     let correct;
@@ -340,6 +350,13 @@ export class SessionState {
 
   submitAnswer(pickedTaxon) {
     const correct = this._currentCorrect;
+    // Track category for variety filtering (Bugs 101 only)
+    if (this.setDef.scoring === 'binary') {
+      this._recentCategories.push(getBugs101Name(correct.taxon));
+      if (this._recentCategories.length > 3) {
+        this._recentCategories.shift();
+      }
+    }
     const isBinary = this.setDef.scoring === 'binary';
     const score = isBinary
       ? (getBugs101Name(pickedTaxon) === getBugs101Name(correct.taxon) ? 100 : 0)
