@@ -15,6 +15,12 @@
     "review-daily": "node scripts/review-server.mjs",
     "calculate-difficulty": "node scripts/calculate-difficulty.mjs",
     "reddit-pipeline": "node scripts/reddit-pipeline.mjs",
+    "reddit": "node scripts/reddit/pipeline.mjs",
+    "reddit-generate": "node scripts/reddit/pipeline.mjs generate",
+    "reddit-review": "node scripts/reddit/pipeline.mjs review",
+    "reddit-prepare": "node scripts/reddit/pipeline.mjs prepare",
+    "reddit-post": "node scripts/reddit/pipeline.mjs post",
+    "reddit-status": "node scripts/reddit/pipeline.mjs status",
     "compile-review": "python3 scripts/compile-review.py",
     "review-flagged": "python3 scripts/compile-review.py && python3 -m http.server 8899 -d scripts",
     "rebuild-sets": "node scripts/rebuild-sets.mjs",
@@ -26,6 +32,7 @@
     "astro": "^4.0.0"
   },
   "devDependencies": {
+    "playwright": "^1.59.1",
     "sharp": "^0.34.5",
     "vitest": "^1.0.0"
   }

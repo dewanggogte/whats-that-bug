@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reddit Post Review</title>
+<style>
+  :root {
+    --bg: #1a1917;
+    --surface: #222120;
+    --text: #e0ddd8;
+    --accent: #d4794e;
+    --border: #2e2c28;
+    --success: #5bc49a;
+    --star: #f0c040;
+    --muted: #9a9590;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  /* ── Sticky header ─────────────────────────────────────────────────────── */
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header h1 { font-size: 20px; }
+
+  .btn-save {
+    padding: 10px 28px;
+    background: var(--success);
+    color: #0d3320;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+
+  .btn-save:hover { filter: brightness(0.9); }
+
+  /* ── Content ───────────────────────────────────────────────────────────── */
+
+  .content { padding: 24px; max-width: 1600px; margin: 0 auto; }
+
+  .slot-section { margin-bottom: 48px; }
+
+  /* ── Sub header ────────────────────────────────────────────────────────── */
+
+  .sub-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .sub-header h2 { font-size: 18px; margin-right: 4px; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-gallery   { background: #2a4a3a; color: #5bc49a; }
+  .badge-challenge  { background: #4a3a2a; color: #d4794e; }
+  .badge-text       { background: #2a3a4a; color: #7ab0d4; }
+
+  .scheduled-time {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .sub-count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .sub-count .count { color: var(--star); font-weight: 700; }
+
+  /* ── Photo grid ────────────────────────────────────────────────────────── */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  @media (max-width: 1200px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 768px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+    position: relative;
+  }
+
+  .card:hover { transform: translateY(-2px); }
+  .card.starred { border-color: var(--star); }
+
+  .card .star-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 5;
+    transition: background 0.15s;
+  }
+
+  .card.starred .star-badge { background: var(--star); color: #1a1917; }
+
+  .card-image {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+    background: var(--border);
+  }
+
+  .card-body { padding: 10px 12px; }
+
+  .card-species {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+
+  .card-meta {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .faves { color: var(--star); }
+
+  /* ── Post preview panel ────────────────────────────────────────────────── */
+
+  .post-preview {
+    margin-top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .post-preview h3 {
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+
+  .field-group { margin-bottom: 14px; }
+
+  .field-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .field-group input,
+  .field-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    transition: border-color 0.15s;
+  }
+
+  .field-group input:focus,
+  .field-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .checkbox-group label {
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  /* ── Toast ─────────────────────────────────────────────────────────────── */
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--success);
+    color: #0d3320;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 100;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .toast.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Reddit Post Review</h1>
+  <button class="btn-save" onclick="submitAll()">Save &amp; Continue</button>
+</div>
+
+<div class="content" id="content"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+// DATA is injected by the server as a preceding <script> tag:
+// window.CANDIDATES    = { subId: [obs, ...], ... }
+// window.SUB_META      = { subId: { name, title, body }, ... }
+// window.CALENDAR_SLOTS = [{ subId, contentType, scheduledAt }, ...]
+
+const starred = {};  // { subId: Set of obs IDs }
+const titles = {};   // { subId: edited title string }
+const bodies = {};   // { subId: edited body string }
+const gameLinkInBody = {}; // { subId: boolean }
+
+// ── Initialisation ──────────────────────────────────────────────────────────
+
+function init() {
+  const container = document.getElementById('content');
+
+  for (const slot of window.CALENDAR_SLOTS) {
+    const subId = slot.subId;
+    const meta = window.SUB_META[subId];
+    const candidates = window.CANDIDATES[subId] || [];
+
+    starred[subId] = new Set();
+    titles[subId] = meta?.title || '';
+    bodies[subId] = meta?.body || '';
+    gameLinkInBody[subId] = true;
+
+    const section = document.createElement('div');
+    section.className = 'slot-section';
+
+    // ── Sub header ────────────────────────────────────────────────────────
+    const badgeClass = 'badge-' + slot.contentType;
+    const badgeLabel = slot.contentType.charAt(0).toUpperCase() + slot.contentType.slice(1);
+    const schedTime = formatScheduledTime(slot.scheduledAt);
+
+    section.innerHTML =
+      '<div class="sub-header">' +
+        '<h2>' + esc(meta?.name || subId) + '</h2>' +
+        '<span class="badge ' + badgeClass + '">' + esc(badgeLabel) + '</span>' +
+        '<span class="sub-count"><span class="count" id="count-' + subId + '">0</span> selected</span>' +
+        '<span class="scheduled-time">' + esc(schedTime) + '</span>' +
+      '</div>';
+
+    // ── Photo grid (for gallery and challenge types) ──────────────────────
+    if (slot.contentType !== 'text' && candidates.length > 0) {
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.id = 'grid-' + subId;
+
+      for (const obs of candidates) {
+        grid.appendChild(createCard(subId, obs));
+      }
+      section.appendChild(grid);
+    }
+
+    // ── Post preview panel ────────────────────────────────────────────────
+    const preview = document.createElement('div');
+    preview.className = 'post-preview';
+    preview.innerHTML =
+      '<h3>Post Preview</h3>' +
+      '<div class="field-group">' +
+        '<label for="title-' + subId + '">Title</label>' +
+        '<input type="text" id="title-' + subId + '" value="' + escAttr(titles[subId]) + '">' +
+      '</div>' +
+      '<div class="field-group">' +
+        '<label for="body-' + subId + '">Body</label>' +
+        '<textarea id="body-' + subId + '">' + esc(bodies[subId]) + '</textarea>' +
+      '</div>' +
+      '<div class="checkbox-group">' +
+        '<input type="checkbox" id="gamelink-' + subId + '" checked>' +
+        '<label for="gamelink-' + subId + '">Include game link in body</label>' +
+      '</div>';
+
+    section.appendChild(preview);
+
+    // ── Wire up input listeners ───────────────────────────────────────────
+    container.appendChild(section);
+
+    document.getElementById('title-' + subId).addEventListener('input', function() {
+      titles[subId] = this.value;
+    });
+    document.getElementById('body-' + subId).addEventListener('input', function() {
+      bodies[subId] = this.value;
+    });
+    document.getElementById('gamelink-' + subId).addEventListener('change', function() {
+      gameLinkInBody[subId] = this.checked;
+    });
+  }
+}
+
+// ── Card creation ───────────────────────────────────────────────────────────
+
+function createCard(subId, obs) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.subId = subId;
+  card.dataset.obsId = obs.id;
+
+  const photographer = extractPhotographer(obs.attribution);
+
+  card.innerHTML =
+    '<div class="star-badge">\u2606</div>' +
+    '<img class="card-image" src="' + esc(obs.photo_url) + '" alt="' + esc(obs.taxon.common_name) + '" loading="lazy">' +
+    '<div class="card-body">' +
+      '<div class="card-species" title="' + esc(obs.taxon.common_name) + ' (' + esc(obs.taxon.species) + ')">' +
+        esc(obs.taxon.common_name) +
+      '</div>' +
+      '<div class="card-meta">' +
+        '<span>' + esc(photographer) + '</span>' +
+        '<span class="faves">\u2665 ' + (obs.faves_count || 0) + '</span>' +
+      '</div>' +
+    '</div>';
+
+  card.addEventListener('click', function() { toggleStar(subId, obs.id, card); });
+  return card;
+}
+
+// ── Star toggling ───────────────────────────────────────────────────────────
+
+function toggleStar(subId, obsId, card) {
+  if (starred[subId].has(obsId)) {
+    starred[subId].delete(obsId);
+    card.classList.remove('starred');
+    card.querySelector('.star-badge').textContent = '\u2606'; // ☆
+  } else {
+    starred[subId].add(obsId);
+    card.classList.add('starred');
+    card.querySelector('.star-badge').textContent = '\u2605'; // ★
+  }
+  document.getElementById('count-' + subId).textContent = starred[subId].size;
+}
+
+// ── Submit ──────────────────────────────────────────────────────────────────
+
+async function submitAll() {
+  const payload = {
+    selections: {},
+    titles: {},
+    bodies: {},
+    gameLinkInBody: {},
+  };
+
+  for (const slot of window.CALENDAR_SLOTS) {
+    const subId = slot.subId;
+    payload.selections[subId] = [...(starred[subId] || [])];
+    payload.titles[subId] = titles[subId] || '';
+    payload.bodies[subId] = bodies[subId] || '';
+    payload.gameLinkInBody[subId] = gameLinkInBody[subId] ?? true;
+  }
+
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('Saved! You can close this tab.');
+  } catch (e) {
+    alert('Failed to save: ' + e.message);
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function escAttr(s) {
+  if (!s) return '';
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function extractPhotographer(attribution) {
+  if (!attribution) return 'Unknown';
+  var match = attribution.match(/\(c\)\s*([^,]+)/i);
+  return match ? match[1].trim() : 'Unknown';
+}
+
+function formatScheduledTime(isoStr) {
+  if (!isoStr) return '';
+  var d = new Date(isoStr);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
+    ' at ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function showToast(message) {
+  var el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('visible');
+  setTimeout(function() { el.classList.remove('visible'); }, 5000);
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+
+init();
+</script>
+</body>
+</html>

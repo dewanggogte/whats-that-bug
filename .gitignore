@@ -14,7 +14,10 @@ What's That Bug*.numbers
 *.pdf
 photo_assets/
 older_analytics/
+analytics/output/
+analytics/.env
 .worktrees/
 scripts/reddit-posts/
 scripts/flagged-observations.json
 scripts/review-candidates.json
+scripts/backfill-leaderboard.mjs
