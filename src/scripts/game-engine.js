@@ -26,7 +26,7 @@ export function getBugs101Name(taxon) {
     return 'Wasp';
   }
   if (taxon.order === 'Lepidoptera') {
-    if (taxon.family === 'Papilionidae') return 'Swallowtail';
+    if (taxon.family === 'Papilionidae') return 'Swallowtail Butterfly';
     if (BUTTERFLY_FAMILIES.includes(taxon.family)) return 'Butterfly';
     if (taxon.family === 'Sphingidae') return 'Hawk Moth';
     if (taxon.family === 'Saturniidae') return 'Silk Moth';
@@ -50,7 +50,7 @@ export function getBugs101Name(taxon) {
   if (taxon.order === 'Coleoptera') {
     if (taxon.family === 'Coccinellidae') return 'Ladybug';
     if (taxon.family === 'Lucanidae') return 'Stag Beetle';
-    if (taxon.family === 'Scarabaeidae') return 'Scarab';
+    if (taxon.family === 'Scarabaeidae') return 'Scarab Beetle';
     if (taxon.family === 'Cerambycidae') return 'Longhorn Beetle';
     if (taxon.family === 'Curculionidae') return 'Weevil';
     return 'Beetle';
@@ -58,7 +58,7 @@ export function getBugs101Name(taxon) {
   if (taxon.order === 'Araneae') {
     if (taxon.family === 'Salticidae') return 'Jumping Spider';
     if (taxon.family === 'Theraphosidae') return 'Tarantula';
-    if (taxon.family === 'Araneidae' || taxon.family === 'Nephilidae') return 'Orb Weaver';
+    if (taxon.family === 'Araneidae' || taxon.family === 'Nephilidae') return 'Orb Weaver Spider';
     return 'Spider';
   }
   if (taxon.order === 'Diptera') {
