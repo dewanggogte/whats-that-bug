@@ -8,6 +8,7 @@ import { generateShareText, generateTimeTrialShareText, generateStreakShareText,
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
+import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
@@ -610,6 +611,20 @@ function handleStreakPostAnswer(score, picked, correct) {
       setTimeout(() => streakEl.classList.remove('anim-scale-bounce'), 250);
     }
 
+    // Check for milestone celebration (after flash settles)
+    const milestone = checkMilestone(session.currentStreak);
+    if (milestone) {
+      setTimeout(() => {
+        showMilestoneToast(milestone);
+        if (milestone.tier === 'toast-pulse' || milestone.tier === 'banner') {
+          showMilestonePulse();
+        }
+        if (milestone.tier === 'banner') {
+          showMilestoneBanner(milestone);
+        }
+      }, 300);
+    }
+
     setTimeout(() => startRound(), 500);
   } else {
     // Wrong — flash red, show game over
@@ -801,6 +816,54 @@ function showAchievementToast(achievement) {
     toast.classList.add('fade-out');
     setTimeout(() => toast.remove(), 500);
   }, 3000);
+}
+
+// ===== MILESTONE CELEBRATIONS =====
+
+function showMilestoneToast(milestone) {
+  const gameScreen = container.querySelector('#game-screen');
+  if (!gameScreen) return;
+
+  gameScreen.style.position = 'relative';
+
+  const toast = document.createElement('div');
+  toast.className = 'milestone-toast';
+  toast.innerHTML = `
+    <div>
+      <div class="milestone-toast-label">${escapeHTML(milestone.label)} ${milestoneFireEmoji(milestone.fires)}</div>
+      <div class="milestone-toast-fires">${milestone.streak} in a row!</div>
+    </div>
+  `;
+  gameScreen.appendChild(toast);
+
+  const duration = milestone.tier === 'banner' ? 2500 : 2000;
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 500);
+  }, duration);
+}
+
+function showMilestonePulse() {
+  const streakEl = container.querySelector('.streak-count');
+  if (!streakEl) return;
+  streakEl.classList.add('milestone-pulse');
+  streakEl.addEventListener('animationend', () => {
+    streakEl.classList.remove('milestone-pulse');
+  }, { once: true });
+}
+
+function showMilestoneBanner(milestone) {
+  const gameScreen = container.querySelector('#game-screen');
+  if (!gameScreen) return;
+
+  gameScreen.style.position = 'relative';
+
+  const banner = document.createElement('div');
+  banner.className = 'milestone-banner-flash';
+  banner.textContent = `${milestone.label} ${milestoneFireEmoji(milestone.fires)}`;
+  gameScreen.appendChild(banner);
+
+  setTimeout(() => banner.remove(), 2600);
 }
 
 // ===== POST-SESSION HELPERS =====
@@ -1084,6 +1147,11 @@ function renderStreakGameOver(picked, correct) {
     ? `<div class="new-best-badge">New Personal Best!</div>`
     : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} in a row</p>` : '';
 
+  const highest = getHighestMilestone(streakCount);
+  const milestoneBadgeHTML = highest
+    ? `<p class="subtitle" style="margin-top:4px;color:var(--accent);">Reached ${highest.streak} ${milestoneFireEmoji(highest.fires)}</p>`
+    : '';
+
   // Learning card content for the bug they got wrong
   let breadcrumb = '';
   const isBugs101Mode = session.setDef.scoring === 'binary';
@@ -1115,6 +1183,7 @@ function renderStreakGameOver(picked, correct) {
         <div class="summary-score">${streakCount}</div>
         <p class="subtitle">in a row</p>
         ${newBestHTML}
+        ${milestoneBadgeHTML}
 
         <div class="tt-stats" style="margin-top:20px;">
           <div class="tt-stat">
