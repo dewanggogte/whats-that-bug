@@ -9,6 +9,7 @@ import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, log
 import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
 import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
+import { loadPercentiles, renderPercentileCard } from './percentiles.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
@@ -69,6 +70,8 @@ const PRELOAD_AHEAD = 3;
 let roundCache = [];
 let displayRound = 0;
 let prefetchedLeaderboards = null;
+// Preload percentile data so it's ready at game-over
+loadPercentiles();
 
 
 function preloadRounds() {
@@ -1058,6 +1061,8 @@ function renderTimeTrialSummary() {
     : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} pts</p>` : '';
 
   handleLeaderboardCheck(session.totalScore, 0, () => {
+    const isStreak = false;
+    const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, isStreak);
     container.innerHTML = `
     <div class="container">
       <div class="summary">
@@ -1092,6 +1097,8 @@ function renderTimeTrialSummary() {
           ${brackets.ok > 0 ? `<span class="tt-bracket tt-bracket-ok">${brackets.ok} steady</span>` : ''}
           ${brackets.slow > 0 ? `<span class="tt-bracket tt-bracket-slow">${brackets.slow} slow</span>` : ''}
         </div>
+
+        ${percentileHTML}
 
         ${renderShareSection(getTimeTrialFlavor(correctCount, totalQ))}
 
@@ -1176,6 +1183,8 @@ function renderStreakGameOver(picked, correct) {
   const totalRounds = streakCount + 1;
 
   handleLeaderboardCheck(0, streakCount, () => {
+    const isStreak = true;
+    const percentileHTML = renderPercentileCard(streakCount, currentSetKey, isStreak);
     container.innerHTML = `
     <div class="container">
       <div class="summary">
@@ -1201,6 +1210,8 @@ function renderStreakGameOver(picked, correct) {
         </div>
 
         <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
+
+        ${percentileHTML}
 
         ${renderShareSection(getStreakFlavor(streakCount))}
       </div>
