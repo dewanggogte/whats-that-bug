@@ -25,9 +25,18 @@ const TINY_TERRORS_TAXA = [
   67742, 84718, 52884, 47370, 48894, 48736,
 ];
 
-const EXCLUDED_ORDERS = new Set([
+const ICK_ORDERS = new Set([
   'Ixodida', 'Blattodea', 'Scolopendromorpha', 'Dermaptera',
+  'Siphonaptera', 'Zygentoma',
 ]);
+const ICK_CLASSES = new Set(['Chilopoda', 'Diplopoda']);
+const ICK_FAMILIES = new Set([
+  'Culicidae', 'Cimicidae', 'Aphididae', 'Dermestidae',
+]);
+function isIcky(obs) {
+  const t = obs.taxon;
+  return ICK_ORDERS.has(t.order) || ICK_CLASSES.has(t.class) || ICK_FAMILIES.has(t.family);
+}
 
 function loadJSON(path) {
   return JSON.parse(readFileSync(path, 'utf-8'));
@@ -65,7 +74,7 @@ function main() {
 
   const mainPool = observations
     .map((obs, i) => ({ obs, i }))
-    .filter(({ obs }) => !EXCLUDED_ORDERS.has(obs.taxon.order))
+    .filter(({ obs }) => !isIcky(obs) && obs.taxon.order !== 'Isopoda')
     .filter(({ obs }) => !blockedIds.has(obs.id))
     .map(({ i }) => i);
 
