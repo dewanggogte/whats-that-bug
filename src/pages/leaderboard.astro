@@ -2,14 +2,15 @@
 import Base from '../layouts/Base.astro';
 ---
 <Base
-  title="Leaderboard — What's That Bug?"
-  description="Top 10 bug identifiers worldwide. Compete in Time Trial and Streak modes across beginner and expert difficulty."
+  title="Daily Leaderboard — What's That Bug?"
+  description="Today's top bug identifiers. Compete in Time Trial and Streak modes — leaderboard resets at midnight ET."
   canonicalPath="/leaderboard"
 >
   <div class="container" style="max-width:640px;">
     <div style="text-align:center;padding:24px 0 8px;">
-      <h1>Leaderboard</h1>
-      <p class="subtitle">Top 10 bug identifiers in the world</p>
+      <h1>Daily Leaderboard</h1>
+      <p class="subtitle">Resets every day at midnight ET</p>
+      <p class="lb-countdown" id="lb-countdown"></p>
     </div>
 
     <div class="mode-group">
@@ -43,17 +44,15 @@ import Base from '../layouts/Base.astro';
 
   <script>
     import { fetchLeaderboards } from '../scripts/leaderboard.js';
-    import { renderLeaderboardTable } from '../scripts/leaderboard-ui.js';
+    import { renderLeaderboardTable, renderYesterdayChampion } from '../scripts/leaderboard-ui.js';
 
     // Tab switching
     document.querySelectorAll('.lb-tabs').forEach(tabGroup => {
       tabGroup.querySelectorAll('.lb-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-          // Deactivate all tabs in this group
           tabGroup.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
 
-          // Show the corresponding content
           const boardKey = tab.dataset.board;
           const parent = tabGroup.closest('.mode-group');
           parent.querySelectorAll('.lb-tab-content').forEach(c => c.classList.remove('active'));
@@ -61,6 +60,27 @@ import Base from '../layouts/Base.astro';
         });
       });
     });
+
+    // Countdown to midnight ET
+    function updateCountdown() {
+      const now = new Date();
+      const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York', hour12: false });
+      const etNow = new Date(etStr);
+
+      const midnightET = new Date(etNow);
+      midnightET.setDate(midnightET.getDate() + 1);
+      midnightET.setHours(0, 0, 0, 0);
+
+      const diffMs = midnightET - etNow;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      const el = document.getElementById('lb-countdown');
+      if (el) el.textContent = `🕐 Resets in ${hours}h ${minutes}m`;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 60000);
 
     // Fetch and render leaderboards
     async function loadLeaderboards() {
@@ -73,7 +93,17 @@ import Base from '../layouts/Base.astro';
           const isStreak = key.includes('streak');
           const container = document.getElementById(`board-${key}`);
           if (container) {
-            container.innerHTML = renderLeaderboardTable(boards[key] || [], isStreak);
+            const entries = boards[key] || [];
+            const yesterdayChampion = boards[`${key}_yesterday_champion`] || null;
+
+            let html = '';
+            if (entries.length === 0) {
+              html = '<p style="text-align:center;color:var(--text-secondary);font-size:0.85rem;padding:16px 0;">No scores yet today — be the first!</p>';
+            } else {
+              html = renderLeaderboardTable(entries, isStreak);
+            }
+            html += renderYesterdayChampion(yesterdayChampion, isStreak);
+            container.innerHTML = html;
           }
         }
       } catch (err) {

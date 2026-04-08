@@ -275,3 +275,20 @@ export function showPersonalBestPopup({ score, streak, previousBest, setKey, boa
     });
   });
 }
+
+/**
+ * Render a "Yesterday's Champion" line below a leaderboard table.
+ * champion: { name, country, score, streak } or null
+ * isStreak: whether to show streak or score
+ */
+export function renderYesterdayChampion(champion, isStreak) {
+  if (!champion) return '';
+  const flag = getFlagForCode(champion.country);
+  const name = escapeHTML(champion.name || 'Anonymous Bug Hunter');
+  const value = isStreak ? `${champion.streak} streak` : `${champion.score} pts`;
+  return `
+    <div class="lb-yesterday">
+      Yesterday: ${name} ${flag} — ${value}
+    </div>
+  `;
+}

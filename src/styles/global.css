@@ -2812,3 +2812,19 @@ a {
     transform: translateY(0);
   }
 }
+
+/* Yesterday's champion line */
+.lb-yesterday {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  opacity: 0.7;
+  padding: 8px 0 4px;
+}
+
+/* Countdown timer */
+.lb-countdown {
+  font-size: var(--text-xs);
+  color: var(--accent);
+  margin-top: 4px;
+}
