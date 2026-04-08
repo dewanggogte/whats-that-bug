@@ -245,6 +245,86 @@
     cursor: pointer;
   }
 
+  /* ── Follow-up comment preview ─────────────────────────────────────────── */
+
+  .followup-preview {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .followup-preview .followup-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    color: var(--muted);
+  }
+
+  /* ── Include toggle ────────────────────────────────────────────────────── */
+
+  .include-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .include-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--success);
+    cursor: pointer;
+  }
+
+  .include-toggle label {
+    cursor: pointer;
+  }
+
+  .slot-section.excluded {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .slot-section.excluded .sub-header {
+    pointer-events: auto;
+  }
+
+  .slot-section.excluded .include-toggle {
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  /* ── Species list ──────────────────────────────────────────────────────── */
+
+  .species-list {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .species-list .species-heading {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .species-list .species-item em {
+    font-style: italic;
+  }
+
   /* ── Toast ─────────────────────────────────────────────────────────────── */
 
   .toast {
@@ -283,13 +363,16 @@
 <script>
 // DATA is injected by the server as a preceding <script> tag:
 // window.CANDIDATES    = { subId: [obs, ...], ... }
-// window.SUB_META      = { subId: { name, title, body }, ... }
+// window.SUB_META      = { subId: { name, title, body, contentType, categoryLabel }, ... }
 // window.CALENDAR_SLOTS = [{ subId, contentType, scheduledAt }, ...]
 
-const starred = {};  // { subId: Set of obs IDs }
-const titles = {};   // { subId: edited title string }
-const bodies = {};   // { subId: edited body string }
-const gameLinkInBody = {}; // { subId: boolean }
+const GAME_URL = 'https://dewanggogte.com/games/bugs/';
+
+const starred = {};         // { subId: Set of obs IDs }
+const titles = {};          // { subId: edited title string }
+const bodies = {};          // { subId: edited body string }
+const gameLinkInBody = {};  // { subId: boolean }
+const excluded = {};        // { subId: boolean }
 
 // ── Initialisation ──────────────────────────────────────────────────────────
 
@@ -304,10 +387,12 @@ function init() {
     starred[subId] = new Set();
     titles[subId] = meta?.title || '';
     bodies[subId] = meta?.body || '';
-    gameLinkInBody[subId] = true;
+    gameLinkInBody[subId] = meta?.gameLinkInBody ?? true;
+    excluded[subId] = false;
 
     const section = document.createElement('div');
     section.className = 'slot-section';
+    section.id = 'section-' + subId;
 
     // ── Sub header ────────────────────────────────────────────────────────
     const badgeClass = 'badge-' + slot.contentType;
@@ -320,6 +405,10 @@ function init() {
         '<span class="badge ' + badgeClass + '">' + esc(badgeLabel) + '</span>' +
         '<span class="sub-count"><span class="count" id="count-' + subId + '">0</span> selected</span>' +
         '<span class="scheduled-time">' + esc(schedTime) + '</span>' +
+        '<div class="include-toggle">' +
+          '<input type="checkbox" id="include-' + subId + '" checked>' +
+          '<label for="include-' + subId + '">Include</label>' +
+        '</div>' +
       '</div>';
 
     // ── Photo grid (for gallery and challenge types) ──────────────────────
@@ -335,6 +424,7 @@ function init() {
     }
 
     // ── Post preview panel ────────────────────────────────────────────────
+    const isGameLinkChecked = gameLinkInBody[subId] ? ' checked' : '';
     const preview = document.createElement('div');
     preview.className = 'post-preview';
     preview.innerHTML =
@@ -348,11 +438,23 @@ function init() {
         '<textarea id="body-' + subId + '">' + esc(bodies[subId]) + '</textarea>' +
       '</div>' +
       '<div class="checkbox-group">' +
-        '<input type="checkbox" id="gamelink-' + subId + '" checked>' +
+        '<input type="checkbox" id="gamelink-' + subId + '"' + isGameLinkChecked + '>' +
         '<label for="gamelink-' + subId + '">Include game link in body</label>' +
+      '</div>' +
+      '<div class="followup-preview" id="followup-' + subId + '" style="display:none;">' +
+        '<div class="followup-label">Follow-up comment preview</div>' +
+        '<div class="followup-text" id="followup-text-' + subId + '"></div>' +
       '</div>';
 
     section.appendChild(preview);
+
+    // ── Species list (below post preview) ─────────────────────────────────
+    const speciesList = document.createElement('div');
+    speciesList.className = 'species-list';
+    speciesList.id = 'species-' + subId;
+    speciesList.style.display = 'none';
+    speciesList.innerHTML = '<div class="species-heading">Species in this post</div>';
+    section.appendChild(speciesList);
 
     // ── Wire up input listeners ───────────────────────────────────────────
     container.appendChild(section);
@@ -363,9 +465,26 @@ function init() {
     document.getElementById('body-' + subId).addEventListener('input', function() {
       bodies[subId] = this.value;
     });
+
+    // Game link toggle
     document.getElementById('gamelink-' + subId).addEventListener('change', function() {
       gameLinkInBody[subId] = this.checked;
+      handleGameLinkToggle(subId, this.checked);
     });
+
+    // Include/exclude toggle
+    document.getElementById('include-' + subId).addEventListener('change', function() {
+      excluded[subId] = !this.checked;
+      var sec = document.getElementById('section-' + subId);
+      if (this.checked) {
+        sec.classList.remove('excluded');
+      } else {
+        sec.classList.add('excluded');
+      }
+    });
+
+    // Initialise follow-up preview and game link state
+    updateFollowupPreview(subId, slot.contentType, meta?.categoryLabel || 'bugs');
   }
 }
 
@@ -399,6 +518,9 @@ function createCard(subId, obs) {
 // ── Star toggling ───────────────────────────────────────────────────────────
 
 function toggleStar(subId, obsId, card) {
+  // Don't allow starring in excluded sections
+  if (excluded[subId]) return;
+
   if (starred[subId].has(obsId)) {
     starred[subId].delete(obsId);
     card.classList.remove('starred');
@@ -409,6 +531,146 @@ function toggleStar(subId, obsId, card) {
     card.querySelector('.star-badge').textContent = '\u2605'; // ★
   }
   document.getElementById('count-' + subId).textContent = starred[subId].size;
+
+  // Update credits in body text
+  updateCreditsInBody(subId);
+
+  // Update species list
+  updateSpeciesList(subId);
+}
+
+// ── Game link toggle ────────────────────────────────────────────────────────
+
+function handleGameLinkToggle(subId, isChecked) {
+  var textarea = document.getElementById('body-' + subId);
+  var text = textarea.value;
+  var slot = window.CALENDAR_SLOTS.find(function(s) { return s.subId === subId; });
+  var meta = window.SUB_META[subId];
+
+  if (isChecked) {
+    // Add game link if not already present
+    if (text.indexOf(GAME_URL) === -1) {
+      text = text + '\n\nIf you want to test your ID skills, I made a free game: ' + GAME_URL;
+    }
+  } else {
+    // Remove any line containing the game URL
+    text = text.split('\n').filter(function(line) {
+      return line.indexOf(GAME_URL) === -1;
+    }).join('\n');
+    // Clean up any trailing blank lines left behind
+    text = text.replace(/\n{3,}$/g, '\n');
+  }
+
+  textarea.value = text;
+  bodies[subId] = text;
+
+  updateFollowupPreview(subId, slot?.contentType, meta?.categoryLabel || 'bugs');
+}
+
+function updateFollowupPreview(subId, contentType, categoryLabel) {
+  var el = document.getElementById('followup-' + subId);
+  var textEl = document.getElementById('followup-text-' + subId);
+  if (!el || !textEl) return;
+
+  if (gameLinkInBody[subId]) {
+    el.style.display = 'none';
+  } else {
+    el.style.display = 'block';
+    var comment;
+    if (contentType === 'challenge') {
+      comment = 'If you liked this challenge, there\'s a whole game built around it: ' + GAME_URL;
+    } else {
+      comment = 'If anyone wants to test their ' + esc(categoryLabel) + ' ID skills, I\'ve been working on a free quiz game: ' + GAME_URL;
+    }
+    textEl.textContent = comment;
+  }
+}
+
+// ── Credits update ──────────────────────────────────────────────────────────
+
+function updateCreditsInBody(subId) {
+  var candidates = window.CANDIDATES[subId] || [];
+  var selectedObs = candidates.filter(function(obs) { return starred[subId].has(obs.id); });
+
+  // Extract unique photographer names
+  var names = [];
+  var seen = {};
+  for (var i = 0; i < selectedObs.length; i++) {
+    var name = extractPhotographer(selectedObs[i].attribution);
+    if (name !== 'Unknown' && !seen[name]) {
+      seen[name] = true;
+      names.push(name);
+    }
+  }
+
+  var textarea = document.getElementById('body-' + subId);
+  var text = textarea.value;
+
+  if (names.length === 0) {
+    // Replace any existing credits line back to placeholder
+    text = text.replace(/\uD83D\uDCF8 Credits: [^\n]*/g, '{credits}');
+  } else {
+    var creditLine = '\uD83D\uDCF8 Credits: ' + formatNames(names);
+    // Replace {credits} placeholder or an existing credits line
+    if (text.indexOf('{credits}') !== -1) {
+      text = text.replace('{credits}', creditLine);
+    } else {
+      // Replace existing credits line
+      text = text.replace(/\uD83D\uDCF8 Credits: [^\n]*/g, creditLine);
+    }
+  }
+
+  textarea.value = text;
+  bodies[subId] = text;
+}
+
+/**
+ * Format names with Oxford comma.
+ * ["Alice"] → "Alice"
+ * ["Alice", "Bob"] → "Alice and Bob"
+ * ["Alice", "Bob", "Charlie"] → "Alice, Bob, and Charlie"
+ */
+function formatNames(names) {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return names[0] + ' and ' + names[1];
+  return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
+}
+
+// ── Species list ────────────────────────────────────────────────────────────
+
+function updateSpeciesList(subId) {
+  var candidates = window.CANDIDATES[subId] || [];
+  var selectedObs = candidates.filter(function(obs) { return starred[subId].has(obs.id); });
+  var listEl = document.getElementById('species-' + subId);
+  if (!listEl) return;
+
+  if (selectedObs.length === 0) {
+    listEl.style.display = 'none';
+    return;
+  }
+
+  // Deduplicate by species name
+  var seen = {};
+  var species = [];
+  for (var i = 0; i < selectedObs.length; i++) {
+    var taxon = selectedObs[i].taxon;
+    var key = taxon.species || taxon.common_name;
+    if (!seen[key]) {
+      seen[key] = true;
+      species.push(taxon);
+    }
+  }
+
+  var html = '<div class="species-heading">Species in this post</div>';
+  for (var j = 0; j < species.length; j++) {
+    html += '<div class="species-item">' +
+      esc(species[j].common_name) + ' (<em>' + esc(species[j].species) + '</em>)' +
+    '</div>';
+  }
+
+  listEl.innerHTML = html;
+  listEl.style.display = 'block';
 }
 
 // ── Submit ──────────────────────────────────────────────────────────────────
@@ -419,6 +681,7 @@ async function submitAll() {
     titles: {},
     bodies: {},
     gameLinkInBody: {},
+    excluded: [],
   };
 
   for (const slot of window.CALENDAR_SLOTS) {
@@ -427,6 +690,9 @@ async function submitAll() {
     payload.titles[subId] = titles[subId] || '';
     payload.bodies[subId] = bodies[subId] || '';
     payload.gameLinkInBody[subId] = gameLinkInBody[subId] ?? true;
+    if (excluded[subId]) {
+      payload.excluded.push(subId);
+    }
   }
 
   try {

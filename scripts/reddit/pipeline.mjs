@@ -25,8 +25,8 @@ import { createInterface } from 'readline';
 import { CACHE_DIR, POSTS_DIR, SUBREDDITS, CONTENT_TYPES } from './config.mjs';
 import { loadCredentials, getToken, uploadImage, submitGallery, submitText, submitComment } from './api.mjs';
 import { fetchGalleryCandidates, pickChallengeCandidates, scanExistingPool } from './content.mjs';
-import { generateTitle, generateBody, generateFollowupComment, generateCaptions } from './copy.mjs';
-import { loadCalendar, saveCalendar, generateWeekSlots, findDuePost, getUpcomingSlots } from './calendar.mjs';
+import { generateTitle, generateBody, generateFollowupComment, generateCaptions, populateCredits, generateTextDraft } from './copy.mjs';
+import { loadCalendar, saveCalendar, generateWeekSlots, findDuePost, getUpcomingSlots, isSubEligible } from './calendar.mjs';
 import { loadPostLog, savePostLog, logPost, updateEngagement, loadPostedPhotos, recordPostedPhotos, getPostedIds, getSubStats } from './tracker.mjs';
 import { ensureSession, postGallery, postText, postComment, closeBrowser } from './poster.mjs';
 import { startReviewServer } from './review-server.mjs';
@@ -123,18 +123,20 @@ async function cmdGenerate() {
     }
   }
 
-  // 3. Generate week slots
-  const slots = generateWeekSlots(new Date(), postLog);
+  // 3. Generate week slots (now async — fetches optimal posting times)
+  log('Generating schedule (checking optimal posting times)...');
+  let slots = await generateWeekSlots(new Date(), postLog);
   log(`Generated ${slots.length} slot(s):\n`);
 
-  for (const slot of slots) {
-    const sub = SUBREDDITS[slot.subId];
-    const typeLabel = CONTENT_TYPES[slot.contentType]?.label ?? slot.contentType;
-    console.log(`  ${statusIcon(slot.status)}  ${bold(sub.name)}  ${typeLabel}  ${fmtDate(slot.scheduledAt)}`);
-  }
-  console.log('');
+  // 4. Show proposed schedule and let user approve/edit
+  slots = await approveSchedule(slots, postLog);
 
-  // 4. Fetch candidates for each slot
+  if (slots.length === 0) {
+    warn('No slots in schedule. Nothing to generate.');
+    return;
+  }
+
+  // 5. Fetch candidates for each slot
   const state = loadState();
   state.candidates = {};
   state.selections = {};
@@ -173,21 +175,17 @@ async function cmdGenerate() {
     }
   }
 
-  // 5. Generate initial title/body for each slot
+  // 6. Generate initial title/body for each slot
+  //    Credits are empty at this stage — generateBody will insert {credits}
+  //    placeholder that gets replaced during prepare.
   for (const slot of slots) {
     const sub = SUBREDDITS[slot.subId];
-    const candidates = state.candidates[slot.subId] || [];
-
-    // Extract credits from candidates for body generation
-    const credits = candidates.slice(0, 6).map(c => {
-      const match = c.attribution?.match(/\(c\)\s*([^,]+)/i);
-      return match ? match[1].trim() : 'Unknown';
-    });
 
     const title = generateTitle(slot.contentType, slot.subId, sub);
     const body = generateBody(slot.contentType, sub, {
-      credits,
+      credits: [], // empty — placeholder will be inserted
       includeGameLink: false,
+      subId: slot.subId,
     });
 
     slot.postData = {
@@ -197,7 +195,7 @@ async function cmdGenerate() {
     };
   }
 
-  // 6. Save calendar and state
+  // 7. Save calendar and state
   const newCal = {
     slots,
     generatedAt: new Date().toISOString(),
@@ -207,6 +205,150 @@ async function cmdGenerate() {
 
   ok('Calendar and candidates saved.');
   log(`Next step: run ${bold('npm run reddit-review')} to curate content.\n`);
+}
+
+/**
+ * Interactive schedule approval/edit loop.
+ * Shows the proposed schedule and lets the user approve, edit (toggle subs
+ * on/off and add replacements), or regenerate entirely.
+ *
+ * @param {Array} slots - Generated slots
+ * @param {Array} postLog - Post log for eligibility checks
+ * @returns {Promise<Array>} Approved slots
+ */
+async function approveSchedule(slots, postLog) {
+  // Build list of all eligible subs not already in the schedule
+  function getAlternateSubs(currentSlots) {
+    const usedIds = new Set(currentSlots.map(s => s.subId));
+    return Object.entries(SUBREDDITS)
+      .filter(([subId, config]) =>
+        !usedIds.has(subId) && isSubEligible(subId, postLog, config.minDaysBetween)
+      )
+      .map(([subId]) => subId);
+  }
+
+  while (true) {
+    // Display current schedule
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const sub = SUBREDDITS[slot.subId];
+      const typeLabel = CONTENT_TYPES[slot.contentType]?.label ?? slot.contentType;
+      console.log(`  [${i + 1}] ${statusIcon(slot.status)}  ${bold(sub.name)}  ${typeLabel}  ${fmtDate(slot.scheduledAt)}`);
+    }
+    console.log('');
+
+    const answer = await ask('  Approve this schedule? (y/edit/regenerate): ');
+    const choice = answer.toLowerCase().trim();
+
+    if (choice === 'y' || choice === 'yes') {
+      return slots;
+    }
+
+    if (choice === 'regenerate') {
+      log('Regenerating schedule...');
+      slots = await generateWeekSlots(new Date(), postLog);
+      log(`Generated ${slots.length} slot(s):\n`);
+      continue;
+    }
+
+    if (choice === 'edit') {
+      // Edit mode: toggle subs on/off or add replacements
+      console.log('');
+      log('Edit mode: type a slot number to remove it, or a subreddit name to add it.');
+      log('Type "done" when finished.\n');
+
+      const alternates = getAlternateSubs(slots);
+      if (alternates.length > 0) {
+        console.log(`  Available subs: ${alternates.map(id => SUBREDDITS[id].name).join(', ')}`);
+        console.log('');
+      }
+
+      while (true) {
+        // Redisplay current slots
+        for (let i = 0; i < slots.length; i++) {
+          const slot = slots[i];
+          const sub = SUBREDDITS[slot.subId];
+          const typeLabel = CONTENT_TYPES[slot.contentType]?.label ?? slot.contentType;
+          console.log(`  [${i + 1}] ${bold(sub.name)}  ${typeLabel}  ${fmtDate(slot.scheduledAt)}`);
+        }
+        console.log('');
+
+        const input = await ask('  Remove # / add sub name / done: ');
+        const trimmed = input.trim();
+
+        if (trimmed.toLowerCase() === 'done') break;
+
+        // Try to parse as a number (remove a slot)
+        const num = parseInt(trimmed, 10);
+        if (!isNaN(num) && num >= 1 && num <= slots.length) {
+          const removed = slots.splice(num - 1, 1)[0];
+          ok(`Removed ${SUBREDDITS[removed.subId].name}`);
+
+          // Offer replacement from eligible subs
+          const alts = getAlternateSubs(slots);
+          if (alts.length > 0) {
+            // Auto-pick replacement for the removed slot's time
+            const replacement = alts[0];
+            const replacementConfig = SUBREDDITS[replacement];
+            const answer = await ask(`  Replace with ${replacementConfig.name}? (y/N): `);
+            if (answer.toLowerCase() === 'y') {
+              const contentType = replacementConfig.contentTypes[0];
+              slots.splice(num - 1, 0, {
+                subId: replacement,
+                contentType,
+                scheduledAt: removed.scheduledAt,
+                status: 'pending',
+                postData: null,
+              });
+              ok(`Added ${replacementConfig.name}`);
+            }
+          }
+          console.log('');
+          continue;
+        }
+
+        // Try to match as a sub name (add a sub)
+        // Accept either the subId key or "r/SubName" format
+        const cleanName = trimmed.replace(/^r\//, '');
+        const matchedSubId = Object.keys(SUBREDDITS).find(
+          id => id.toLowerCase() === cleanName.toLowerCase()
+        );
+
+        if (matchedSubId) {
+          if (slots.some(s => s.subId === matchedSubId)) {
+            warn(`${SUBREDDITS[matchedSubId].name} is already in the schedule.`);
+          } else {
+            const subConfig = SUBREDDITS[matchedSubId];
+            const contentType = subConfig.contentTypes[0];
+            // Use the last slot's time + 1 hour, or a default
+            const lastSlot = slots[slots.length - 1];
+            const schedTime = lastSlot
+              ? new Date(new Date(lastSlot.scheduledAt).getTime() + 3600000).toISOString()
+              : new Date().toISOString();
+            slots.push({
+              subId: matchedSubId,
+              contentType,
+              scheduledAt: schedTime,
+              status: 'pending',
+              postData: null,
+            });
+            ok(`Added ${subConfig.name}`);
+          }
+        } else if (trimmed) {
+          warn(`Unknown subreddit: "${trimmed}". Use a name from the config (e.g. "spiders", "WebGames").`);
+        }
+        console.log('');
+      }
+
+      // Show updated schedule for approval
+      console.log('');
+      log('Updated schedule:');
+      continue; // Loop back to show schedule and ask for approval
+    }
+
+    // Unknown input
+    warn('Please type "y", "edit", or "regenerate".');
+  }
 }
 
 // ── review ──────────────────────────────────────────────────────────────────
@@ -236,6 +378,7 @@ async function cmdReview() {
     subMeta[slot.subId] = {
       name: sub.name,
       contentType: slot.contentType,
+      categoryLabel: sub.categoryLabel || '',
       title: slot.postData?.title ?? '',
       body: slot.postData?.body ?? '',
       gameLinkInBody: slot.postData?.gameLinkInBody ?? false,
@@ -247,18 +390,28 @@ async function cmdReview() {
   log('Starting review server...');
   await startReviewServer(candidateData, subMeta, pendingSlots, (savedData) => {
     // onSave callback: apply edits back to calendar and state
-    for (const [subId, data] of Object.entries(savedData)) {
+    // Payload format: { selections: { subId: [...] }, titles: { subId: '...' },
+    //   bodies: { subId: '...' }, gameLinkInBody: { subId: bool }, excluded: ['subId', ...] }
+    const excludedSet = new Set(savedData.excluded || []);
+
+    for (const slot of pendingSlots) {
+      const subId = slot.subId;
+
       // Save selections to state
-      if (data.selections) {
-        state.selections[subId] = data.selections;
+      if (savedData.selections?.[subId]) {
+        state.selections[subId] = savedData.selections[subId];
       }
 
       // Save edited title/body/gameLinkInBody to calendar slot
-      const slot = cal.slots.find(s => s.subId === subId && s.status === 'pending');
-      if (slot && slot.postData) {
-        if (data.title !== undefined) slot.postData.title = data.title;
-        if (data.body !== undefined) slot.postData.body = data.body;
-        if (data.gameLinkInBody !== undefined) slot.postData.gameLinkInBody = data.gameLinkInBody;
+      if (slot.postData) {
+        if (savedData.titles?.[subId] !== undefined) slot.postData.title = savedData.titles[subId];
+        if (savedData.bodies?.[subId] !== undefined) slot.postData.body = savedData.bodies[subId];
+        if (savedData.gameLinkInBody?.[subId] !== undefined) slot.postData.gameLinkInBody = savedData.gameLinkInBody[subId];
+      }
+
+      // Mark excluded slots
+      if (excludedSet.has(subId)) {
+        slot.status = 'excluded';
       }
     }
 
