@@ -1,11 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   isSubEligible,
   generateWeekSlots,
   findDuePost,
   getUpcomingSlots,
+  fetchOptimalTimes,
 } from '../scripts/reddit/calendar.mjs';
 import { SUBREDDITS } from '../scripts/reddit/config.mjs';
+
+// Mock global fetch so fetchOptimalTimes doesn't hit the network.
+// It will fall back to the hardcoded postWindow from config.
+vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('mocked'))));
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -65,34 +70,34 @@ describe('isSubEligible', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateWeekSlots', () => {
-  it('generates expected number of slots (up to cadence)', () => {
+  it('generates expected number of slots (up to cadence)', async () => {
     // With a clean post log, many subs are eligible — should get cadence slots
     const weekStart = new Date('2026-04-06T00:00:00Z'); // a Monday
-    const slots = generateWeekSlots(weekStart, [], 4);
+    const slots = await generateWeekSlots(weekStart, [], 4);
     expect(slots).toHaveLength(4);
   });
 
-  it('does not schedule the same sub twice in one week', () => {
+  it('does not schedule the same sub twice in one week', async () => {
     const weekStart = new Date('2026-04-06T00:00:00Z');
     // Use a high cadence to try to force duplicates — but there are enough subs
-    const slots = generateWeekSlots(weekStart, [], 4);
+    const slots = await generateWeekSlots(weekStart, [], 4);
     const subIds = slots.map(s => s.subId);
     expect(new Set(subIds).size).toBe(subIds.length);
   });
 
-  it('respects minDaysBetween by excluding recently posted subs', () => {
+  it('respects minDaysBetween by excluding recently posted subs', async () => {
     const weekStart = new Date('2026-04-06T00:00:00Z');
     // Post to ALL subs very recently so none are eligible
     const postLog = Object.keys(SUBREDDITS).map(
       subId => ({ subId, timestamp: daysAgo(1) })
     );
-    const slots = generateWeekSlots(weekStart, postLog, 4);
+    const slots = await generateWeekSlots(weekStart, postLog, 4);
     expect(slots).toHaveLength(0);
   });
 
-  it('each slot has required fields', () => {
+  it('each slot has required fields', async () => {
     const weekStart = new Date('2026-04-06T00:00:00Z');
-    const slots = generateWeekSlots(weekStart, [], 4);
+    const slots = await generateWeekSlots(weekStart, [], 4);
     for (const slot of slots) {
       expect(slot).toHaveProperty('subId');
       expect(slot).toHaveProperty('contentType');
@@ -104,9 +109,9 @@ describe('generateWeekSlots', () => {
     }
   });
 
-  it('schedules on correct days of the week (Tue, Wed, Thu, Sat)', () => {
+  it('schedules on correct days of the week (Tue, Wed, Thu, Sat)', async () => {
     const weekStart = new Date('2026-04-06T00:00:00Z'); // Monday
-    const slots = generateWeekSlots(weekStart, [], 4);
+    const slots = await generateWeekSlots(weekStart, [], 4);
     const expectedDays = [2, 3, 4, 6]; // Tue, Wed, Thu, Sat
     for (const slot of slots) {
       const d = new Date(slot.scheduledAt);
@@ -114,12 +119,12 @@ describe('generateWeekSlots', () => {
     }
   });
 
-  it('limits slots to eligible sub count when fewer than cadence', () => {
+  it('limits slots to eligible sub count when fewer than cadence', async () => {
     const weekStart = new Date('2026-04-06T00:00:00Z');
     // Post to all subs except 2 recently
     const allSubs = Object.keys(SUBREDDITS);
     const postLog = allSubs.slice(0, -2).map(subId => ({ subId, timestamp: daysAgo(1) }));
-    const slots = generateWeekSlots(weekStart, postLog, 4);
+    const slots = await generateWeekSlots(weekStart, postLog, 4);
     expect(slots.length).toBeLessThanOrEqual(2);
   });
 });

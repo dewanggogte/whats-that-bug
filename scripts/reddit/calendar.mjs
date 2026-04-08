@@ -3,7 +3,7 @@
  * Manages the weekly posting schedule, eligibility checks, and slot lifecycle.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { CACHE_DIR, SUBREDDITS, WEEKLY_CADENCE } from './config.mjs';
 
@@ -16,6 +16,10 @@ const POST_DAYS = [2, 3, 4, 6];
 
 const CALENDAR_PATH = join(CACHE_DIR, 'reddit-calendar.json');
 const POST_LOG_PATH = join(CACHE_DIR, 'reddit-post-log.json');
+const POST_TIMES_CACHE = join(CACHE_DIR, 'reddit-post-times.json');
+
+/** Cache TTL for optimal posting times: 7 days in milliseconds */
+const POST_TIMES_TTL = 7 * 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Persistence: Calendar
@@ -69,6 +73,120 @@ export function loadPostLog() {
 export function savePostLog(log) {
   mkdirSync(CACHE_DIR, { recursive: true });
   writeFileSync(POST_LOG_PATH, JSON.stringify(log, null, 2));
+}
+
+// ---------------------------------------------------------------------------
+// Optimal posting times (laterforreddit.com)
+// ---------------------------------------------------------------------------
+
+/**
+ * Load the cached optimal posting times. Returns an empty object if the
+ * cache file doesn't exist or can't be parsed.
+ * @returns {{ [subId: string]: { hour: number, minute: number, fetchedAt: string } }}
+ */
+function loadPostTimesCache() {
+  try {
+    if (!existsSync(POST_TIMES_CACHE)) return {};
+    return JSON.parse(readFileSync(POST_TIMES_CACHE, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Save the posting times cache to disk.
+ * @param {object} cache
+ */
+function savePostTimesCache(cache) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(POST_TIMES_CACHE, JSON.stringify(cache, null, 2));
+}
+
+/**
+ * Fetch the optimal posting time for a subreddit from laterforreddit.com.
+ *
+ * Fetches the analysis page and parses the best day/time from the HTML
+ * response. Results are cached for 7 days so repeated runs don't hit
+ * the service unnecessarily.
+ *
+ * Falls back to the hardcoded `postWindow` from config if the fetch fails
+ * or no data can be parsed.
+ *
+ * @param {string} subId - Key into SUBREDDITS config
+ * @returns {Promise<{ hour: number, minute: number }>}
+ */
+export async function fetchOptimalTimes(subId) {
+  const subConfig = SUBREDDITS[subId];
+  const fallback = subConfig?.postWindow ?? { hour: 8, minute: 0 };
+
+  // Check cache first
+  const cache = loadPostTimesCache();
+  const cached = cache[subId];
+  if (cached && cached.fetchedAt) {
+    const age = Date.now() - new Date(cached.fetchedAt).getTime();
+    if (age < POST_TIMES_TTL) {
+      return { hour: cached.hour, minute: cached.minute };
+    }
+  }
+
+  // Fetch from laterforreddit.com
+  const subName = subId; // The config key matches the subreddit name
+  const url = `https://laterforreddit.com/analysis/${subName}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'WhatsThattBug-Pipeline/1.0' },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!res.ok) {
+      return fallback;
+    }
+
+    const html = await res.text();
+
+    // laterforreddit.com embeds the best time in the page. Common patterns:
+    //   "The best time to post ... is <day> at <time>"
+    //   or structured data in a JSON blob on the page.
+    // We try both approaches.
+
+    // Approach 1: Look for a JSON data blob (more reliable if present)
+    const jsonMatch = html.match(/bestTime["\s:]+\{[^}]*hour["\s:]+(\d+)[^}]*minute["\s:]+(\d+)/i);
+    if (jsonMatch) {
+      const hour = parseInt(jsonMatch[1], 10);
+      const minute = parseInt(jsonMatch[2], 10);
+      if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+        cache[subId] = { hour, minute: minute || 0, fetchedAt: new Date().toISOString() };
+        savePostTimesCache(cache);
+        return { hour, minute: minute || 0 };
+      }
+    }
+
+    // Approach 2: Parse natural language pattern
+    // e.g. "best time to post is Monday at 7:00 AM" or "10:30 AM"
+    const timeMatch = html.match(/best\s+time\s+to\s+post.*?(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      let hour = parseInt(timeMatch[1], 10);
+      const minute = parseInt(timeMatch[2], 10);
+      const ampm = timeMatch[3].toUpperCase();
+
+      // Convert 12-hour to 24-hour
+      if (ampm === 'PM' && hour !== 12) hour += 12;
+      if (ampm === 'AM' && hour === 12) hour = 0;
+
+      if (hour >= 0 && hour <= 23) {
+        cache[subId] = { hour, minute, fetchedAt: new Date().toISOString() };
+        savePostTimesCache(cache);
+        return { hour, minute };
+      }
+    }
+
+    // Could not parse — fall back but don't cache the failure
+    return fallback;
+  } catch {
+    // Network error, timeout, etc. — use fallback
+    return fallback;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -184,12 +302,15 @@ function pickContentType(subId, postLog, subConfig) {
 /**
  * Generate weekly posting slots starting from a given Monday.
  *
+ * Uses optimal posting times from laterforreddit.com when available,
+ * falling back to the hardcoded postWindow from config.
+ *
  * @param {Date} weekStart - The Monday of the target week
  * @param {Array<{ subId: string, timestamp: string, contentType?: string }>} postLog
  * @param {number} [cadence] - Target posts per week (defaults to WEEKLY_CADENCE)
- * @returns {Array<{ subId: string, contentType: string, scheduledAt: string, status: string, postData: null }>}
+ * @returns {Promise<Array<{ subId: string, contentType: string, scheduledAt: string, status: string, postData: null }>>}
  */
-export function generateWeekSlots(weekStart, postLog, cadence = WEEKLY_CADENCE) {
+export async function generateWeekSlots(weekStart, postLog, cadence = WEEKLY_CADENCE) {
   // Get all eligible subs
   const eligible = Object.entries(SUBREDDITS)
     .filter(([subId, config]) => isSubEligible(subId, postLog, config.minDaysBetween))
@@ -213,7 +334,9 @@ export function generateWeekSlots(weekStart, postLog, cadence = WEEKLY_CADENCE) 
     const slotDate = new Date(weekStart);
     slotDate.setUTCDate(slotDate.getUTCDate() + (POST_DAYS[i] - 1));
 
-    const scheduledAt = etToUtc(slotDate, subConfig.postWindow);
+    // Try optimal time from laterforreddit.com, fall back to config
+    const postWindow = await fetchOptimalTimes(subId);
+    const scheduledAt = etToUtc(slotDate, postWindow);
 
     slots.push({
       subId,

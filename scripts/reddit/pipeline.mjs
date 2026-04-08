@@ -526,15 +526,22 @@ async function cmdPrepare() {
       if (i < selectedObs.length - 1) await sleep(500);
     }
 
+    // Extract photographer credits from selected observations
+    const credits = selectedObs.map(o => {
+      const match = o.attribution?.match(/\(c\)\s*([^,]+)/i);
+      return match ? match[1].trim() : 'Unknown';
+    });
+
     // Use edited title/body from review, fall back to generated
     const title = slot.postData?.title ?? generateTitle(slot.contentType, subId, sub);
-    const body = slot.postData?.body ?? generateBody(slot.contentType, sub, {
-      credits: selectedObs.map(o => {
-        const match = o.attribution?.match(/\(c\)\s*([^,]+)/i);
-        return match ? match[1].trim() : 'Unknown';
-      }),
+    let body = slot.postData?.body ?? generateBody(slot.contentType, sub, {
+      credits,
       includeGameLink: slot.postData?.gameLinkInBody ?? false,
+      subId,
     });
+
+    // Replace {credits} placeholder with actual photographer names
+    body = populateCredits(body, credits);
 
     // Generate captions
     const captions = generateCaptions(selectedObs);
@@ -544,21 +551,30 @@ async function cmdPrepare() {
     const gameLinkInBody = slot.postData?.gameLinkInBody ?? false;
     const followupComment = gameLinkInBody ? null : generateFollowupComment(slot.contentType, sub);
 
+    // Build species list for comment reference
+    const speciesList = selectedObs.map(obs => {
+      const commonName = obs.taxon?.common_name ?? 'Unknown';
+      const sciName = obs.taxon?.species ?? obs.taxon?.name ?? 'Unknown';
+      return `${commonName} (${sciName})`;
+    });
+
     const postData = {
       title,
       body,
       captions,
       followupComment,
       images,
+      speciesList,
     };
 
-    // Write preview and post data
+    // Write preview, post data, and species list
     writeFileSync(join(dir, 'post.json'), JSON.stringify(postData, null, 2));
     writeFileSync(join(dir, 'preview.md'), buildPreviewMd(subId, sub, postData));
+    writeFileSync(join(dir, 'species-list.txt'), speciesList.join('\n') + '\n');
 
     slot.postData = { ...slot.postData, ...postData };
     slot.status = 'ready';
-    ok(`${sub.name} ready (${images.length} image(s))`);
+    ok(`${sub.name} ready (${images.length} image(s), ${speciesList.length} species)`);
     preparedCount++;
   }
 
@@ -600,6 +616,14 @@ function buildPreviewMd(subId, sub, postData) {
     lines.push(`**Images:** ${postData.images.length}`);
     for (const img of postData.images) {
       lines.push(`- ${img.filename} — ${img.caption} ([iNat](${img.inat_url}))`);
+    }
+    lines.push('');
+  }
+
+  if (postData.speciesList?.length) {
+    lines.push('**Species:**');
+    for (const species of postData.speciesList) {
+      lines.push(`- ${species}`);
     }
     lines.push('');
   }
@@ -659,6 +683,10 @@ async function cmdPost() {
   if (pd.images?.length) {
     console.log(`  ${bold('Images:')} ${pd.images.length}`);
     pd.images.forEach(img => console.log(`    - ${img.filename}: ${img.caption}`));
+  }
+  if (pd.speciesList?.length) {
+    console.log(`  ${bold('Species:')}`);
+    pd.speciesList.forEach(s => console.log(`    - ${s}`));
   }
   if (pd.followupComment) {
     console.log(`  ${bold('Follow-up comment:')} ${pd.followupComment}`);
@@ -900,6 +928,98 @@ async function cmdLogEngagement() {
   ok('Engagement logging complete.');
 }
 
+// ── run (interactive full pipeline) ────────────────────────────────────────
+
+/** State file for tracking which stage the `run` command has completed. */
+const RUN_STATE_FILE = join(CACHE_DIR, 'reddit-run-state.json');
+
+function loadRunState() {
+  try {
+    return JSON.parse(readFileSync(RUN_STATE_FILE, 'utf-8'));
+  } catch {
+    return { lastCompletedStage: null, startedAt: null };
+  }
+}
+
+function saveRunState(state) {
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(RUN_STATE_FILE, JSON.stringify(state, null, 2));
+}
+
+/**
+ * Interactive full pipeline: walks through generate → review → prepare → post
+ * sequentially, asking for confirmation between each stage.
+ *
+ * Detects existing progress and offers to resume from where the user left off.
+ */
+async function cmdRun() {
+  heading('Reddit Content Pipeline — Full Run');
+
+  const stages = [
+    { name: 'generate', label: 'Generate Calendar', fn: cmdGenerate },
+    { name: 'review',   label: 'Review & Curate',   fn: cmdReview },
+    { name: 'prepare',  label: 'Prepare Posts',      fn: cmdPrepare },
+    { name: 'post',     label: 'Post to Reddit',     fn: cmdPost },
+  ];
+
+  // Check for existing run state
+  const runState = loadRunState();
+  let startIndex = 0;
+
+  if (runState.lastCompletedStage) {
+    const completedIdx = stages.findIndex(s => s.name === runState.lastCompletedStage);
+    if (completedIdx >= 0 && completedIdx < stages.length - 1) {
+      const nextStage = stages[completedIdx + 1];
+      log(`Previous run paused after "${runState.lastCompletedStage}" stage (${fmtDate(runState.startedAt)}).`);
+      const answer = await ask(`  Resume from "${nextStage.label}"? (y/N): `);
+      if (answer.toLowerCase() === 'y') {
+        startIndex = completedIdx + 1;
+      } else {
+        // Start fresh
+        saveRunState({ lastCompletedStage: null, startedAt: new Date().toISOString() });
+      }
+    }
+  }
+
+  if (startIndex === 0) {
+    saveRunState({ lastCompletedStage: null, startedAt: new Date().toISOString() });
+  }
+
+  for (let i = startIndex; i < stages.length; i++) {
+    const stage = stages[i];
+
+    // Show status before each stage
+    if (i > startIndex) {
+      console.log('');
+      log(`Stage ${i + 1}/${stages.length}: ${bold(stage.label)}`);
+      const answer = await ask('  Continue to next stage? (y/n): ');
+      if (answer.toLowerCase() !== 'y') {
+        // Save state so user can resume later
+        saveRunState({
+          lastCompletedStage: stages[i - 1].name,
+          startedAt: runState.startedAt ?? new Date().toISOString(),
+        });
+        log('State saved. Run "npm run reddit-pipeline" to resume.');
+        return;
+      }
+    }
+
+    // Run the stage
+    await stage.fn();
+
+    // Save progress
+    saveRunState({
+      lastCompletedStage: stage.name,
+      startedAt: runState.startedAt ?? new Date().toISOString(),
+    });
+  }
+
+  // All stages complete — clean up run state
+  saveRunState({ lastCompletedStage: null, startedAt: null });
+  heading('Pipeline Complete');
+  ok('All stages finished successfully.');
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // CLI ROUTER
 // ═══════════════════════════════════════════════════════════════════════════
@@ -910,7 +1030,10 @@ function showHelp() {
 
 Usage: node scripts/reddit/pipeline.mjs [command]
 
-\x1b[1mCommands:\x1b[0m
+\x1b[1mPrimary:\x1b[0m
+  run             Walk through all stages interactively (recommended)
+
+\x1b[1mIndividual stages:\x1b[0m
   generate        Create a posting calendar and fetch content candidates
   review          Open browser UI for photo curation and post editing
   prepare         Download images and finalize posts for publishing
@@ -919,9 +1042,10 @@ Usage: node scripts/reddit/pipeline.mjs [command]
   log-engagement  Record upvotes and comments for past posts
 
 \x1b[1mWorkflow:\x1b[0m
-  generate → review → prepare → post
+  run (or manually: generate → review → prepare → post)
 
 \x1b[1mnpm scripts:\x1b[0m
+  npm run reddit-pipeline     Run full interactive pipeline
   npm run reddit              Show this help
   npm run reddit-generate     Generate calendar
   npm run reddit-review       Open review UI
@@ -934,6 +1058,7 @@ Usage: node scripts/reddit/pipeline.mjs [command]
 const command = process.argv[2];
 
 const COMMANDS = {
+  run: cmdRun,
   generate: cmdGenerate,
   review: cmdReview,
   prepare: cmdPrepare,

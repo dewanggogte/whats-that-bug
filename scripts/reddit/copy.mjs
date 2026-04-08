@@ -3,7 +3,7 @@
  * Generates varied, natural post text so consecutive posts never look identical.
  */
 
-import { GAME_URL } from './config.mjs';
+import { GAME_URL, SUBREDDITS } from './config.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -132,6 +132,18 @@ const CHALLENGE_BODY_TEMPLATES = [
 ];
 
 // ---------------------------------------------------------------------------
+// Text post draft templates (by tone)
+// ---------------------------------------------------------------------------
+
+const TEXT_DRAFTS = {
+  casual: `I built a bug identification quiz game using real photos from iNaturalist. You get shown a photo and pick from 4 choices — there's a classic 10-round mode, a streak mode (game over on first wrong answer), and a daily challenge. It has 3,000+ species from around the world. Free, no login required. ${GAME_URL}\n\nWould love to hear what you think!`,
+
+  builder: `I've been working on a side project — a species identification quiz game. It pulls research-grade photos from iNaturalist (CC licensed) and challenges you to identify insects, spiders, butterflies, etc.\n\nTech: Astro static site, vanilla JS game engine, Google Sheets for event logging, iNaturalist API for content.\n\nIt's live at ${GAME_URL} — has classic mode (10 rounds), streak mode, time trials, and a daily challenge. Around 3,000 species in the database.\n\nFeedback welcome!`,
+
+  concise: `A free bug identification quiz using real photos from citizen scientists. 3,000+ species, multiple game modes. ${GAME_URL}`,
+};
+
+// ---------------------------------------------------------------------------
 // Follow-up comment templates
 // ---------------------------------------------------------------------------
 
@@ -182,7 +194,24 @@ export function generateTitle(contentType, subId, subConfig, challengeObs) {
 }
 
 /**
+ * Generate a text post draft body based on the subreddit's tone.
+ *
+ * @param {string} subId - Subreddit key (e.g. 'WebGames')
+ * @param {object} subConfig - Config entry from SUBREDDITS
+ * @returns {string}
+ */
+export function generateTextDraft(subId, subConfig) {
+  const tone = subConfig.tone;
+  return TEXT_DRAFTS[tone] ?? TEXT_DRAFTS.casual;
+}
+
+/**
  * Generate a post body.
+ *
+ * When `credits` is empty (e.g. during the generate stage before photos are
+ * selected), inserts a `{credits}` placeholder that can be replaced later
+ * via `populateCredits()`.
+ *
  * @param {'gallery'|'challenge'|'text'} contentType
  * @param {object} subConfig
  * @param {object} options
@@ -193,11 +222,13 @@ export function generateTitle(contentType, subId, subConfig, challengeObs) {
  */
 export function generateBody(contentType, subConfig, options) {
   const { credits = [], includeGameLink = false } = options;
-  const creditString = formatCredits(credits);
 
   if (contentType === 'text') {
-    return '[Text post — write body manually before posting]';
+    return generateTextDraft(options.subId ?? '', subConfig);
   }
+
+  // When credits aren't available yet, use a placeholder token
+  const creditString = credits.length > 0 ? formatCredits(credits) : '{credits}';
 
   const gameSnippet = includeGameLink
     ? `\n\nIf you want to test your ID skills, I made a free game: ${GAME_URL}`
@@ -212,6 +243,20 @@ export function generateBody(contentType, subConfig, options) {
   const pool = GALLERY_BODY_TEMPLATES[subConfig.tone] || GALLERY_BODY_TEMPLATES.default;
   const template = pick(pool);
   return template(subConfig.categoryLabel, creditString, gameSnippet);
+}
+
+/**
+ * Replace the `{credits}` placeholder in a body string with actual
+ * formatted photographer names. Called during the prepare stage when
+ * the selected photos (and their attributions) are known.
+ *
+ * @param {string} bodyText - Body text potentially containing `{credits}`
+ * @param {string[]} credits - Photographer names
+ * @returns {string}
+ */
+export function populateCredits(bodyText, credits) {
+  const creditString = formatCredits(credits);
+  return bodyText.replace(/\{credits\}/g, creditString);
 }
 
 /**

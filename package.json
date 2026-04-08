@@ -14,7 +14,7 @@
     "recrop-daily": "node scripts/recrop-daily.mjs",
     "review-daily": "node scripts/review-server.mjs",
     "calculate-difficulty": "node scripts/calculate-difficulty.mjs",
-    "reddit-pipeline": "node scripts/reddit-pipeline.mjs",
+    "reddit-pipeline": "node scripts/reddit/pipeline.mjs run",
     "reddit": "node scripts/reddit/pipeline.mjs",
     "reddit-generate": "node scripts/reddit/pipeline.mjs generate",
     "reddit-review": "node scripts/reddit/pipeline.mjs review",
