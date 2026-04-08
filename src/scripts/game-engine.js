@@ -14,6 +14,7 @@ const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae',
 const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
 const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
 const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
+const MOSQUITO_FAMILIES = ['Culicidae'];
 
 export function getBugs101Name(taxon) {
   if (taxon.order === 'Hymenoptera') {
@@ -62,6 +63,7 @@ export function getBugs101Name(taxon) {
     return 'Spider';
   }
   if (taxon.order === 'Diptera') {
+    if (MOSQUITO_FAMILIES.includes(taxon.family)) return 'Mosquito';
     if (taxon.family === 'Syrphidae') return 'Hover Fly';
     if (taxon.family === 'Tipulidae' || taxon.family === 'Limoniidae') return 'Crane Fly';
     return 'Fly';
@@ -121,7 +123,32 @@ function pickRandomN(arr, n) {
 }
 
 /**
+ * Check if two category names conflict — either identical or one is a
+ * sub-category of the other (e.g. "Swallowtail Butterfly" vs "Butterfly").
+ * Uses word-boundary matching so "Dragonfly" doesn't conflict with "Fly".
+ */
+function categoriesConflict(a, b) {
+  if (a === b) return true;
+  const wordsA = a.split(' ');
+  const wordsB = b.split(' ');
+  if (wordsA.length === 1 && wordsB.includes(a)) return true;
+  if (wordsB.length === 1 && wordsA.includes(b)) return true;
+  return false;
+}
+
+/**
+ * Check if a candidate category conflicts with any already-used category.
+ */
+function conflictsWithUsed(candidate, usedCategories) {
+  for (const used of usedCategories) {
+    if (categoriesConflict(candidate, used)) return true;
+  }
+  return false;
+}
+
+/**
  * Generate 3 distractors for Bugs 101 mode — each with a DIFFERENT category name.
+ * Also prevents parent/child category pairs (e.g. "Butterfly" + "Swallowtail Butterfly").
  */
 export function generateBugs101Distractors(correct, taxonomy, observations) {
   const correctCategory = getBugs101Name(correct.taxon);
@@ -137,7 +164,7 @@ export function generateBugs101Distractors(correct, taxonomy, observations) {
     const pick = observations[idx];
     if (!pick) continue;
     const category = getBugs101Name(pick.taxon);
-    if (usedCategories.has(category)) continue;
+    if (conflictsWithUsed(category, usedCategories)) continue;
     distractors.push(pick);
     usedCategories.add(category);
   }
