@@ -14,6 +14,14 @@ const LB_CACHE_KEY = 'wtb_lb_cache';
 const LB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Invalidate the sessionStorage leaderboard cache.
+ * Called after submitting an entry so subsequent page loads fetch fresh data.
+ */
+export function invalidateLeaderboardCache() {
+  try { sessionStorage.removeItem(LB_CACHE_KEY); } catch (_) {}
+}
+
+/**
  * Fetch all leaderboards from Apps Script.
  * Returns: { bugs_101_time_trial: Entry[], bugs_101_streak: Entry[], time_trial: Entry[], streak: Entry[] }
  * Each Entry: { rank, name, country, score, streak, questions, correct, timestamp }

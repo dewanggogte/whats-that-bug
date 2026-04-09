@@ -3,7 +3,7 @@
  */
 
 import { renderCountryOptions, getFlagForCode } from './countries.js';
-import { submitLeaderboardEntry } from './leaderboard.js';
+import { submitLeaderboardEntry, invalidateLeaderboardCache } from './leaderboard.js';
 import { generateLeaderboardShareText, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent } from './share.js';
 
 function escapeHTML(str) {
@@ -207,6 +207,7 @@ export function showCelebrationPopup({ rank, score, streak, setKey, sessionId, b
           questions_answered: questionsAnswered || 0,
           correct_count: correctCount || 0,
         });
+        invalidateLeaderboardCache();
       } catch (err) {
         console.warn('Leaderboard submit failed:', err);
       }
