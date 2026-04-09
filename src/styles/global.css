@@ -2964,6 +2964,35 @@ a {
   color: var(--text-secondary);
 }
 
+.expert-modes {
+  margin-top: var(--space-3);
+}
+
+.expert-modes-toggle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  list-style: none;
+  padding: var(--space-2) 0;
+}
+
+.expert-modes-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.expert-modes-toggle::before {
+  content: '▸ ';
+}
+
+.expert-modes[open] > .expert-modes-toggle::before {
+  content: '▾ ';
+}
+
+.expert-modes-toggle:hover {
+  color: var(--accent);
+}
+
 /* Mobile: stack play cards */
 @media (max-width: 480px) {
   .play-cards {

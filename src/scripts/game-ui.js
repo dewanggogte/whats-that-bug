@@ -211,7 +211,7 @@ function getRulesContent() {
   const mode = session.mode;
   const isBinary = session.setDef.scoring === 'binary';
   const setName = session.setDef.name;
-  const task = isBinary ? 'Pick the bug type' : 'Name the exact species';
+  const task = isBinary ? 'Pick the bug type' : 'Identify the genus';
 
   if (mode === 'time_trial') {
     return {
@@ -252,7 +252,7 @@ function getRulesContent() {
     items: [
       ['🖼️', task],
       ['🔢', '10 rounds · 1,000 pts max'],
-      ['🎯', 'Closer guess = more points'],
+      ['✅', 'Right = 100 pts · Wrong = 0'],
     ],
   };
 }
@@ -395,7 +395,6 @@ function renderRound() {
       if (i < session.history.length) {
         const h = session.history[i];
         if (h.score === 100) cls += ' filled';
-        else if (h.score >= 50) cls += ' filled-close';
         else cls += ' filled-miss';
       } else if (i === session.history.length) {
         cls += ' current';
@@ -423,9 +422,9 @@ function renderRound() {
 
       <div class="choices stagger-in" id="choices">
         ${choices.map((choice, i) => {
-          const isBugs101 = session.setDef.scoring === 'binary';
-          const displayName = isBugs101 ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
-          const displayLatin = isBugs101 ? choice.taxon.order : choice.taxon.species;
+          const scoring = session.setDef.scoring;
+          const displayName = scoring === 'binary' ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
+          const displayLatin = scoring === 'binary' ? choice.taxon.order : choice.taxon.genus;
           return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">
             <div class="choice-name">${escapeHTML(displayName)}</div>
@@ -470,10 +469,7 @@ function handleAnswer(picked, choices, choiceEls) {
   if (mode === 'time_trial') {
     // Submit to get correct answer reference, then calculate timed score
     result = session.submitAnswer(picked.taxon);
-    const isBinarySet = session.setDef.scoring === 'binary';
-    const isCorrect = isBinarySet
-      ? picked.taxon.order === result.correct.taxon.order
-      : picked.taxon.species === result.correct.taxon.species;
+    const isCorrect = result.score > 0;
     const timedScore = isCorrect ? calculateTimedScore(timeTaken) : 0;
     // Adjust: undo the binary 100 and apply timed score instead
     session.totalScore = session.totalScore - result.score + timedScore;
@@ -492,19 +488,17 @@ function handleAnswer(picked, choices, choiceEls) {
   choiceEls.forEach(el => { el.style.pointerEvents = 'none'; });
 
   // Highlight correct/wrong
-  const isBugs101 = session.setDef.scoring === 'binary';
+  const scoring = session.setDef.scoring;
   choices.forEach((choice, i) => {
     const el = choiceEls[i];
-    if (isBugs101) {
+    if (scoring === 'binary') {
       if (getBugs101Name(choice.taxon) === getBugs101Name(correct.taxon)) el.classList.add('correct');
       else if (getBugs101Name(choice.taxon) === getBugs101Name(picked.taxon)) el.classList.add('miss');
     } else {
-      if (choice.taxon.species === correct.taxon.species) {
+      if (choice.taxon.genus === correct.taxon.genus) {
         el.classList.add('correct');
-      } else if (choice.taxon.species === picked.taxon.species) {
-        if (mode === 'time_trial' || mode === 'streak') el.classList.add('miss');
-        else if (score >= 50) el.classList.add('close');
-        else el.classList.add('miss');
+      } else if (choice.taxon.genus === picked.taxon.genus) {
+        el.classList.add('miss');
       }
     }
   });
@@ -643,26 +637,15 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
   // Same as original: show learning card
   let feedbackClass, feedbackTitle;
   if (score === 100) { feedbackClass = 'exact'; feedbackTitle = 'Nailed it!'; }
-  else if (score >= 50) { feedbackClass = 'close'; feedbackTitle = 'So close!'; }
   else { feedbackClass = 'miss'; feedbackTitle = 'Not quite'; }
 
   let breadcrumb = '';
   if (score < 100) {
-    if (score >= 75) {
-      breadcrumb = `Same genus (${escapeHTML(correct.taxon.genus)}) — look for subtle differences.`;
-    } else if (score >= 50) {
-      breadcrumb = `Same family (${escapeHTML(correct.taxon.family)}) — you're in the right ballpark!`;
-    } else if (score >= 25) {
-      breadcrumb = `Same order (${escapeHTML(correct.taxon.order)}) — right group, wrong family.`;
+    const scoring = session.setDef.scoring;
+    if (scoring === 'binary') {
+      breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
     } else {
-      const isBugs101Mode = session.setDef.scoring === 'binary';
-      if (isBugs101Mode) {
-        breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
-      } else if (picked.taxon.order === correct.taxon.order) {
-        breadcrumb = `Both are ${escapeHTML(correct.taxon.order)}, but different families — this is ${escapeHTML(correct.taxon.family_common || correct.taxon.family)}.`;
-      } else {
-        breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
-      }
+      breadcrumb = `You picked <em>${escapeHTML(picked.taxon.genus)}</em>, but this is <em>${escapeHTML(correct.taxon.genus)}</em>.`;
     }
   }
 
@@ -939,8 +922,7 @@ function renderRecommendation(totalScore, setKey, mode) {
 function renderClassicSummary() {
   playSessionEnd();
   const exactCount = session.history.filter(h => h.score === 100).length;
-  const closeCount = session.history.filter(h => h.score >= 50 && h.score < 100).length;
-  const missCount = session.history.filter(h => h.score < 50).length;
+  const missCount = session.history.filter(h => h.score < 100).length;
   const shareText = generateShareText(session.totalScore, session.history, session.setDef.name, session.bestStreak);
 
   const storageKey = `best_${currentSetKey}`;
@@ -968,9 +950,9 @@ function renderClassicSummary() {
       <div class="summary">
         <h1>🪲 What's That Bug?</h1>
         <div class="summary-score">${session.totalScore} / 1000</div>
-        <div class="summary-breakdown">${exactCount} exact · ${closeCount} close · ${missCount} misses</div>
+        <div class="summary-breakdown">${exactCount} correct · ${missCount} wrong</div>
         <div class="emoji-grid emoji-stagger">${session.history.map((h, i) => {
-          const emoji = h.score === 100 ? '🟩' : h.score >= 50 ? '🟨' : '🟥';
+          const emoji = h.score === 100 ? '🟩' : '🟥';
           return `<span class="emoji-char" style="animation-delay:${i * 100}ms">${emoji}</span>`;
         }).join('')}</div>
         ${potdHTML}

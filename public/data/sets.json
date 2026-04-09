@@ -1,7 +1,7 @@
 {
   "bugs_101": {
     "name": "Bugs 101",
-    "description": "Identify bugs by type — beetle, spider, butterfly, and more.",
+    "description": "Identify bugs by type \u2014 beetle, spider, butterfly, and more.",
     "difficulty": "beginner",
     "scoring": "binary",
     "observation_ids": [
@@ -2918,7 +2918,7 @@
     "name": "All Bugs",
     "description": "Name the exact species. Partial credit for close guesses.",
     "difficulty": "expert",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       0,
       1,
@@ -6551,7 +6551,7 @@
     "name": "Backyard Basics",
     "description": "The 100 most common species. A good step up from Bugs 101.",
     "difficulty": "intermediate",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       875,
       897,
@@ -6804,9 +6804,9 @@
   },
   "beetles": {
     "name": "Beetles",
-    "description": "All Coleoptera — tell a ladybug from a longhorn.",
+    "description": "All Coleoptera \u2014 tell a ladybug from a longhorn.",
     "difficulty": "themed",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       1529,
       1530,
@@ -7220,9 +7220,9 @@
   },
   "butterflies_moths": {
     "name": "Butterflies & Moths",
-    "description": "All Lepidoptera — moths, skippers, and swallowtails.",
+    "description": "All Lepidoptera \u2014 moths, skippers, and swallowtails.",
     "difficulty": "themed",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       0,
       1,
@@ -8102,9 +8102,9 @@
   },
   "spiders": {
     "name": "Spiders & Friends",
-    "description": "All Arachnida — spiders, scorpions, and their relatives.",
+    "description": "All Arachnida \u2014 spiders, scorpions, and their relatives.",
     "difficulty": "themed",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       3010,
       3011,
@@ -8870,7 +8870,7 @@
     "name": "Eye Candy",
     "description": "The most beautiful bug photos on iNaturalist.",
     "difficulty": "themed",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       58,
       88,
@@ -8978,9 +8978,9 @@
   },
   "tiny_terrors": {
     "name": "Tiny Terrors",
-    "description": "Bugs you find at home — roaches, ticks, bed bugs, and more.",
+    "description": "Bugs you find at home \u2014 roaches, ticks, bed bugs, and more.",
     "difficulty": "themed",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "observation_ids": [
       340,
       710,
@@ -10051,7 +10051,7 @@
     "name": "Time Trial",
     "description": "60 seconds. How many can you identify?",
     "mode": "time_trial",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "difficulty": "expert",
     "observation_ids": [
       0,
@@ -13685,7 +13685,7 @@
     "name": "Streaks",
     "description": "How many in a row? One wrong and it is over.",
     "mode": "streak",
-    "scoring": "taxonomic",
+    "scoring": "genus",
     "difficulty": "expert",
     "observation_ids": [
       0,

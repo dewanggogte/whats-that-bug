@@ -27,19 +27,6 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
 
-    <div class="mode-group" style="margin-top:20px;">
-      <h2 class="mode-group-title">🌍 All Bugs</h2>
-      <div class="lb-tabs" data-group="allbugs">
-        <button class="lb-tab active" data-board="time_trial">Time Trial</button>
-        <button class="lb-tab" data-board="streak">Streaks</button>
-      </div>
-      <div class="lb-tab-content active" id="board-time_trial">
-        <div class="lb-page-spinner"><div class="lb-spinner"></div></div>
-      </div>
-      <div class="lb-tab-content" id="board-streak">
-        <div class="lb-page-spinner"><div class="lb-spinner"></div></div>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -88,7 +75,7 @@ import Base from '../layouts/Base.astro';
         const boards = await fetchLeaderboards();
         if (!boards) throw new Error('No data');
 
-        const boardKeys = ['bugs_101_time_trial', 'bugs_101_streak', 'time_trial', 'streak'];
+        const boardKeys = ['bugs_101_time_trial', 'bugs_101_streak'];
         for (const key of boardKeys) {
           const isStreak = key.includes('streak');
           const container = document.getElementById(`board-${key}`);

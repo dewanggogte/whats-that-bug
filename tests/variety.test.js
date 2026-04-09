@@ -85,8 +85,8 @@ describe('Bugs 101 category variety', () => {
     }
   });
 
-  it('variety tracking does not apply to taxonomic scoring sets', () => {
-    const allBugsSet = { ...bugs101Set, scoring: 'taxonomic' };
+  it('variety tracking does not apply to genus scoring sets', () => {
+    const allBugsSet = { ...bugs101Set, scoring: 'genus' };
     const session = new SessionState(observations, taxonomy, allBugsSet, 'all_bugs');
     for (let round = 0; round < 10; round++) {
       const r = session.nextRound();

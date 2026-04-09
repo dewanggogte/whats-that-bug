@@ -171,6 +171,57 @@ export function generateBugs101Distractors(correct, taxonomy, observations) {
   return distractors;
 }
 
+/**
+ * Generate 3 distractors for genus-level scoring — each with a DIFFERENT genus.
+ * Prioritizes same-family picks for difficulty, then same-order, then any.
+ */
+export function generateGenusDistractors(correct, taxonomy, observations) {
+  const distractors = [];
+  const usedGenera = new Set([correct.taxon.genus]);
+
+  // Tier 1: same family, different genus (up to 2)
+  const familyCandidates = shuffle(
+    (taxonomy.family?.[correct.taxon.family] || [])
+      .map(i => observations[i])
+      .filter(obs => obs && !usedGenera.has(obs.taxon.genus))
+  );
+  for (const pick of familyCandidates) {
+    if (distractors.length >= 2) break;
+    if (usedGenera.has(pick.taxon.genus)) continue;
+    distractors.push(pick);
+    usedGenera.add(pick.taxon.genus);
+  }
+
+  // Tier 2: same order, different genus — fill remaining
+  if (distractors.length < 3) {
+    const orderCandidates = shuffle(
+      (taxonomy.order?.[correct.taxon.order] || [])
+        .map(i => observations[i])
+        .filter(obs => obs && !usedGenera.has(obs.taxon.genus))
+    );
+    for (const pick of orderCandidates) {
+      if (distractors.length >= 3) break;
+      if (usedGenera.has(pick.taxon.genus)) continue;
+      distractors.push(pick);
+      usedGenera.add(pick.taxon.genus);
+    }
+  }
+
+  // Tier 3: any order — fill remaining
+  if (distractors.length < 3) {
+    const allIndices = shuffle(Object.values(taxonomy.order).flat());
+    for (const idx of allIndices) {
+      if (distractors.length >= 3) break;
+      const pick = observations[idx];
+      if (!pick || usedGenera.has(pick.taxon.genus)) continue;
+      distractors.push(pick);
+      usedGenera.add(pick.taxon.genus);
+    }
+  }
+
+  return distractors;
+}
+
 export function generateDistractors(correct, taxonomy, observations) {
   const correctSpecies = correct.taxon.species;
   const distractors = [];
@@ -324,13 +375,17 @@ export class SessionState {
     this._currentCorrect = correct;
     this.currentRound++;
 
-    const isBugs101 = this.setDef.scoring === 'binary';
+    const scoring = this.setDef.scoring;
     let distractors;
-    if (isBugs101) {
+    if (scoring === 'binary') {
       distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
-    } else if (this._difficulty && this.currentRound <= 3) {
-      // Easy rounds in All Bugs: use cross-order distractors for visual distinction
-      distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+    } else if (scoring === 'genus') {
+      if (this._difficulty && this.currentRound <= 3) {
+        // Easy rounds: cross-order distractors for visual distinction
+        distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+      } else {
+        distractors = generateGenusDistractors(correct, this.taxonomy, this.observations);
+      }
     } else {
       distractors = generateDistractors(correct, this.taxonomy, this.observations);
     }
@@ -384,10 +439,15 @@ export class SessionState {
         this._recentCategories.shift();
       }
     }
-    const isBinary = this.setDef.scoring === 'binary';
-    const score = isBinary
-      ? (getBugs101Name(pickedTaxon) === getBugs101Name(correct.taxon) ? 100 : 0)
-      : calculateScore(pickedTaxon, correct.taxon);
+    const scoring = this.setDef.scoring;
+    let score;
+    if (scoring === 'binary') {
+      score = getBugs101Name(pickedTaxon) === getBugs101Name(correct.taxon) ? 100 : 0;
+    } else if (scoring === 'genus') {
+      score = pickedTaxon.genus === correct.taxon.genus ? 100 : 0;
+    } else {
+      score = calculateScore(pickedTaxon, correct.taxon);
+    }
     this.totalScore += score;
     this.questionsAnswered++;
     if (score === 100) {

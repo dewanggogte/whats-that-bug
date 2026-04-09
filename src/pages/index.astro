@@ -52,7 +52,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
         <a href="/play?set=all_bugs" class="play-card">
           <span class="play-card-icon">🌍</span>
           <span class="play-card-title">All Bugs</span>
-          <span class="play-card-subtitle">Name exact species</span>
+          <span class="play-card-subtitle">Identify the genus</span>
           <span class="play-card-detail">10 rounds · Expert</span>
         </a>
       </div>
@@ -73,17 +73,22 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
           <span class="compete-card-label">Streaks</span>
           <span class="compete-card-set">Bugs 101</span>
         </a>
-        <a href="/play?set=time_trial" class="compete-card">
-          <span class="compete-card-icon">⏱️</span>
-          <span class="compete-card-label">Time Trial</span>
-          <span class="compete-card-set">All Bugs</span>
-        </a>
-        <a href="/play?set=streak" class="compete-card">
-          <span class="compete-card-icon">🎯</span>
-          <span class="compete-card-label">Streaks</span>
-          <span class="compete-card-set">All Bugs</span>
-        </a>
       </div>
+      <details class="expert-modes">
+        <summary class="expert-modes-toggle">I know what I'm doing</summary>
+        <div class="compete-grid" style="margin-top: 12px;">
+          <a href="/play?set=time_trial" class="compete-card">
+            <span class="compete-card-icon">⏱️</span>
+            <span class="compete-card-label">Time Trial</span>
+            <span class="compete-card-set">All Bugs</span>
+          </a>
+          <a href="/play?set=streak" class="compete-card">
+            <span class="compete-card-icon">🎯</span>
+            <span class="compete-card-label">Streaks</span>
+            <span class="compete-card-set">All Bugs</span>
+          </a>
+        </div>
+      </details>
     </div>
 
     <!-- Explore section -->

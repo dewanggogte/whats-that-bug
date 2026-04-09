@@ -4,7 +4,7 @@
 
 const WEBHOOK_URL = import.meta.env.PUBLIC_GOOGLE_SHEET_WEBHOOK_URL || '';
 
-const LEADERBOARD_SETS = ['bugs_101_time_trial', 'bugs_101_streak', 'time_trial', 'streak'];
+const LEADERBOARD_SETS = ['bugs_101_time_trial', 'bugs_101_streak'];
 
 export function isLeaderboardEligible(setKey) {
   return LEADERBOARD_SETS.includes(setKey);

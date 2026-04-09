@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateScore, calculateTimedScore } from '../src/scripts/game-engine.js';
+import { calculateScore, calculateTimedScore, SessionState } from '../src/scripts/game-engine.js';
 
 const figeater = {
   species: 'Cotinis mutabilis',
@@ -42,6 +42,46 @@ describe('calculateScore', () => {
       order: 'Diptera',
     };
     expect(calculateScore(picked, figeater)).toBe(0);
+  });
+});
+
+describe('genus scoring (100 or 0)', () => {
+  const observations = [
+    { id: 1, taxon: { species: 'Cotinis mutabilis', common_name: 'Fig Beetle', genus: 'Cotinis', family: 'Scarabaeidae', order: 'Coleoptera' } },
+    { id: 2, taxon: { species: 'Cotinis nitida', common_name: 'June Bug', genus: 'Cotinis', family: 'Scarabaeidae', order: 'Coleoptera' } },
+    { id: 3, taxon: { species: 'Popillia japonica', common_name: 'Japanese Beetle', genus: 'Popillia', family: 'Scarabaeidae', order: 'Coleoptera' } },
+    { id: 4, taxon: { species: 'Cerambyx cerdo', common_name: 'Great Capricorn', genus: 'Cerambyx', family: 'Cerambycidae', order: 'Coleoptera' } },
+    { id: 5, taxon: { species: 'Musca domestica', common_name: 'House Fly', genus: 'Musca', family: 'Muscidae', order: 'Diptera' } },
+  ];
+  const taxonomy = {
+    order: { Coleoptera: [0,1,2,3], Diptera: [4] },
+    family: { Scarabaeidae: [0,1,2], Cerambycidae: [3], Muscidae: [4] },
+    genus: { Cotinis: [0,1], Popillia: [2], Cerambyx: [3], Musca: [4] },
+  };
+  const setDef = { name: 'Test', scoring: 'genus', observation_ids: [0,1,2,3,4] };
+
+  it('returns 100 for same genus (different species)', () => {
+    const session = new SessionState(observations, taxonomy, setDef, 'test');
+    session.nextRound();
+    session._currentCorrect = observations[0];
+    const result = session.submitAnswer(observations[1].taxon);
+    expect(result.score).toBe(100);
+  });
+
+  it('returns 0 for different genus, same family', () => {
+    const session = new SessionState(observations, taxonomy, setDef, 'test');
+    session.nextRound();
+    session._currentCorrect = observations[0];
+    const result = session.submitAnswer(observations[2].taxon);
+    expect(result.score).toBe(0);
+  });
+
+  it('returns 0 for different order', () => {
+    const session = new SessionState(observations, taxonomy, setDef, 'test');
+    session.nextRound();
+    session._currentCorrect = observations[0];
+    const result = session.submitAnswer(observations[4].taxon);
+    expect(result.score).toBe(0);
   });
 });
 
