@@ -928,6 +928,20 @@
     "wikipedia_summary": "Phidippus comatus is a species of jumping spider in the family Salticidae. It is found in North America."
   },
   {
+    "id": 253798086,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/454505898/medium.jpeg",
+    "photo_width": 1536,
+    "photo_height": 2048,
+    "attribution": "(c) Irisa Hudson, some rights reserved (CC BY)",
+    "faves": 16,
+    "inat_url": "https://www.inaturalist.org/observations/253798086",
+    "taxon": {
+      "id": 398171,
+      "common_name": "Frosted Phoenix"
+    },
+    "wikipedia_summary": "Titanomis is a genus of moth containing the single species Titanomis sisyrota, the Frosted Phoenix, which is only known from New Zealand. It is an ext"
+  },
+  {
     "id": 147731362,
     "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/254259026/medium.jpeg",
     "photo_width": 2048,
@@ -2764,6 +2778,20 @@
     "wikipedia_summary": "Eresus kollari is a spider species in the family Eresidae."
   },
   {
+    "id": 120556425,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203915242/medium.jpeg",
+    "photo_width": 2048,
+    "photo_height": 1281,
+    "attribution": "(c) Julia Moning, some rights reserved (CC BY)",
+    "faves": 8,
+    "inat_url": "https://www.inaturalist.org/observations/120556425",
+    "taxon": {
+      "id": 343264,
+      "common_name": "Four-Spotted Odorous Ant"
+    },
+    "wikipedia_summary": "Dolichoderus quadripunctatus is a species of ant in the genus Dolichoderus. Described by Linnaeus in 1771, the species is endemic all over Europe and "
+  },
+  {
     "id": 64862155,
     "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/104344954/medium.jpeg",
     "photo_width": 1710,
@@ -3794,6 +3822,28 @@
     },
     "bugs101_name": "Spider",
     "wikipedia_summary": "The southern house spider is a species of large spider in the family Filistatidae. Currently given the scientific name Kukulcania hibernalis, it was f"
+  },
+  {
+    "id": 71415897,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/116271608/medium.jpeg",
+    "photo_width": 2048,
+    "photo_height": 1356,
+    "attribution": "(c) Rafael M R Serra, some rights reserved (CC BY)",
+    "faves": 7,
+    "inat_url": "https://www.inaturalist.org/observations/71415897",
+    "taxon": {
+      "id": 1225747,
+      "species": "Tityus kuryi",
+      "common_name": "",
+      "genus": "Tityus",
+      "family": "Buthidae",
+      "order": "Scorpiones",
+      "genus_common": "Thick-tailed scorpions",
+      "family_common": "Arrowbreasted Scorpions",
+      "order_common": "Scorpions"
+    },
+    "bugs101_name": "Scorpion",
+    "wikipedia_summary": ""
   },
   {
     "id": 145621781,
@@ -4990,6 +5040,42 @@
     },
     "bugs101_name": "Spider",
     "wikipedia_summary": "The Sydney funnel-web spider (Atrax robustus) is a species of venomous mygalomorph spider native to eastern Australia, usually found within a 100 km ("
+  },
+  {
+    "id": 42801183,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/67971233/medium.jpeg",
+    "photo_width": 2048,
+    "photo_height": 2000,
+    "attribution": "(c) John Hibbard, some rights reserved (CC BY)",
+    "faves": 6,
+    "inat_url": "https://www.inaturalist.org/observations/42801183",
+    "taxon": {
+      "id": 122379,
+      "common_name": "Muir's Hairstreak"
+    },
+    "wikipedia_summary": ""
+  },
+  {
+    "id": 347543524,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/633698855/medium.jpg",
+    "photo_width": 2048,
+    "photo_height": 1365,
+    "attribution": "(c) Jonghyun Park, some rights reserved (CC BY)",
+    "faves": 6,
+    "inat_url": "https://www.inaturalist.org/observations/347543524",
+    "taxon": {
+      "id": 1389825,
+      "species": "Metalasius myrmidon",
+      "common_name": "",
+      "genus": "Metalasius",
+      "family": "Formicidae",
+      "order": "Hymenoptera",
+      "genus_common": "",
+      "family_common": "Ants",
+      "order_common": "Ants, Bees, Wasps, and Sawflies"
+    },
+    "bugs101_name": "Ant",
+    "wikipedia_summary": ""
   },
   {
     "id": 242414355,
@@ -7318,6 +7404,72 @@
     },
     "bugs101_name": "Spider",
     "wikipedia_summary": "Habronattus decorus is a species of jumping spider in the family Salticidae. It is found in the United States and Canada."
+  },
+  {
+    "id": 158506419,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/273934875/medium.jpg",
+    "photo_width": 1716,
+    "photo_height": 1218,
+    "attribution": "(c) Sunčana Bradley, some rights reserved (CC BY)",
+    "faves": 5,
+    "inat_url": "https://www.inaturalist.org/observations/158506419",
+    "taxon": {
+      "id": 200148,
+      "species": "Arsacia rectalis",
+      "common_name": "",
+      "genus": "Arsacia",
+      "family": "Erebidae",
+      "order": "Lepidoptera",
+      "genus_common": "",
+      "family_common": "Underwing, Tiger, Tussock, and Allied Moths",
+      "order_common": "Butterflies and Moths"
+    },
+    "bugs101_name": "Moth",
+    "wikipedia_summary": "Arsacia rectalis is a moth of the Noctuidae family. It was described by Walker in 1863. It is found from the Indo-Australian tropics of India, Sri Lan"
+  },
+  {
+    "id": 6282221,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/7906466/medium.jpg",
+    "photo_width": 2048,
+    "photo_height": 1536,
+    "attribution": "(c) Conrad Altmann, some rights reserved (CC BY)",
+    "faves": 5,
+    "inat_url": "https://www.inaturalist.org/observations/6282221",
+    "taxon": {
+      "id": 546603,
+      "species": "Carabus variolosus",
+      "common_name": "",
+      "genus": "Carabus",
+      "family": "Carabidae",
+      "order": "Coleoptera",
+      "genus_common": "Worm and Slug Hunters",
+      "family_common": "Ground Beetles",
+      "order_common": "Beetles"
+    },
+    "bugs101_name": "Beetle",
+    "wikipedia_summary": "..."
+  },
+  {
+    "id": 122012492,
+    "photo_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206530325/medium.jpg",
+    "photo_width": 2048,
+    "photo_height": 1365,
+    "attribution": "(c) Trevor Van Loon, some rights reserved (CC BY)",
+    "faves": 5,
+    "inat_url": "https://www.inaturalist.org/observations/122012492",
+    "taxon": {
+      "id": 216928,
+      "species": "Cicindela lengi",
+      "common_name": "Blowout Tiger Beetle",
+      "genus": "Cicindela",
+      "family": "Cicindelidae",
+      "order": "Coleoptera",
+      "genus_common": "Common Tiger Beetles",
+      "family_common": "Tiger Beetles",
+      "order_common": "Beetles"
+    },
+    "bugs101_name": "Beetle",
+    "wikipedia_summary": "Cicindela lengi, the blowout tiger beetle, is a species of flashy tiger beetle in the family Carabidae. It is found in North America."
   },
   {
     "id": 112814155,

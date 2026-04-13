@@ -335,6 +335,342 @@
         "answer_common": "Heather Ladybird",
         "approved": true
       }
+    },
+    {
+      "date": "2026-04-14",
+      "number": 10,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 248504194,
+        "crops": [
+          "daily/2026-04-14/b101_1.jpg",
+          "daily/2026-04-14/b101_2.jpg",
+          "daily/2026-04-14/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-14/b101_full.jpg",
+        "attribution": "(c) J. Mario Herrera-Lopera, some rights reserved (CC BY)",
+        "wikipedia_summary": "Euchroma gigantea, the Metallic Wood Boring Beetle or Giant Metallic Ceiba Borer, is a species of beetle in the family Buprestidae, the only species i",
+        "inat_url": "https://www.inaturalist.org/observations/248504194",
+        "center_x": 0.509,
+        "center_y": 0.463,
+        "approved": true,
+        "answer_order": "Coleoptera",
+        "answer_common": "Beetle"
+      },
+      "allbugs": {
+        "observation_id": 112814155,
+        "crops": [
+          "daily/2026-04-14/all_1.jpg",
+          "daily/2026-04-14/all_2.jpg",
+          "daily/2026-04-14/all_3.jpg",
+          "daily/2026-04-14/all_4.jpg",
+          "daily/2026-04-14/all_5.jpg",
+          "daily/2026-04-14/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-14/all_full.jpg",
+        "attribution": "(c) Cheryl Stinchcomb, some rights reserved (CC BY)",
+        "wikipedia_summary": "Thysia wallichii is a species of beetle in the family Cerambycidae, and the only species in the genus Thysia. It was described by Hope in 1831.",
+        "inat_url": "https://www.inaturalist.org/observations/112814155",
+        "center_x": 0.323,
+        "center_y": 0.477,
+        "answer_species": "Thysia wallichii",
+        "answer_common": "Fabulous Longhorn Beetle",
+        "approved": true
+      }
+    },
+    {
+      "date": "2026-04-15",
+      "number": 11,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 16187337,
+        "crops": [
+          "daily/2026-04-15/b101_1.jpg",
+          "daily/2026-04-15/b101_2.jpg",
+          "daily/2026-04-15/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-15/b101_full.jpg",
+        "attribution": "(c) Gordon C. Snelling, some rights reserved (CC BY)",
+        "wikipedia_summary": "Megacyllene decora, the Amorpha borer, is a species of beetle in the family Cerambycidae occurring in the central United States. Its larvae feed only ",
+        "inat_url": "https://www.inaturalist.org/observations/16187337",
+        "center_x": 0.548,
+        "center_y": 0.463,
+        "answer_order": "Coleoptera",
+        "answer_common": "Longhorn Beetle",
+        "approved": true
+      },
+      "allbugs": {
+        "observation_id": 340893157,
+        "crops": [
+          "daily/2026-04-15/all_1.jpg",
+          "daily/2026-04-15/all_2.jpg",
+          "daily/2026-04-15/all_3.jpg",
+          "daily/2026-04-15/all_4.jpg",
+          "daily/2026-04-15/all_5.jpg",
+          "daily/2026-04-15/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-15/all_full.jpg",
+        "attribution": "(c) Jeff Clark, some rights reserved (CC BY)",
+        "wikipedia_summary": "Criorhina villosa is a species of hoverfly in the family Syrphidae, formerly placed into its own genus, Merapioidus. Its name has been confused with t",
+        "inat_url": "https://www.inaturalist.org/observations/340893157",
+        "center_x": 0.451,
+        "center_y": 0.602,
+        "answer_species": "Criorhina villosa",
+        "answer_common": "Winter Bumblefly",
+        "approved": true
+      }
+    },
+    {
+      "date": "2026-04-16",
+      "number": 12,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 168434549,
+        "crops": [
+          "daily/2026-04-16/b101_1.jpg",
+          "daily/2026-04-16/b101_2.jpg",
+          "daily/2026-04-16/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-16/b101_full.jpg",
+        "attribution": "(c) Benoit Renaud, some rights reserved (CC BY)",
+        "wikipedia_summary": "The four-spotted chaser (Libellula quadrimaculata), known in North America as the four-spotted skimmer, is a dragonfly of the family Libellulidae foun",
+        "inat_url": "https://www.inaturalist.org/observations/168434549",
+        "center_x": 0.564,
+        "center_y": 0.391,
+        "approved": true,
+        "answer_order": "Odonata",
+        "answer_common": "Dragonfly"
+      },
+      "allbugs": {
+        "observation_id": 74683314,
+        "crops": [
+          "daily/2026-04-16/all_1.jpg",
+          "daily/2026-04-16/all_2.jpg",
+          "daily/2026-04-16/all_3.jpg",
+          "daily/2026-04-16/all_4.jpg",
+          "daily/2026-04-16/all_5.jpg",
+          "daily/2026-04-16/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-16/all_full.jpg",
+        "attribution": "(c) Jason Hill, some rights reserved (CC BY)",
+        "wikipedia_summary": "Phellopsis obcordata is a beetle of the Family Zopheridae.",
+        "inat_url": "https://www.inaturalist.org/observations/74683314",
+        "center_x": 0.594,
+        "center_y": 0.613,
+        "answer_species": "Phellopsis obcordata",
+        "answer_common": "Eastern Ironclad Beetle",
+        "approved": true
+      }
+    },
+    {
+      "date": "2026-04-17",
+      "number": 13,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 40172485,
+        "crops": [
+          "daily/2026-04-17/b101_1.jpg",
+          "daily/2026-04-17/b101_2.jpg",
+          "daily/2026-04-17/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-17/b101_full.jpg",
+        "attribution": "(c) Rejoice Gassah, some rights reserved (CC BY)",
+        "wikipedia_summary": "Lamproptera curius, the white dragontail, is a species of swallowtail butterfly native to parts of South Asia and Southeast Asia. It belongs to the dr",
+        "inat_url": "https://www.inaturalist.org/observations/40172485",
+        "center_x": 0.61,
+        "center_y": 0.359,
+        "approved": true,
+        "answer_order": "Lepidoptera",
+        "answer_common": "Swallowtail"
+      },
+      "allbugs": {
+        "observation_id": 9388040,
+        "crops": [
+          "daily/2026-04-17/all_1.jpg",
+          "daily/2026-04-17/all_2.jpg",
+          "daily/2026-04-17/all_3.jpg",
+          "daily/2026-04-17/all_4.jpg",
+          "daily/2026-04-17/all_5.jpg",
+          "daily/2026-04-17/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-17/all_full.jpg",
+        "attribution": "(c) James, some rights reserved (CC BY)",
+        "wikipedia_summary": "Argema mimosae (African moon moth) is a giant silk moth of the Family Saturniidae. Similar in appearance to the giant Madagascan moon moth (Argema mit",
+        "inat_url": "https://www.inaturalist.org/observations/9388040",
+        "center_x": 0.45,
+        "center_y": 0.427,
+        "approved": true,
+        "answer_species": "Argema mimosae",
+        "answer_common": "African Moon Moth"
+      }
+    },
+    {
+      "date": "2026-04-18",
+      "number": 14,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 123365509,
+        "crops": [
+          "daily/2026-04-18/b101_1.jpg",
+          "daily/2026-04-18/b101_2.jpg",
+          "daily/2026-04-18/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-18/b101_full.jpg",
+        "attribution": "(c) Sokratis, some rights reserved (CC BY)",
+        "wikipedia_summary": "Daphnis nerii, the oleander hawk-moth or army green moth, is a moth of the family Sphingidae. It was described by Carl Linnaeus in his 1758 10th editi",
+        "inat_url": "https://www.inaturalist.org/observations/123365509",
+        "center_x": 0.5,
+        "center_y": 0.5,
+        "approved": true,
+        "answer_order": "Lepidoptera",
+        "answer_common": "Hawk Moth"
+      },
+      "allbugs": {
+        "observation_id": 124655284,
+        "crops": [
+          "daily/2026-04-18/all_1.jpg",
+          "daily/2026-04-18/all_2.jpg",
+          "daily/2026-04-18/all_3.jpg",
+          "daily/2026-04-18/all_4.jpg",
+          "daily/2026-04-18/all_5.jpg",
+          "daily/2026-04-18/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-18/all_full.jpg",
+        "attribution": "(c) Dennis Vollmar, some rights reserved (CC BY)",
+        "wikipedia_summary": "Anteos clorinde, the white angled-sulphur, is a butterfly of the family Pieridae. It is found in South America, Central America, and southern North Am",
+        "inat_url": "https://www.inaturalist.org/observations/124655284",
+        "center_x": 0.503,
+        "center_y": 0.448,
+        "answer_species": "Anteos clorinde",
+        "answer_common": "White Angled-Sulphur",
+        "approved": true
+      }
+    },
+    {
+      "date": "2026-04-19",
+      "number": 15,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 138087259,
+        "crops": [
+          "daily/2026-04-19/b101_1.jpg",
+          "daily/2026-04-19/b101_2.jpg",
+          "daily/2026-04-19/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-19/b101_full.jpg",
+        "attribution": "(c) Tommy Andriollo, some rights reserved (CC BY)",
+        "wikipedia_summary": "",
+        "inat_url": "https://www.inaturalist.org/observations/138087259",
+        "center_x": 0.188,
+        "center_y": 0.477,
+        "answer_order": "Orthoptera",
+        "answer_common": "Grasshopper",
+        "approved": true
+      },
+      "allbugs": {
+        "observation_id": 13862221,
+        "crops": [
+          "daily/2026-04-19/all_1.jpg",
+          "daily/2026-04-19/all_2.jpg",
+          "daily/2026-04-19/all_3.jpg",
+          "daily/2026-04-19/all_4.jpg",
+          "daily/2026-04-19/all_5.jpg",
+          "daily/2026-04-19/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-19/all_full.jpg",
+        "attribution": "(c) Chung-Yen, some rights reserved (CC BY)",
+        "wikipedia_summary": "Anaciaeschna jaspidea is a species of dragonfly in the family Aeshnidae, commonly known as the Australasian duskhawker and Rusty darner. It inhabits s",
+        "inat_url": "https://www.inaturalist.org/observations/13862221",
+        "center_x": 0.384,
+        "center_y": 0.413,
+        "answer_species": "Anaciaeschna jaspidea",
+        "answer_common": "Rusty Darner",
+        "approved": true
+      }
+    },
+    {
+      "date": "2026-04-20",
+      "number": 16,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 231488970,
+        "crops": [
+          "daily/2026-04-20/b101_1.jpg",
+          "daily/2026-04-20/b101_2.jpg",
+          "daily/2026-04-20/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-20/b101_full.jpg",
+        "attribution": "(c) Reinaldo Oliveira Elias, some rights reserved (CC BY)",
+        "wikipedia_summary": "",
+        "inat_url": "https://www.inaturalist.org/observations/231488970",
+        "center_x": 0.625,
+        "center_y": 0.545,
+        "answer_order": "Hymenoptera",
+        "answer_common": "Ant",
+        "approved": true
+      },
+      "allbugs": {
+        "observation_id": 66603473,
+        "crops": [
+          "daily/2026-04-20/all_1.jpg",
+          "daily/2026-04-20/all_2.jpg",
+          "daily/2026-04-20/all_3.jpg",
+          "daily/2026-04-20/all_4.jpg",
+          "daily/2026-04-20/all_5.jpg",
+          "daily/2026-04-20/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-20/all_full.jpg",
+        "attribution": "(c) Toby Y, some rights reserved (CC BY)",
+        "wikipedia_summary": "Apis cerana, or the eastern honey bee (and the Asiatic honey bee), is a species of honey bee found in southern and southeastern Asia, including China,",
+        "inat_url": "https://www.inaturalist.org/observations/66603473",
+        "center_x": 0.624,
+        "center_y": 0.609,
+        "approved": true,
+        "answer_species": "Apis cerana",
+        "answer_common": "Asian Honey Bee"
+      }
+    },
+    {
+      "date": "2026-04-13",
+      "number": 9,
+      "approved": true,
+      "bugs101": {
+        "observation_id": 8337520,
+        "crops": [
+          "daily/2026-04-13/b101_1.jpg",
+          "daily/2026-04-13/b101_2.jpg",
+          "daily/2026-04-13/b101_3.jpg"
+        ],
+        "reveal": "daily/2026-04-13/b101_full.jpg",
+        "attribution": "(c) Kostas Zontanos, some rights reserved (CC BY)",
+        "wikipedia_summary": "Libelloides macaronius is a day-flying owlfly species of Europe and Asia. The genus belongs to the family Ascalaphidae, subfamily Ascalaphinae.",
+        "inat_url": "https://www.inaturalist.org/observations/8337520",
+        "center_x": 0.346,
+        "center_y": 0.55,
+        "answer_order": "Neuroptera",
+        "answer_common": "Lacewing",
+        "approved": true
+      },
+      "allbugs": {
+        "observation_id": 37467933,
+        "crops": [
+          "daily/2026-04-13/all_1.jpg",
+          "daily/2026-04-13/all_2.jpg",
+          "daily/2026-04-13/all_3.jpg",
+          "daily/2026-04-13/all_4.jpg",
+          "daily/2026-04-13/all_5.jpg",
+          "daily/2026-04-13/all_6.jpg"
+        ],
+        "reveal": "daily/2026-04-13/all_full.jpg",
+        "attribution": "(c) Kai Löhr, some rights reserved (CC BY)",
+        "wikipedia_summary": "Phelotrupes auratus is a species of beetle known by the common names Japanese earth-boring dung beetle and golden dung beetle.",
+        "inat_url": "https://www.inaturalist.org/observations/37467933",
+        "center_x": 0.682,
+        "center_y": 0.479,
+        "answer_species": "Phelotrupes auratus",
+        "answer_common": "Japanese Earth-boring Dung Beetle",
+        "approved": true
+      }
     }
   ]
 }
