@@ -2269,9 +2269,9 @@ a {
 /* --- Gameplay --- */
 .daily-image-container {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 10;
   background: var(--photo-bg);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   position: relative;
 }
@@ -2314,7 +2314,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(220, 38, 38, 0.4);
+  background: rgba(196, 181, 168, 0.6);
   color: white;
   font-size: 14px;
   font-weight: 700;
@@ -2385,10 +2385,18 @@ a {
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
+  box-shadow: 0 3px 0 #8a3f28;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.daily-submit:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #8a3f28;
 }
 
 .daily-submit:disabled {
