@@ -952,24 +952,54 @@ function renderClassicSummary() {
   ` : '';
   const recHTML = renderRecommendation(session.totalScore, currentSetKey, session.mode);
 
+  const accuracy = Math.round((exactCount / session.history.length) * 100);
+  const roundDots = session.history.map((h, i) => {
+    const cls = h.score === 100 ? 'correct' : 'wrong';
+    const icon = h.score === 100 ? '✓' : '✗';
+    return `<div class="round-dot ${cls}" style="animation-delay:${i * 80}ms">${icon}</div>`;
+  }).join('');
+
+  const potdCard = potd ? `
+    <div class="potd-card">
+      <span class="potd-card-icon">🏆</span>
+      <div class="potd-card-text">
+        <strong>Play of the Day</strong>
+        <em>${escapeHTML(potd.common_name)} (${escapeHTML(potd.species)})</em>
+      </div>
+    </div>
+  ` : '';
+
   container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>🪲 What's That Bug?</h1>
-        <div class="summary-score">${session.totalScore} / 1000</div>
-        <div class="summary-breakdown">${exactCount} correct · ${missCount} wrong</div>
-        <div class="emoji-grid emoji-stagger">${session.history.map((h, i) => {
-          const emoji = h.score === 100 ? '🟩' : '🟥';
-          return `<span class="emoji-char" style="animation-delay:${i * 100}ms">${emoji}</span>`;
-        }).join('')}</div>
-        ${potdHTML}
-        <p class="subtitle">Best streak: ${session.bestStreak} · Set: ${session.setDef.name}</p>
+        <div class="summary-set-label">${escapeHTML(session.setDef.name)}</div>
+        <div class="summary-score">${session.totalScore}</div>
+        <div class="summary-sub">out of 1,000</div>
+
+        <div class="round-dots anim-fade-in">${roundDots}</div>
+
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <div class="summary-stat-val">${exactCount}</div>
+            <div class="summary-stat-label">Correct</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-val">${session.bestStreak}</div>
+            <div class="summary-stat-label">Best Streak</div>
+          </div>
+          <div class="summary-stat">
+            <div class="summary-stat-val">${accuracy}%</div>
+            <div class="summary-stat-label">Accuracy</div>
+          </div>
+        </div>
+
+        ${potdCard}
         ${speciesLine}
 
         ${renderShareSection(getClassicFlavor(exactCount))}
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-          <button class="btn btn-outline" id="play-again-btn">Play Again</button>
+          <button class="btn btn-primary" id="play-again-btn">Play Again</button>
           <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
         ${recHTML}
@@ -984,7 +1014,7 @@ function renderClassicSummary() {
   attachSessionFeedbackHandlers();
 
   // Tween the score counter
-  tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, ' / 1000');
+  tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, '');
 
   // Check session-end achievements
   if (achievementsModule) {
@@ -1046,7 +1076,7 @@ function renderTimeTrialSummary() {
     container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>⏱️ Time Trial</h1>
+        <div class="summary-set-label">Time Trial</div>
         <div class="summary-score">${session.totalScore} pts</div>
         ${newBestHTML}
 
@@ -1168,7 +1198,7 @@ function renderStreakGameOver(picked, correct) {
     container.innerHTML = `
     <div class="container">
       <div class="summary">
-        <h1>🎯 Streaks</h1>
+        <div class="summary-set-label">Streaks</div>
         <div class="summary-score">${streakCount}</div>
         <p class="subtitle">in a row</p>
         ${newBestHTML}
