@@ -1,0 +1,255 @@
+---
+// src/components/LandingPage.astro
+import Base from '../layouts/Base.astro';
+import setsData from '../../public/data/sets.json';
+import observations from '../../public/data/observations.json';
+import { buildSpeciesMap, getSpeciesForSet } from '../lib/species-utils.js';
+
+interface Props {
+  setKey: string;
+  title: string;
+  description: string;
+  h1: string;
+  intro: string;
+  canonicalPath: string;
+}
+
+const { setKey, title, description, h1, intro, canonicalPath } = Astro.props;
+const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
+
+// Time trial/streak variants only exist for these sets
+const COMPETE_MODES = {
+  bugs_101: { timeTrial: 'bugs_101_time_trial', streak: 'bugs_101_streak' },
+  all_bugs: { timeTrial: 'time_trial', streak: 'streak' },
+};
+const compete = COMPETE_MODES[setKey] || null;
+
+const set = setsData[setKey];
+const speciesMap = buildSpeciesMap(observations);
+const speciesList = getSpeciesForSet(set, observations, speciesMap);
+const speciesCount = speciesList.length;
+const photoCount = set.observation_ids.length;
+
+// Pick 6 sample photos — spread evenly across the set for variety
+const sampleIndices = Array.from({ length: 6 }, (_, i) =>
+  Math.floor((i / 6) * set.observation_ids.length)
+);
+const samplePhotos = sampleIndices
+  .map(i => observations[set.observation_ids[i]])
+  .filter(Boolean);
+
+const breadcrumbData = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": `${CANONICAL_BASE}` },
+    { "@type": "ListItem", "position": 2, "name": h1, "item": `${CANONICAL_BASE}${canonicalPath}` },
+  ],
+};
+
+const gameData = {
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": `${h1} — What's That Bug?`,
+  "description": description,
+  "url": `${CANONICAL_BASE}${canonicalPath}`,
+  "genre": "Trivia",
+  "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
+  "gamePlatform": "Web Browser",
+  "operatingSystem": "Web",
+  "applicationCategory": "Game",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "Dewang Gogte", "url": "https://dewanggogte.com" },
+};
+---
+<Base title={title} description={description} canonicalPath={canonicalPath}>
+  <div class="container landing-page">
+    <div class="landing-header">
+      <h1>{h1}</h1>
+      <p class="landing-intro">{intro}</p>
+      <p class="landing-stats">
+        {speciesCount} species &middot; {photoCount} research-grade photos &middot; Free to play
+      </p>
+    </div>
+
+    <div class="landing-photos">
+      {samplePhotos.map(obs => (
+        <div class="landing-photo">
+          <img
+            src={obs.photo_url}
+            alt={`Photo of ${obs.taxon?.common_name || obs.taxon?.species || 'an insect'}`}
+            loading="lazy"
+            width="200"
+            height="200"
+          />
+        </div>
+      ))}
+    </div>
+
+    <div class="landing-cta-section">
+      <a href={`/play?set=${setKey}`} class="landing-cta">Play Now</a>
+      {compete && (
+        <div class="landing-mode-links">
+          <a href={`/play?set=${compete.timeTrial}`}>Time Trial</a>
+          <span class="landing-mode-sep">&middot;</span>
+          <a href={`/play?set=${compete.streak}`}>Streaks</a>
+        </div>
+      )}
+    </div>
+
+    <details class="landing-species-list">
+      <summary>All {speciesCount} species in this set</summary>
+      <ul class="landing-species-grid">
+        {speciesList.map(s => (
+          <li>
+            <a href={`/species/${s.slug}`}>
+              {s.commonName || s.species}
+              {s.commonName && <span class="landing-species-sci"> ({s.species})</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
+  </div>
+
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)}></script>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(gameData)}></script>
+
+  <style>
+    .landing-page {
+      max-width: 720px;
+      padding-top: 24px;
+    }
+
+    .landing-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .landing-header h1 {
+      margin-bottom: 12px;
+    }
+
+    .landing-intro {
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 560px;
+      margin: 0 auto 12px;
+    }
+
+    .landing-stats {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .landing-photos {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 32px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .landing-photo img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: var(--photo-bg);
+    }
+
+    .landing-cta-section {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .landing-cta {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      font-size: var(--text-lg);
+      font-weight: 700;
+      padding: 14px 48px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      transition: opacity var(--transition-fast);
+    }
+
+    .landing-cta:hover {
+      opacity: 0.9;
+    }
+
+    .landing-mode-links {
+      margin-top: 12px;
+      font-size: var(--text-sm);
+    }
+
+    .landing-mode-links a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .landing-mode-links a:hover {
+      text-decoration: underline;
+    }
+
+    .landing-mode-sep {
+      color: var(--text-secondary);
+      margin: 0 6px;
+    }
+
+    .landing-species-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 32px;
+    }
+
+    .landing-species-list summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text);
+      font-size: var(--text-sm);
+    }
+
+    .landing-species-grid {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 4px 16px;
+      list-style: none;
+      padding: 0;
+    }
+
+    .landing-species-grid li {
+      font-size: var(--text-sm);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .landing-species-grid a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .landing-species-grid a:hover {
+      color: var(--accent);
+    }
+
+    .landing-species-sci {
+      color: var(--text-secondary);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    @media (max-width: 480px) {
+      .landing-photos {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</Base>
