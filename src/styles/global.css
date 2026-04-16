@@ -105,6 +105,68 @@
   --photo-bg: #0d0d15;
 }
 
+/* Dark mode shadow overrides */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .play-card,
+  :root:not([data-theme="light"]) .compete-card {
+    box-shadow: 0 2px 0 rgba(212, 121, 78, 0.2), 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  :root:not([data-theme="light"]) .choice {
+    box-shadow: 0 3px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  :root:not([data-theme="light"]) .btn-primary {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  :root:not([data-theme="light"]) .btn-next-round {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  :root:not([data-theme="light"]) .btn-outline,
+  :root:not([data-theme="light"]) .share-icon-btn,
+  :root:not([data-theme="light"]) .reaction-btn {
+    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  :root:not([data-theme="light"]) .lb-row:nth-child(odd) {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  :root:not([data-theme="light"]) .daily-submit {
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+:root[data-theme="dark"] .play-card,
+:root[data-theme="dark"] .compete-card {
+  box-shadow: 0 2px 0 rgba(212, 121, 78, 0.2), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .choice {
+  box-shadow: 0 3px 0 rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-next-round {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="dark"] .btn-outline,
+:root[data-theme="dark"] .share-icon-btn,
+:root[data-theme="dark"] .reaction-btn {
+  box-shadow: 0 2px 0 rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="dark"] .lb-row:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root[data-theme="dark"] .daily-submit {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+}
+
 /* =============================================
    Reset
    ============================================= */
