@@ -1810,23 +1810,64 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 12px;
 }
 
 .lb-row {
-  display: grid;
-  grid-template-columns: 36px 28px 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg);
-  border-radius: 8px;
-  font-size: 0.85rem;
+  padding: 10px 12px;
+  border-radius: 10px;
+  gap: 12px;
 }
 
-.lb-row-top1 { background: rgba(234, 179, 8, 0.1); }
-.lb-row-top2 { background: rgba(192, 192, 192, 0.1); }
-.lb-row-top3 { background: rgba(205, 127, 50, 0.1); }
+.lb-row:nth-child(odd) {
+  background: rgba(245, 243, 240, 0.5);
+}
+
+.lb-rank {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.lb-rank-gold { color: #d4a017; }
+.lb-rank-silver { color: #8a8a8a; }
+.lb-rank-bronze { color: #b87333; }
+
+.lb-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-flag {
+  margin-right: 6px;
+}
+
+.lb-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.lb-row-you {
+  background: rgba(184, 90, 59, 0.08) !important;
+  border: 1.5px solid rgba(184, 90, 59, 0.2);
+}
+
+.lb-row-you .lb-rank,
+.lb-row-you .lb-name {
+  color: var(--accent);
+}
 
 .lb-row-highlight {
   border: 2px solid var(--accent);
@@ -1836,31 +1877,6 @@ a {
 @keyframes lbPulse {
   from { box-shadow: 0 0 0 0 rgba(184, 90, 59, 0.3); }
   to { box-shadow: 0 0 0 6px rgba(184, 90, 59, 0); }
-}
-
-.lb-rank {
-  font-weight: 700;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.lb-flag {
-  font-size: 1.1rem;
-  text-align: center;
-}
-
-.lb-name {
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lb-value {
-  font-weight: 700;
-  color: var(--accent);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 /* =============================================
@@ -2154,33 +2170,37 @@ a {
 /* =============================================
    Leaderboard Page Tabs
    ============================================= */
-.lb-tabs {
+.lb-tabs-segmented {
   display: flex;
-  gap: 0;
-  margin-bottom: 12px;
-  border-bottom: 2px solid var(--border);
+  background: var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 16px;
 }
 
-.lb-tab {
-  padding: 8px 16px;
-  font-size: 0.85rem;
+.lb-tab-seg {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
   border: none;
   background: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.lb-tab:hover {
+.lb-tab-seg:hover {
   color: var(--text);
 }
 
-.lb-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+.lb-tab-seg.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .lb-tab-content {

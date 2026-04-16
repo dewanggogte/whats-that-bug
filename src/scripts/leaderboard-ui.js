@@ -33,7 +33,7 @@ export function renderLeaderboardTable(board, isStreak, highlightRank) {
     if (rank === 1) rankDisplay = '🥇';
     else if (rank === 2) rankDisplay = '🥈';
     else if (rank === 3) rankDisplay = '🥉';
-    else rankDisplay = `#${rank}`;
+    else rankDisplay = rank;
 
     const flag = getFlagForCode(entry.country);
     const name = escapeHTML(entry.name || 'Anonymous Bug Hunter');
@@ -41,13 +41,12 @@ export function renderLeaderboardTable(board, isStreak, highlightRank) {
     const valueLabel = isStreak ? `${value} streak` : `${value} pts`;
 
     const highlightClass = isHighlighted ? ' lb-row-highlight' : '';
-    const medalClass = rank <= 3 ? ` lb-row-top${rank}` : '';
+    const rankColorClass = rank === 1 ? ' lb-rank-gold' : rank === 2 ? ' lb-rank-silver' : rank === 3 ? ' lb-rank-bronze' : '';
 
     return `
-      <div class="lb-row${medalClass}${highlightClass}">
-        <span class="lb-rank">${rankDisplay}</span>
-        <span class="lb-flag">${flag}</span>
-        <span class="lb-name">${name}</span>
+      <div class="lb-row${highlightClass}">
+        <span class="lb-rank${rankColorClass}">${rankDisplay}</span>
+        <span class="lb-name"><span class="lb-flag">${flag}</span>${name}</span>
         <span class="lb-value">${valueLabel}</span>
       </div>
     `;

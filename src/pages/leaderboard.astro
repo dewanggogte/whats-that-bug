@@ -8,16 +8,16 @@ import Base from '../layouts/Base.astro';
 >
   <div class="container" style="max-width:640px;">
     <div style="text-align:center;padding:24px 0 8px;">
-      <h1>Daily Leaderboard</h1>
+      <h1 style="font-size:1.4rem;letter-spacing:-0.3px;">Leaderboard</h1>
       <p class="subtitle">Resets every day at midnight ET</p>
-      <p class="lb-countdown" id="lb-countdown"></p>
+      <p class="lb-countdown" id="lb-countdown" style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;"></p>
     </div>
 
     <div class="mode-group">
       <h2 class="mode-group-title">🔰 Bugs 101</h2>
-      <div class="lb-tabs" data-group="bugs101">
-        <button class="lb-tab active" data-board="bugs_101_time_trial">Time Trial</button>
-        <button class="lb-tab" data-board="bugs_101_streak">Streaks</button>
+      <div class="lb-tabs-segmented" data-group="bugs101">
+        <button class="lb-tab-seg active" data-board="bugs_101_time_trial">Time Trial</button>
+        <button class="lb-tab-seg" data-board="bugs_101_streak">Streaks</button>
       </div>
       <div class="lb-tab-content active" id="board-bugs_101_time_trial">
         <div class="lb-page-spinner"><div class="lb-spinner"></div></div>
@@ -34,10 +34,10 @@ import Base from '../layouts/Base.astro';
     import { renderLeaderboardTable, renderYesterdayChampion } from '../scripts/leaderboard-ui.js';
 
     // Tab switching
-    document.querySelectorAll('.lb-tabs').forEach(tabGroup => {
-      tabGroup.querySelectorAll('.lb-tab').forEach(tab => {
+    document.querySelectorAll('.lb-tabs-segmented').forEach(tabGroup => {
+      tabGroup.querySelectorAll('.lb-tab-seg').forEach(tab => {
         tab.addEventListener('click', () => {
-          tabGroup.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+          tabGroup.querySelectorAll('.lb-tab-seg').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
 
           const boardKey = tab.dataset.board;
