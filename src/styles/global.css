@@ -334,13 +334,13 @@ h1, h2 {
    ============================================= */
 .photo-hero {
   background: var(--photo-bg);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 16 / 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  margin: 12px 0;
   position: relative;
 }
 
@@ -349,6 +349,17 @@ h1, h2 {
   height: 100%;
   object-fit: contain;
   display: block;
+}
+
+.photo-hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(26, 26, 46, 0.5), transparent);
+  pointer-events: none;
 }
 .photo-hero .report-photo-btn {
   position: absolute;
@@ -376,13 +387,11 @@ h1, h2 {
 .photo-hero .photo-credit {
   position: absolute;
   bottom: 8px;
-  right: 8px;
-  background: rgba(0,0,0,0.65);
-  color: rgba(255,255,255,0.8);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  max-width: 50%;
+  left: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 9px;
+  z-index: 1;
+  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -392,33 +401,23 @@ h1, h2 {
    Round Prompt (question + location)
    ============================================= */
 .round-prompt {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  text-align: center;
+  padding: 8px 16px 4px;
 }
 
 .round-prompt-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text);
+  display: block;
 }
 
 .round-prompt-location {
   font-size: 0.8rem;
   color: var(--text-secondary);
-}
-
-@media (max-width: 480px) {
-  .round-prompt {
-    margin-bottom: 6px;
-  }
-  .round-prompt-title {
-    font-size: 0.95rem;
-  }
-  .round-prompt-location {
-    font-size: 0.72rem;
-  }
+  display: block;
+  margin-top: 2px;
 }
 
 /* =============================================
@@ -427,26 +426,33 @@ h1, h2 {
 .choices {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 24px;
 }
 
 .choice {
   background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 12px;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-  text-align: left;
+  text-align: center;
+  box-shadow: 0 3px 0 #e0d5c8;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease;
 }
 
 .choice:hover:not(:disabled) {
-  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 #e0d5c8;
+}
+
+.choice:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #e0d5c8;
 }
 
 .choice-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--text-base);
   color: var(--text);
   display: block;
@@ -457,13 +463,14 @@ h1, h2 {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   display: block;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 /* Choice result states */
 .choice.correct {
-  border-color: var(--success-border);
+  border-color: var(--success);
   background: var(--success-bg);
+  box-shadow: 0 3px 0 var(--success);
 }
 
 .choice.correct .choice-name {
@@ -473,6 +480,7 @@ h1, h2 {
 .choice.close {
   border-color: var(--warning-border);
   background: var(--warning-bg);
+  box-shadow: 0 3px 0 var(--warning);
 }
 
 .choice.close .choice-name {
@@ -482,10 +490,18 @@ h1, h2 {
 .choice.miss {
   border-color: var(--error-border);
   background: var(--error-bg);
+  box-shadow: 0 3px 0 var(--error);
+  opacity: 0.6;
 }
 
 .choice.miss .choice-name {
   color: var(--error);
+}
+
+/* Dimmed state for non-selected, non-correct choices */
+.choice.dimmed {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 /* =============================================
@@ -2508,7 +2524,7 @@ a {
 .session-progress {
   display: flex;
   gap: 3px;
-  padding: var(--space-2) 0;
+  padding: 8px 16px 4px;
 }
 
 .session-progress-segment {
@@ -2533,7 +2549,12 @@ a {
 
 .session-progress-segment.current {
   background: var(--accent);
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: pulse-segment 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-segment {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 /* =============================================

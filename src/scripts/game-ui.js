@@ -503,6 +503,13 @@ function handleAnswer(picked, choices, choiceEls) {
     }
   });
 
+  // Dim choices that are neither correct nor the player's pick
+  choiceEls.forEach(el => {
+    if (!el.classList.contains('correct') && !el.classList.contains('miss') && !el.classList.contains('close')) {
+      el.classList.add('dimmed');
+    }
+  });
+
   // Shake photo on wrong answer
   if (score === 0) {
     const photoHero = container.querySelector('.photo-hero');
