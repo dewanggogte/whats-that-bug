@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
+import { SET_TO_URL } from '../lib/species-utils.js';
 
 const THEMED_SETS = [
   { key: 'backyard_basics', icon: '🏡' },
@@ -21,8 +22,8 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
 });
 ---
 <Base
-  title="What's That Bug? — The Insect Identification Game"
-  description="A free guess-the-bug game with 1,000+ species. Can you identify insects from real research-grade photos? Test your insect ID skills in this GeoGuessr-style quiz."
+  title="What's That Bug? — Free Insect Identification Game & Quiz"
+  description="Free insect identification game with 1,000+ species. Identify bugs from real research-grade photos in this online quiz. Play daily challenges, compete on leaderboards, and test your bug ID skills."
   canonicalPath="/"
 >
   <div class="container">
@@ -43,13 +44,13 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     <div class="homepage-section">
       <h2 class="homepage-section-title">Play</h2>
       <div class="play-cards">
-        <a href="/play?set=bugs_101" class="play-card">
+        <a href="/beginners" class="play-card">
           <span class="play-card-icon">🔰</span>
           <span class="play-card-title">Bugs 101</span>
           <span class="play-card-subtitle">Identify by type</span>
           <span class="play-card-detail">10 rounds · Beginner</span>
         </a>
-        <a href="/play?set=all_bugs" class="play-card">
+        <a href="/expert" class="play-card">
           <span class="play-card-icon">🌍</span>
           <span class="play-card-title">All Bugs</span>
           <span class="play-card-subtitle">Identify the genus</span>
@@ -97,12 +98,73 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       <p class="homepage-section-subtitle">Themed deep dives</p>
       <div class="themed-buttons">
         {themedGroup.map(set => (
-          <a href={`/play?set=${set.key}`} class="themed-btn">
+          <a href={SET_TO_URL[set.key] || `/play?set=${set.key}`} class="themed-btn">
             <span class="themed-btn-icon">{set.icon}</span>
             <span class="themed-btn-label">{set.name}</span>
             <span class="themed-btn-meta">{set.countLabel}</span>
           </a>
         ))}
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="homepage-section">
+      <h2 class="homepage-section-title">How It Works</h2>
+      <div class="how-it-works">
+        <div class="how-step">
+          <span class="how-step-num">1</span>
+          <div>
+            <strong>See a photo</strong>
+            <p>We show you a real research-grade insect photo from iNaturalist</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <span class="how-step-num">2</span>
+          <div>
+            <strong>Make your guess</strong>
+            <p>Pick from four possible identifications</p>
+          </div>
+        </div>
+        <div class="how-step">
+          <span class="how-step-num">3</span>
+          <div>
+            <strong>Learn something new</strong>
+            <p>Every round teaches you about a different species</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What You'll Learn -->
+    <div class="homepage-section">
+      <h2 class="homepage-section-title">What You'll Learn</h2>
+      <p class="homepage-learn-text">What's That Bug? features over 1,000 insect species photographed in the wild by citizen scientists. From common backyard beetles to rare tropical butterflies, every photo is research-grade verified. Whether you're a curious beginner or a seasoned entomologist, there's always a new bug to discover.</p>
+    </div>
+
+    <!-- FAQ -->
+    <div class="homepage-section">
+      <h2 class="homepage-section-title">FAQ</h2>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary>What is What's That Bug?</summary>
+          <p>A free online insect identification game. You're shown a real photo of a bug and choose the correct identification from four options. It's like GeoGuessr, but for insects.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How many insects are in the game?</summary>
+          <p>Over 1,000 species across 17 orders, from beetles and butterflies to spiders and dragonflies. All photos are research-grade observations from iNaturalist.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is this game free?</summary>
+          <p>Yes, completely free with no sign-up required.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How does the Daily Challenge work?</summary>
+          <p>Every day, a new mystery insect is featured. You get one guess. Your streak tracks how many days in a row you've played and solved correctly.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I compete with others?</summary>
+          <p>Yes — Time Trial and Streak modes have daily leaderboards that reset at midnight ET. Enter a display name to see how you rank.</p>
+        </details>
       </div>
     </div>
   </div>
@@ -128,6 +190,55 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       "name": "Dewang Gogte",
       "url": "https://dewanggogte.com"
     }
+  }
+  </script>
+
+  <script type="application/ld+json" is:inline>
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is What's That Bug?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A free online insect identification game. You're shown a real photo of a bug and choose the correct identification from four options. It's like GeoGuessr, but for insects."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How many insects are in the game?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Over 1,000 species across 17 orders, from beetles and butterflies to spiders and dragonflies. All photos are research-grade observations from iNaturalist."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is this game free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, completely free with no sign-up required."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the Daily Challenge work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every day, a new mystery insect is featured. You get one guess. Your streak tracks how many days in a row you've played and solved correctly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I compete with others?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes — Time Trial and Streak modes have daily leaderboards that reset at midnight ET. Enter a display name to see how you rank."
+        }
+      }
+    ]
   }
   </script>
 
@@ -740,6 +851,78 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   }
   .badge-share-btn svg {
     flex-shrink: 0;
+  }
+
+  /* How It Works */
+  .how-it-works {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .how-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+  }
+
+  .how-step-num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: var(--text-sm);
+  }
+
+  .how-step p {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+  }
+
+  /* What You'll Learn */
+  .homepage-learn-text {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: var(--text-sm);
+  }
+
+  /* FAQ */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+  }
+
+  .faq-item summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--text);
+  }
+
+  .faq-item p {
+    margin: 8px 0 0;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.5;
   }
 </style>
 </Base>
