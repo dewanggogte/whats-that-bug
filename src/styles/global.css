@@ -3369,6 +3369,51 @@ a {
 /* Mobile: stack play cards */
 @media (max-width: 480px) {
   .play-cards {
-    flex-direction: column;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .play-card {
+    padding: 16px 10px;
+  }
+
+  .play-card-title {
+    font-size: 1rem;
+  }
+
+  .summary-score {
+    font-size: 2.5rem;
+  }
+
+  .summary-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .summary-stat {
+    padding: 10px 6px;
+  }
+
+  .summary-stat-val {
+    font-size: 1.1rem;
+  }
+
+  .round-dots {
+    gap: 4px;
+  }
+
+  .round-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .share-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .round-prompt-title {
+    font-size: 1rem;
   }
 }
