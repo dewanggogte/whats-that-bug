@@ -21,3 +21,4 @@ scripts/reddit-posts/
 scripts/flagged-observations.json
 scripts/review-candidates.json
 scripts/backfill-leaderboard.mjs
+data/
