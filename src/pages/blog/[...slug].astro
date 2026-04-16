@@ -1,0 +1,156 @@
+---
+// src/pages/blog/[...slug].astro
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
+
+const breadcrumbData = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": CANONICAL_BASE },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${CANONICAL_BASE}/blog` },
+    { "@type": "ListItem", "position": 3, "name": post.data.title, "item": `${CANONICAL_BASE}/blog/${post.slug}` },
+  ],
+};
+
+const articleData = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": post.data.title,
+  "description": post.data.description,
+  "datePublished": post.data.date.toISOString(),
+  "author": { "@type": "Person", "name": "Dewang Gogte", "url": "https://dewanggogte.com" },
+  ...(post.data.image ? { "image": `${CANONICAL_BASE}${post.data.image}` } : {}),
+};
+---
+<Base
+  title={`${post.data.title} — What's That Bug?`}
+  description={post.data.description}
+  canonicalPath={`/blog/${post.slug}`}
+  ogType="article"
+>
+  <div class="container blog-post">
+    <article>
+      <header class="blog-post-header">
+        <h1>{post.data.title}</h1>
+        <time datetime={post.data.date.toISOString()}>
+          {post.data.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </time>
+        {post.data.tags && (
+          <div class="blog-post-tags">
+            {post.data.tags.map(tag => <span class="blog-post-tag">{tag}</span>)}
+          </div>
+        )}
+      </header>
+      <div class="blog-post-content">
+        <Content />
+      </div>
+    </article>
+    <nav class="blog-post-back">
+      <a href="/blog">&larr; All posts</a>
+    </nav>
+  </div>
+
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)}></script>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(articleData)}></script>
+
+  <style>
+    .blog-post {
+      max-width: 680px;
+      padding-top: 24px;
+    }
+
+    .blog-post-header {
+      margin-bottom: 32px;
+    }
+
+    .blog-post-header h1 {
+      margin-bottom: 8px;
+    }
+
+    .blog-post-header time {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+    }
+
+    .blog-post-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .blog-post-tag {
+      font-size: var(--text-xs);
+      padding: 2px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      color: var(--text-secondary);
+    }
+
+    .blog-post-content {
+      line-height: 1.7;
+      font-size: var(--text-base);
+    }
+
+    .blog-post-content :global(h2) {
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+
+    .blog-post-content :global(h3) {
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    .blog-post-content :global(p) {
+      margin-bottom: 16px;
+    }
+
+    .blog-post-content :global(img) {
+      max-width: 100%;
+      border-radius: var(--radius-md);
+    }
+
+    .blog-post-content :global(ul), .blog-post-content :global(ol) {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    .blog-post-content :global(blockquote) {
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+      margin: 16px 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .blog-post-back {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .blog-post-back a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: var(--text-sm);
+    }
+
+    .blog-post-back a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</Base>

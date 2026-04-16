@@ -1,0 +1,138 @@
+---
+// src/pages/blog/index.astro
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
+const breadcrumbData = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": CANONICAL_BASE },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${CANONICAL_BASE}/blog` },
+  ],
+};
+---
+<Base
+  title="Bug Identification Blog — What's That Bug?"
+  description="Articles about insect identification, entomology tips, and bug facts. Learn to identify the insects around you."
+  canonicalPath="/blog"
+>
+  <div class="container blog-page">
+    <div style="text-align: center; padding: 24px 0 8px;">
+      <h1>Blog</h1>
+      <p class="subtitle">Insect identification tips, fun facts, and field guides</p>
+    </div>
+
+    {posts.length === 0 ? (
+      <div class="blog-empty">
+        <p>Posts coming soon. In the meantime, explore our <a href="/genera">genera index</a> or <a href="/beginners">play the game</a>.</p>
+      </div>
+    ) : (
+      <div class="blog-list">
+        {posts.map(post => (
+          <a href={`/blog/${post.slug}`} class="blog-card">
+            {post.data.image && (
+              <img src={post.data.image} alt="" class="blog-card-img" loading="lazy" width="200" height="130" />
+            )}
+            <div class="blog-card-info">
+              <h2 class="blog-card-title">{post.data.title}</h2>
+              <p class="blog-card-desc">{post.data.description}</p>
+              <time class="blog-card-date" datetime={post.data.date.toISOString()}>
+                {post.data.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </time>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)}></script>
+
+  <style>
+    .blog-page {
+      max-width: 680px;
+      padding-top: 24px;
+    }
+
+    .blog-empty {
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-secondary);
+    }
+
+    .blog-empty a {
+      color: var(--accent);
+    }
+
+    .blog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .blog-card {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      transition: border-color var(--transition-fast);
+    }
+
+    .blog-card:hover {
+      border-color: var(--accent);
+    }
+
+    .blog-card-img {
+      width: 140px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+      background: var(--photo-bg);
+    }
+
+    .blog-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .blog-card-title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .blog-card-desc {
+      font-size: var(--text-sm);
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .blog-card-date {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      margin-top: auto;
+    }
+
+    @media (max-width: 480px) {
+      .blog-card {
+        flex-direction: column;
+      }
+      .blog-card-img {
+        width: 100%;
+        height: 160px;
+      }
+    }
+  </style>
+</Base>
