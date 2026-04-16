@@ -7,6 +7,8 @@
  * (mixing both caused duplicate events via keepalive race condition).
  */
 
+import { getUserId } from './user-id.js';
+
 const WEBHOOK_URL = import.meta.env.PUBLIC_GOOGLE_SHEET_WEBHOOK_URL || '';
 
 // --- Event queue ---
@@ -55,6 +57,7 @@ function enqueue(data) {
   }
   queue.push({
     ...data,
+    user_id: getUserId(),
     event_id: eventId(),
     timestamp: new Date().toISOString(),
   });

@@ -2,6 +2,8 @@
  * Leaderboard API client — fetch/submit leaderboard data via Google Apps Script.
  */
 
+import { getUserId } from './user-id.js';
+
 const WEBHOOK_URL = import.meta.env.PUBLIC_GOOGLE_SHEET_WEBHOOK_URL || '';
 
 const LEADERBOARD_SETS = ['bugs_101_time_trial', 'bugs_101_streak'];
@@ -68,7 +70,7 @@ export async function submitLeaderboardEntry(entry) {
   const res = await fetch(WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'leaderboard_entry', ...entry }),
+    body: JSON.stringify({ action: 'leaderboard_entry', user_id: getUserId(), ...entry }),
   });
   if (!res.ok) throw new Error(`Leaderboard submit failed: ${res.status}`);
   return res.json();
