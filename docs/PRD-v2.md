@@ -1,7 +1,15 @@
 # What's That Bug? — v2 Product Requirements Document
 
 **Date:** 2026-04-07
-**Status:** Draft — awaiting review
+**Status:** Draft — partially implemented (see implementation notes below)
+
+**Implementation status (updated 2026-04-17):**
+- Section 3 (UI Polish): **Done** — Full visual revamp shipped (Fraunces/Inter typography, tactile buttons, warm shadows, gray-not-red errors, View Transitions, confetti). See `docs/superpowers/specs/2026-04-17-ui-revamp-design.md`.
+- Section 4E (Achievement System): **Done** — 10 badges tracked in localStorage, viewable on profile page.
+- Section 4B (Micro-Animations): **Partially done** — View Transitions between rounds, confetti on perfect score, score tween counter. Stagger-in and tile flips not yet implemented.
+- Section 4D (Comeback Hooks): **Partially done** — Play of the Day on results screen (clickable to iNaturalist), personal stats on profile page. "Your streak is at risk" and post-session recommendations not yet implemented.
+- Profile page + persistent user_id: **Done** — `/profile` page with avatar picker, stats, badges, species log. `user_id` attached to all events/leaderboard. See `docs/superpowers/plans/2026-04-17-profile-page-plan.md`.
+- Sections 1, 2, 5: **Not started**
 
 ---
 

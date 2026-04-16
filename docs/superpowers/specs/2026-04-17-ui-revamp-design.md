@@ -1,7 +1,7 @@
 # UI Revamp — Design Spec
 
 **Date:** 2026-04-17
-**Status:** Approved
+**Status:** Implemented and shipped (2026-04-17)
 **Direction:** Evolution (A) — same warm palette, elevated with award-winning techniques
 
 ## Overview
