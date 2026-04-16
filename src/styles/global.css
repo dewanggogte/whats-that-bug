@@ -3449,6 +3449,44 @@ a {
 .profile-avatar-display {
   font-size: 64px;
   line-height: 1;
+  margin-bottom: 8px;
+  position: relative;
+  background: none;
+  border: 3px solid var(--border);
+  border-radius: 50%;
+  width: 96px;
+  height: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.profile-avatar-display:hover {
+  border-color: var(--primary);
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 24px;
+  height: 24px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-name-display {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 16px;
 }
 
@@ -3457,6 +3495,16 @@ a {
   grid-template-columns: repeat(5, 48px);
   gap: 8px;
   justify-content: center;
+  margin-bottom: 16px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
+}
+
+.profile-avatar-grid.open {
+  max-height: 300px;
+  opacity: 1;
   margin-bottom: 20px;
 }
 
@@ -3488,6 +3536,15 @@ a {
   max-width: 320px;
   margin: 0 auto;
   text-align: left;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+
+.profile-fields.open {
+  max-height: 400px;
+  opacity: 1;
 }
 
 .profile-field {
@@ -3568,7 +3625,12 @@ a {
 }
 
 .profile-badge.locked {
-  opacity: 0.5;
+  opacity: 0.6;
+  background: var(--bg);
+}
+
+.profile-badge.locked .profile-badge-icon {
+  filter: grayscale(1);
 }
 
 .profile-badge-icon {
@@ -3585,11 +3647,21 @@ a {
   color: var(--text);
 }
 
+.profile-badge.locked .profile-badge-name {
+  color: var(--text-secondary);
+}
+
 .profile-badge-desc {
   display: block;
   font-size: 0.7rem;
   color: var(--text-secondary);
   margin-top: 2px;
+}
+
+.profile-badges-count {
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 /* Species */

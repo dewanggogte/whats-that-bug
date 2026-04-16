@@ -67,13 +67,20 @@ export function initProfilePage() {
 
   const selectedAvatar = profile.avatar || AVATARS[0];
 
+  const flagHTML = profile.country ? ` ${getFlagForCode(profile.country)}` : '';
+  const displayName = escapeHTML(profile.name || 'Anonymous Bug Hunter');
+
   container.innerHTML = `
     <section class="profile-section profile-identity">
-      <div class="profile-avatar-display" id="profile-avatar-display">${selectedAvatar}</div>
+      <button class="profile-avatar-display" id="profile-avatar-display" aria-label="Change avatar">
+        ${selectedAvatar}
+        <span class="profile-avatar-edit">&#9998;</span>
+      </button>
+      <div class="profile-name-display">${displayName}${flagHTML}</div>
       <div class="profile-avatar-grid" id="profile-avatar-grid">
         ${AVATARS.map(a => `<button class="profile-avatar-opt${a === selectedAvatar ? ' selected' : ''}" data-avatar="${a}">${a}</button>`).join('')}
       </div>
-      <div class="profile-fields">
+      <div class="profile-fields" id="profile-fields">
         <div class="profile-field">
           <label for="profile-name">Name</label>
           <input type="text" id="profile-name" class="lb-input" placeholder="Anonymous Bug Hunter" maxlength="30" value="${escapeHTML(profile.name || '')}">
@@ -112,14 +119,14 @@ export function initProfilePage() {
     </section>
 
     <section class="profile-section profile-badges">
-      <h2>Badges</h2>
+      <h2>Badges <span class="profile-badges-count">${earned.length}/${ACHIEVEMENT_DEFS.length}</span></h2>
       <div class="profile-badges-grid">
         ${ACHIEVEMENT_DEFS.map(def => {
           const isEarned = earnedIds.has(def.id);
           return `<div class="profile-badge${isEarned ? ' earned' : ' locked'}">
             <span class="profile-badge-icon">${isEarned ? def.icon : '🔒'}</span>
-            <span class="profile-badge-name">${isEarned ? escapeHTML(def.name) : '???'}</span>
-            ${isEarned ? `<span class="profile-badge-desc">${escapeHTML(def.description)}</span>` : ''}
+            <span class="profile-badge-name">${escapeHTML(def.name)}</span>
+            <span class="profile-badge-desc">${escapeHTML(def.description)}</span>
           </div>`;
         }).join('')}
       </div>
@@ -140,12 +147,26 @@ export function initProfilePage() {
     </div>
   `;
 
+  // Wire up avatar tap-to-expand
+  const avatarDisplay = document.getElementById('profile-avatar-display');
+  const avatarGrid = document.getElementById('profile-avatar-grid');
+  const fieldsBlock = document.getElementById('profile-fields');
+
+  avatarDisplay?.addEventListener('click', () => {
+    const isOpen = avatarGrid.classList.toggle('open');
+    if (isOpen) fieldsBlock.classList.add('open');
+  });
+
   // Wire up avatar picker
   container.querySelectorAll('.profile-avatar-opt').forEach(btn => {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.profile-avatar-opt').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      document.getElementById('profile-avatar-display').textContent = btn.dataset.avatar;
+      // Update the display avatar (keep the edit pencil)
+      const display = document.getElementById('profile-avatar-display');
+      if (display) {
+        display.innerHTML = `${btn.dataset.avatar}<span class="profile-avatar-edit">&#9998;</span>`;
+      }
     });
   });
 
@@ -156,9 +177,22 @@ export function initProfilePage() {
     const name = document.getElementById('profile-name')?.value.trim() || '';
     const country = document.getElementById('profile-country')?.value || '';
     saveProfile({ avatar, name, country });
+
     // Update header avatar
     const headerAvatar = document.getElementById('header-avatar');
     if (headerAvatar) headerAvatar.textContent = avatar;
+
+    // Update display name + flag
+    const nameDisplay = container.querySelector('.profile-name-display');
+    if (nameDisplay) {
+      const flag = country ? ` ${getFlagForCode(country)}` : '';
+      nameDisplay.innerHTML = `${escapeHTML(name || 'Anonymous Bug Hunter')}${flag}`;
+    }
+
+    // Collapse the edit section
+    avatarGrid.classList.remove('open');
+    fieldsBlock.classList.remove('open');
+
     const status = document.getElementById('profile-save-status');
     if (status) {
       status.textContent = 'Saved!';
