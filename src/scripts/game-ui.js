@@ -687,7 +687,7 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
       </div>
     </div>
     <div style="text-align: center; margin-top: 16px;">
-      <button class="btn btn-primary" id="next-btn">
+      <button class="btn-next-round" id="next-btn">
         ${session.isComplete ? 'See Results' : 'Next Round →'}
       </button>
     </div>
