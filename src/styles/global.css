@@ -155,14 +155,16 @@ body {
 }
 
 .site-logo {
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--text);
+  color: var(--accent);
   text-decoration: none;
+  letter-spacing: -0.3px;
 }
 
 .site-logo:hover {
-  color: var(--accent);
+  opacity: 0.85;
 }
 
 .site-nav {
@@ -243,12 +245,13 @@ h1, h2 {
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s ease;
   text-decoration: none;
 }
 
@@ -261,20 +264,33 @@ h1, h2 {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+  box-shadow: 0 3px 0 #8a3f28;
 }
 
 .btn-primary:hover:not(:disabled) {
-  opacity: 0.88;
+  opacity: 0.92;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 #8a3f28;
 }
 
 .btn-outline {
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
   border-color: var(--border);
+  box-shadow: 0 2px 0 var(--border);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-outline:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--border);
 }
 
 #play-again-btn,
