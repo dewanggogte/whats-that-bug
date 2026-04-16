@@ -9,6 +9,9 @@
  *   renderAchievementToast(achievement) → string
  *   getEarnedAchievements() → Achievement[]
  *   getSpeciesCount() → number
+ *   getPlayerStats() → { session_count, last_played }
+ *   getAllBestScores() → { setKey: number }
+ *   getSpeciesList() → string[]
  */
 
 const STORAGE_KEY = 'wtb_achievements';
@@ -57,7 +60,7 @@ function markEarned(id) {
   return true;
 }
 
-function getPlayerStats() {
+export function getPlayerStats() {
   try {
     return JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
   } catch {
@@ -206,5 +209,33 @@ export function getSpeciesCount() {
     return JSON.parse(localStorage.getItem(SPECIES_KEY) || '[]').length;
   } catch {
     return 0;
+  }
+}
+
+/**
+ * Get all per-set best scores/streaks from localStorage.
+ * Scans all `best_*` keys. Returns { setKey: number }.
+ */
+export function getAllBestScores() {
+  const bests = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('best_')) {
+      const setKey = key.slice(5);
+      bests[setKey] = parseInt(localStorage.getItem(key) || '0', 10);
+    }
+  }
+  return bests;
+}
+
+/**
+ * Get the species seen list (species names).
+ * @returns {string[]}
+ */
+export function getSpeciesList() {
+  try {
+    return JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
+  } catch {
+    return [];
   }
 }
