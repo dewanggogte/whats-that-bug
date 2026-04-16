@@ -965,6 +965,13 @@ h1, h2 {
   display: flex;
   align-items: center;
   gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+
+a.potd-card:hover {
+  background: rgba(184, 90, 59, 0.12);
 }
 
 .potd-card-icon {
@@ -2541,19 +2548,17 @@ a {
 
 .daily-reveal-image {
   width: 100%;
-  border-radius: 12px;
+  border-radius: 16px;
   display: block;
 }
 
 .daily-reveal-credit {
   position: absolute;
   bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.65);
-  color: rgba(255, 255, 255, 0.8);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
+  left: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 9px;
+  z-index: 1;
   max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2563,7 +2568,8 @@ a {
 .daily-result-badge {
   display: inline-block;
   padding: 6px 20px;
-  border-radius: 20px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
   font-weight: 700;
   font-size: 15px;
   margin-bottom: 12px;
@@ -2582,6 +2588,7 @@ a {
 }
 
 .daily-species-name {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 2px;
@@ -2614,14 +2621,17 @@ a {
 .daily-streak-box {
   flex: 1;
   text-align: center;
-  padding: 8px;
+  padding: 10px;
   background: var(--surface);
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .daily-streak-number {
-  font-size: 24px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
 }
 
 .daily-streak-label {

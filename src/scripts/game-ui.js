@@ -919,6 +919,7 @@ function getPlayOfTheDay(history) {
   return {
     common_name: pick.correct_taxon.common_name,
     species: pick.correct_taxon.species,
+    inat_url: pick.correct_inat_url || '',
   };
 }
 
@@ -957,11 +958,6 @@ function renderClassicSummary() {
   const speciesLine = speciesCount > 10 ? `<p class="subtitle" style="font-size:0.8rem;">${speciesCount} species identified so far</p>` : '';
 
   const potd = getPlayOfTheDay(session.history);
-  const potdHTML = potd ? `
-    <p class="anim-fade-in" style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">
-      Best ID: <strong>${escapeHTML(potd.common_name)}</strong> (<em>${escapeHTML(potd.species)}</em>)
-    </p>
-  ` : '';
   const recHTML = renderRecommendation(session.totalScore, currentSetKey, session.mode);
 
   const accuracy = Math.round((exactCount / session.history.length) * 100);
@@ -971,15 +967,18 @@ function renderClassicSummary() {
     return `<div class="round-dot ${cls}" style="animation-delay:${i * 80}ms">${icon}</div>`;
   }).join('');
 
-  const potdCard = potd ? `
-    <div class="potd-card">
-      <span class="potd-card-icon">🏆</span>
-      <div class="potd-card-text">
-        <strong>Play of the Day</strong>
-        <em>${escapeHTML(potd.common_name)} (${escapeHTML(potd.species)})</em>
-      </div>
+  const potdInner = `
+    <span class="potd-card-icon">🏆</span>
+    <div class="potd-card-text">
+      <strong>Play of the Day</strong>
+      <em>${escapeHTML(potd?.common_name || '')} (${escapeHTML(potd?.species || '')})</em>
     </div>
-  ` : '';
+  `;
+  const potdCard = potd
+    ? (potd.inat_url
+      ? `<a href="${escapeHTML(potd.inat_url)}" target="_blank" rel="noopener" class="potd-card">${potdInner}</a>`
+      : `<div class="potd-card">${potdInner}</div>`)
+    : '';
 
   container.innerHTML = `
     <div class="container">
@@ -1137,7 +1136,7 @@ function renderTimeTrialSummary() {
         ${renderShareSection(getTimeTrialFlavor(correctCount, totalQ))}
 
         <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-          <button class="btn btn-outline" id="play-again-btn">Play Again</button>
+          <button class="btn btn-primary" id="play-again-btn">Play Again</button>
           <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
         </div>
         ${renderRecommendation(session.totalScore, currentSetKey, session.mode)}
@@ -1251,7 +1250,7 @@ function renderStreakGameOver(picked, correct) {
       </div>
 
       <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-        <button class="btn btn-outline" id="play-again-btn">Play Again</button>
+        <button class="btn btn-primary" id="play-again-btn">Play Again</button>
         <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
       </div>
       ${renderRecommendation(0, currentSetKey, session.mode)}

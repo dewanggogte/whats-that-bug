@@ -640,15 +640,15 @@ function renderReveal() {
 
       <div class="share-section">
         <p class="share-flavor">${escapeHTML(flavorText)}</p>
-        <button class="btn btn-primary btn-share-hero" id="share-hero-btn">
+        <button class="btn-next-round btn-share-hero" id="share-hero-btn">
           ${SHARE_ICON}
           Challenge a Friend
         </button>
         <div class="share-buttons-secondary">
-          <button class="btn btn-outline share-icon-btn" id="whatsapp-btn" title="WhatsApp" aria-label="Share on WhatsApp">${WHATSAPP_ICON}</button>
-          <button class="btn btn-outline share-icon-btn" id="imessage-btn" title="iMessage" aria-label="Share via iMessage">${IMESSAGE_ICON}</button>
-          <button class="btn btn-outline share-icon-btn" id="tweet-btn" title="X" aria-label="Share on X">${TWITTER_ICON}</button>
-          <button class="btn btn-outline share-icon-btn" id="copy-btn" title="Copy to clipboard" aria-label="Copy to clipboard">${CLIPBOARD_ICON}</button>
+          <button class="share-icon-btn" id="whatsapp-btn" title="WhatsApp" aria-label="Share on WhatsApp">${WHATSAPP_ICON}</button>
+          <button class="share-icon-btn" id="imessage-btn" title="iMessage" aria-label="Share via iMessage">${IMESSAGE_ICON}</button>
+          <button class="share-icon-btn" id="tweet-btn" title="X" aria-label="Share on X">${TWITTER_ICON}</button>
+          <button class="share-icon-btn" id="copy-btn" title="Copy to clipboard" aria-label="Copy to clipboard">${CLIPBOARD_ICON}</button>
         </div>
       </div>
 

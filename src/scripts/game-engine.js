@@ -465,6 +465,7 @@ export class SessionState {
       round: this.currentRound,
       observation_id: correct.id,
       correct_taxon: correct.taxon,
+      correct_inat_url: correct.inat_url || '',
       picked_taxon: pickedTaxon,
       score,
     });
