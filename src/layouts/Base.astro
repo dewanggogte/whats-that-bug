@@ -92,6 +92,9 @@ const resolvedOgType = ogType || 'website';
     <div class="site-header-inner">
       <a href="/" class="site-logo">🪲 What's That Bug?</a>
       <nav class="site-nav">
+        <a href="/profile" class="header-avatar-link" id="header-avatar-link">
+          <span class="header-avatar" id="header-avatar">🪲</span>
+        </a>
         <a href="/leaderboard">Leaderboard</a>
         <div class="sound-toggle-wrap">
           <button id="sound-toggle" aria-label="Sound settings">🔊</button>
@@ -170,6 +173,16 @@ const resolvedOgType = ogType || 'website';
           btn.textContent = next === 'dark' ? '☀️' : '🌙';
         });
       });
+    })();
+  </script>
+
+  <script is:inline>
+    (function() {
+      try {
+        var profile = JSON.parse(localStorage.getItem('wtb_profile') || '{}');
+        var el = document.getElementById('header-avatar');
+        if (el && profile.avatar) el.textContent = profile.avatar;
+      } catch(e) {}
     })();
   </script>
 

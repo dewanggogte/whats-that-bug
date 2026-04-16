@@ -165,6 +165,19 @@ export function showCelebrationPopup({ rank, score, streak, setKey, sessionId, b
 
     document.body.appendChild(overlay);
 
+    // Pre-fill from profile
+    try {
+      const profile = JSON.parse(localStorage.getItem('wtb_profile') || '{}');
+      if (profile.name) {
+        const nameInput = overlay.querySelector('#lb-name');
+        if (nameInput) nameInput.value = profile.name;
+      }
+      if (profile.country) {
+        const countrySelect = overlay.querySelector('#lb-country');
+        if (countrySelect) countrySelect.value = profile.country;
+      }
+    } catch {}
+
     // Spawn confetti
     const popup = overlay.querySelector('.lb-popup');
     spawnConfetti(popup);
@@ -206,6 +219,13 @@ export function showCelebrationPopup({ rank, score, streak, setKey, sessionId, b
           questions_answered: questionsAnswered || 0,
           correct_count: correctCount || 0,
         });
+        // Sync back to profile
+        try {
+          const current = JSON.parse(localStorage.getItem('wtb_profile') || '{}');
+          if (name) current.name = name;
+          if (country) current.country = country;
+          localStorage.setItem('wtb_profile', JSON.stringify(current));
+        } catch {}
         invalidateLeaderboardCache();
       } catch (err) {
         console.warn('Leaderboard submit failed:', err);
