@@ -65,9 +65,10 @@ const resolvedOgType = ogType || 'website';
     // Detect base path for subpath deployments (e.g. /games/bugs/)
     // At root, __BASE is empty string so all paths work unchanged.
     (function() {
-      var path = window.location.pathname.replace(/\/+$/, '') || '/';
-      var base = path.replace(/\/(play|leaderboard|daily\/play)$/, '');
-      window.__BASE = (base === '/' || base === '') ? '' : base;
+      var base = '';
+      var match = window.location.pathname.match(/^(\/games\/bugs)/);
+      if (match) base = match[1];
+      window.__BASE = base;
 
       // Rewrite favicon and internal links for subpath
       if (window.__BASE) {
