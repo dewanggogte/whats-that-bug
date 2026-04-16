@@ -201,9 +201,11 @@ export const COUNTRIES = [
   { code: 'ZW', flag: '🇿🇼', name: 'Zimbabwe' },
 ];
 
-export function renderCountryOptions() {
-  return '<option value="">Select country (optional)</option>' +
-    COUNTRIES.map(c => `<option value="${c.code}">${c.flag} ${c.name}</option>`).join('');
+export function renderCountryOptions(selectedCode = '') {
+  return `<option value="">-- Select country --</option>` +
+    COUNTRIES.map(c =>
+      `<option value="${c.code}"${c.code === selectedCode ? ' selected' : ''}>${c.flag} ${c.name}</option>`
+    ).join('');
 }
 
 export function getFlagForCode(code) {
