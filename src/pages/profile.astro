@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base
+  title="Your Profile — What's That Bug?"
+  description="View your bug-hunting stats, badges, and species discoveries"
+  canonicalPath="/profile"
+>
+  <div class="container" style="max-width: 600px; margin: 0 auto; padding: 16px;">
+    <div id="profile-root"></div>
+  </div>
+
+  <script>
+    import { initProfilePage } from '../scripts/profile-ui.js';
+    initProfilePage();
+  </script>
+</Base>
