@@ -18,6 +18,11 @@ import('./achievements.js')
   .then(m => { achievementsModule = m; })
   .catch(() => { /* achievements.js not available yet — skip */ });
 
+let confettiModule = null;
+import('canvas-confetti')
+  .then(m => { confettiModule = m.default || m; })
+  .catch(() => { /* confetti not available — skip */ });
+
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -341,8 +346,15 @@ function startRound() {
   preloadRounds();
 
   roundStartTime = Date.now();
-  renderRound();
-  window.scrollTo({ top: 0 });
+  if (document.startViewTransition && displayRound > 1) {
+    document.startViewTransition(() => {
+      renderRound();
+      window.scrollTo({ top: 0 });
+    });
+  } else {
+    renderRound();
+    window.scrollTo({ top: 0 });
+  }
 }
 
 function renderRound() {
@@ -1015,6 +1027,18 @@ function renderClassicSummary() {
 
   // Tween the score counter
   tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, '');
+
+  // Confetti celebration on perfect score
+  if (session.totalScore === 1000 && confettiModule) {
+    setTimeout(() => {
+      confettiModule({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#b85a3b', '#d4a07a', '#e8a54b', '#059669', '#ffd700'],
+      });
+    }, 600);
+  }
 
   // Check session-end achievements
   if (achievementsModule) {
