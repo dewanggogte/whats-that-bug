@@ -8,6 +8,8 @@ import {
   saveDailyResult,
   loadHistory,
   getCountdownToReset,
+  hashDate,
+  getTodaysEntry,
 } from '../src/scripts/daily-engine.js';
 
 // --- Mock localStorage for Node environment ---
@@ -226,5 +228,55 @@ describe('getCountdownToReset', () => {
     vi.setSystemTime(new Date('2026-04-07T03:30:00Z'));
     const result = getCountdownToReset();
     expect(result).toEqual({ hours: 0, minutes: 30 });
+  });
+});
+
+// ──────────────────────────────────────────────
+// hashDate
+// ──────────────────────────────────────────────
+describe('hashDate', () => {
+  it('is deterministic for the same date', () => {
+    expect(hashDate('2026-05-18')).toBe(hashDate('2026-05-18'));
+  });
+
+  it('returns an unsigned 32-bit integer', () => {
+    const h = hashDate('2026-05-18');
+    expect(Number.isInteger(h)).toBe(true);
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(h).toBeLessThanOrEqual(0xffffffff);
+  });
+
+  it('differs for different dates', () => {
+    expect(hashDate('2026-05-18')).not.toBe(hashDate('2026-05-19'));
+  });
+});
+
+// ──────────────────────────────────────────────
+// getTodaysEntry
+// ──────────────────────────────────────────────
+describe('getTodaysEntry', () => {
+  const pool = [
+    { id: 11, answer_common: 'Beetle' },
+    { id: 22, answer_common: 'Moth' },
+    { id: 33, answer_common: 'Spider' },
+  ];
+
+  it('returns the scheduled entry when the date is in the schedule', () => {
+    expect(getTodaysEntry(pool, { '2026-05-18': 22 }, '2026-05-18')).toEqual({ id: 22, answer_common: 'Moth' });
+  });
+
+  it('falls back to hash selection when the date is not scheduled', () => {
+    const e = getTodaysEntry(pool, {}, '2026-05-18');
+    expect(pool).toContain(e);
+    expect(getTodaysEntry(pool, {}, '2026-05-18')).toBe(e); // deterministic
+  });
+
+  it('falls back to hash when the scheduled id is missing from the pool', () => {
+    const e = getTodaysEntry(pool, { '2026-05-18': 999 }, '2026-05-18');
+    expect(pool).toContain(e);
+  });
+
+  it('returns null for an empty pool', () => {
+    expect(getTodaysEntry([], { '2026-05-18': 1 }, '2026-05-18')).toBeNull();
   });
 });
