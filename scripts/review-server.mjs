@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
+import { getBugs101Name, VALID_BUGS101_NAMES, topUpSchedule } from './lib/pool.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -31,6 +32,10 @@ const CANDIDATES_FILE = join(DAILY_DIR, 'candidates.json');
 const OBS_FILE = join(DATA_DIR, 'observations.json');
 const REVIEWED_OBS_FILE = join(DATA_DIR, 'reviewed-observations.json');
 const FLAGGED_OBS_FILE = join(__dirname, 'flagged-observations.json');
+const POOL_FILE = join(DAILY_DIR, 'approved-pool.json');
+const SCHEDULE_FILE = join(DAILY_DIR, 'daily-schedule.json');
+const POOL_DIR = join(DAILY_DIR, 'pool');
+const POOL_SKIP_FILE = join(DAILY_DIR, 'pool-skipped.json');
 
 const PORT = parseInt(process.argv[2] || '3333', 10);
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -38,96 +43,6 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Crop fractions — must match generate-daily.mjs
 const BUGS101_FRACS = [0.12, 0.35, 0.65];
 const ALLBUGS_FRACS = [0.08, 0.15, 0.25, 0.38, 0.55, 0.75];
-
-// ---------------------------------------------------------------------------
-// Bugs 101 display name logic (copied from generate-daily.mjs)
-// ---------------------------------------------------------------------------
-const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
-const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
-const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
-const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae'];
-const TERMITE_FAMILIES = ['Termitidae', 'Rhinotermitidae', 'Kalotermitidae', 'Hodotermitidae', 'Mastotermitidae', 'Stylotermitidae', 'Archotermopsidae', 'Serritermitidae'];
-const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
-const CICADA_FAMILIES = ['Cicadidae'];
-const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
-const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
-const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
-const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
-
-function getBugs101Name(taxon) {
-  if (taxon.order === 'Hymenoptera') {
-    if (BEE_FAMILIES.includes(taxon.family)) {
-      if (taxon.genus === 'Apis') return 'Honey Bee';
-      if (taxon.genus === 'Bombus') return 'Bumble Bee';
-      return 'Bee';
-    }
-    if (ANT_FAMILIES.includes(taxon.family)) return 'Ant';
-    return 'Wasp';
-  }
-  if (taxon.order === 'Lepidoptera') {
-    if (taxon.family === 'Papilionidae') return 'Swallowtail';
-    if (BUTTERFLY_FAMILIES.includes(taxon.family)) return 'Butterfly';
-    if (taxon.family === 'Sphingidae') return 'Hawk Moth';
-    if (taxon.family === 'Saturniidae') return 'Silk Moth';
-    return 'Moth';
-  }
-  if (taxon.order === 'Orthoptera') {
-    if (taxon.family === 'Tettigoniidae') return 'Katydid';
-    if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
-    return 'Grasshopper';
-  }
-  if (taxon.order === 'Odonata') {
-    return DAMSELFLY_FAMILIES.includes(taxon.family) ? 'Damselfly' : 'Dragonfly';
-  }
-  if (taxon.order === 'Hemiptera') {
-    if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
-    if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
-    if (PLANTHOPPER_FAMILIES.includes(taxon.family)) return 'Planthopper';
-    if (APHID_FAMILIES.includes(taxon.family)) return 'Aphid';
-    if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';
-    return 'True Bug';
-  }
-  if (taxon.order === 'Coleoptera') {
-    if (taxon.family === 'Lucanidae') return 'Stag Beetle';
-    if (taxon.family === 'Scarabaeidae') return 'Scarab';
-    if (taxon.family === 'Cerambycidae') return 'Longhorn Beetle';
-    if (taxon.family === 'Curculionidae') return 'Weevil';
-    return 'Beetle';
-  }
-  if (taxon.order === 'Araneae') {
-    if (taxon.family === 'Salticidae') return 'Jumping Spider';
-    if (taxon.family === 'Theraphosidae') return 'Tarantula';
-    if (taxon.family === 'Araneidae' || taxon.family === 'Nephilidae') return 'Orb Weaver';
-    return 'Spider';
-  }
-  if (taxon.order === 'Diptera') {
-    if (taxon.family === 'Syrphidae') return 'Hover Fly';
-    if (taxon.family === 'Tipulidae' || taxon.family === 'Limoniidae') return 'Crane Fly';
-    return 'Fly';
-  }
-  if (taxon.order === 'Blattodea') {
-    return TERMITE_FAMILIES.includes(taxon.family) ? 'Termite' : 'Cockroach';
-  }
-  const names = {
-    'Ixodida': 'Tick', 'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman',
-    'Mantodea': 'Mantis', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
-    'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
-    'Trichoptera': 'Caddisfly', 'Scolopendromorpha': 'Centipede',
-    'Isopoda': 'Woodlouse', 'Julida': 'Millipede',
-  };
-  return names[taxon.order] || taxon.order_common || taxon.order;
-}
-
-const VALID_BUGS101_NAMES = new Set([
-  'Ant', 'Aphid', 'Bee', 'Beetle', 'Bumble Bee', 'Butterfly', 'Caddisfly',
-  'Centipede', 'Cicada', 'Cockroach', 'Crane Fly', 'Cricket', 'Damselfly',
-  'Dragonfly', 'Earwig', 'Fly', 'Grasshopper', 'Harvestman', 'Hawk Moth',
-  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Katydid', 'Lacewing',
-  'Longhorn Beetle', 'Mantis', 'Mayfly', 'Millipede', 'Moth', 'Orb Weaver',
-  'Planthopper', 'Scarab', 'Scorpion', 'Silk Moth', 'Spider', 'Stag Beetle',
-  'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Termite', 'Tick', 'True Bug',
-  'Wasp', 'Water Bug', 'Weevil', 'Woodlouse',
-]);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -211,6 +126,31 @@ async function generateReveal(imageBuffer, outputPath) {
     .resize(1600, 1200, { fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 90 })
     .toFile(outputPath);
+}
+
+function loadPool() {
+  return existsSync(POOL_FILE) ? JSON.parse(readFileSync(POOL_FILE, 'utf-8')) : [];
+}
+function loadSkips() {
+  return existsSync(POOL_SKIP_FILE) ? JSON.parse(readFileSync(POOL_SKIP_FILE, 'utf-8')) : [];
+}
+function todayET() {
+  const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  return `${et.getFullYear()}-${String(et.getMonth() + 1).padStart(2, '0')}-${String(et.getDate()).padStart(2, '0')}`;
+}
+
+/** Next unused, valid-name candidate not already in the pool or skipped. */
+function nextPoolCandidate() {
+  const pool = loadPool();
+  const skipped = new Set(loadSkips());
+  const inPool = new Set(pool.map(p => p.id));
+  const cands = JSON.parse(readFileSync(CANDIDATES_FILE, 'utf-8'));
+  for (const o of cands) {
+    if (inPool.has(o.id) || skipped.has(o.id) || !o.taxon) continue;
+    const name = getBugs101Name(o.taxon);
+    if (VALID_BUGS101_NAMES.has(name)) return { obs: o, name };
+  }
+  return null;
 }
 
 async function recropEntry(challenge, modeKey) {
@@ -602,6 +542,66 @@ load();
 </html>`;
 }
 
+function getPoolHTML() {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Pool Builder</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background:#1a1917; color:#e0ddd8; padding:24px; }
+  .answer { font-size:18px; margin:12px 0; } .answer strong { color:#d4794e; }
+  .picker { position:relative; display:inline-block; cursor:crosshair; }
+  .picker img { max-height:360px; border-radius:8px; border:2px solid #2e2c28; display:block; }
+  .ch { position:absolute; width:22px; height:22px; border-radius:50%; border:2px solid #4aff44;
+        background:rgba(68,255,68,.25); transform:translate(-50%,-50%); pointer-events:none; }
+  .crops { display:flex; gap:6px; margin:10px 0; } .crops img { height:110px; border-radius:6px; }
+  button { padding:10px 22px; border:none; border-radius:8px; font-weight:600; cursor:pointer; margin-right:8px; }
+  .approve { background:#059669; color:#fff; } .skip { background:#7c5a1e; color:#fde047; }
+  .topup { background:#2563eb; color:#fff; } .recrop { background:#444; color:#fff; }
+  #status { color:#9a9590; margin:12px 0; }
+</style></head><body>
+<h1>Pool Builder</h1>
+<div id="status">Loading…</div>
+<div id="card"></div>
+<button class="topup" onclick="topup()">Top up schedule (today+90)</button>
+<script>
+let cur=null, cx=0.5, cy=0.5;
+async function next(){
+  document.getElementById('status').textContent='Loading next candidate…';
+  const r=await fetch('/api/pool/next'); const d=await r.json();
+  if(d.done){ document.getElementById('card').innerHTML='<p>No more candidates.</p>'; document.getElementById('status').textContent=''; return; }
+  cur=d; cx=d.center_x; cy=d.center_y; renderCard();
+}
+function bust(u){ return u+'?t='+Date.now(); }
+function renderCard(){
+  document.getElementById('status').textContent='Candidate #'+cur.id;
+  document.getElementById('card').innerHTML=
+    '<div class="answer">Answer: <strong>'+cur.name+'</strong> ('+cur.order+')</div>'+
+    '<div class="crops">'+[1,2,3].map(i=>'<img src="'+bust('/pool-preview/'+cur.id+'/'+i+'.jpg')+'">').join('')+'</div>'+
+    '<div class="picker" id="pk"><img src="'+bust('/pool-preview/'+cur.id+'/full.jpg')+'">'+
+    '<div class="ch" style="left:'+(cx*100)+'%;top:'+(cy*100)+'%"></div></div>'+
+    '<p><button class="recrop" onclick="recrop()">Re-crop at center</button>'+
+    '<button class="approve" onclick="approve()">Approve → pool</button>'+
+    '<button class="skip" onclick="skip()">Skip</button></p>';
+  document.getElementById('pk').onclick=(e)=>{
+    const img=e.currentTarget.querySelector('img'); const b=img.getBoundingClientRect();
+    cx=Math.round((e.clientX-b.left)/b.width*1000)/1000;
+    cy=Math.round((e.clientY-b.top)/b.height*1000)/1000;
+    e.currentTarget.querySelector('.ch').style.left=(cx*100)+'%';
+    e.currentTarget.querySelector('.ch').style.top=(cy*100)+'%';
+  };
+}
+async function post(u,b){ return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}); }
+async function recrop(){ document.getElementById('status').textContent='Re-cropping…';
+  await post('/api/pool/recrop',{id:cur.id,cx,cy}); renderCard(); }
+async function approve(){ document.getElementById('status').textContent='Approving…';
+  const r=await post('/api/pool/approve',{id:cur.id,cx,cy}); const d=await r.json();
+  if(!r.ok){ alert('Error: '+JSON.stringify(d)); return; } next(); }
+async function skip(){ await post('/api/pool/skip',{id:cur.id}); next(); }
+async function topup(){ const r=await post('/api/pool/topup',{}); const d=await r.json();
+  document.getElementById('status').textContent='Schedule now covers '+d.days+' days.'; }
+next();
+</script></body></html>`;
+}
+
 // ---------------------------------------------------------------------------
 // HTTP Server
 // ---------------------------------------------------------------------------
@@ -714,6 +714,114 @@ const server = createServer(async (req, res) => {
       res.end(err.message);
     }
     return;
+  }
+
+  // --- Pool builder UI ---
+  if (url.pathname === '/pool') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(getPoolHTML());
+    return;
+  }
+
+  // --- API: GET next pool candidate ---
+  if (url.pathname === '/api/pool/next' && req.method === 'GET') {
+    const next = nextPoolCandidate();
+    if (!next) { res.writeHead(200); res.end(JSON.stringify({ done: true })); return; }
+    const dir = join(POOL_DIR, '_preview', String(next.obs.id));
+    mkdirSync(dir, { recursive: true });
+    try {
+      const buf = await downloadImage(next.obs.photo_url);
+      for (let i = 0; i < BUGS101_FRACS.length; i++) {
+        await generateCrop(buf, BUGS101_FRACS[i], join(dir, `${i + 1}.jpg`), 0.5, 0.5);
+      }
+      await generateReveal(buf, join(dir, 'full.jpg'));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        id: next.obs.id, name: next.name, order: next.obs.taxon.order,
+        attribution: next.obs.attribution, inat_url: next.obs.inat_url,
+        wikipedia_summary: next.obs.wikipedia_summary || '',
+        center_x: 0.5, center_y: 0.5,
+      }));
+    } catch (err) { res.writeHead(500); res.end(err.message); }
+    return;
+  }
+
+  // --- API: POST recrop a preview at a new center ---
+  if (url.pathname === '/api/pool/recrop' && req.method === 'POST') {
+    let body = ''; for await (const c of req) body += c;
+    const { id, cx, cy } = JSON.parse(body);
+    const obs = JSON.parse(readFileSync(CANDIDATES_FILE, 'utf-8')).find(o => o.id === id);
+    if (!obs) { res.writeHead(404); res.end('not found'); return; }
+    const dir = join(POOL_DIR, '_preview', String(id));
+    try {
+      const buf = await downloadImage(obs.photo_url);
+      for (let i = 0; i < BUGS101_FRACS.length; i++) {
+        await generateCrop(buf, BUGS101_FRACS[i], join(dir, `${i + 1}.jpg`), cx, cy);
+      }
+      res.writeHead(200); res.end(JSON.stringify({ ok: true }));
+    } catch (err) { res.writeHead(500); res.end(err.message); }
+    return;
+  }
+
+  // --- API: POST approve → append to pool ---
+  if (url.pathname === '/api/pool/approve' && req.method === 'POST') {
+    let body = ''; for await (const c of req) body += c;
+    const { id, cx, cy } = JSON.parse(body);
+    const obs = JSON.parse(readFileSync(CANDIDATES_FILE, 'utf-8')).find(o => o.id === id);
+    if (!obs) { res.writeHead(404); res.end('not found'); return; }
+    const dir = join(POOL_DIR, String(id));
+    mkdirSync(dir, { recursive: true });
+    try {
+      const buf = await downloadImage(obs.photo_url);
+      const cropPaths = [];
+      for (let i = 0; i < BUGS101_FRACS.length; i++) {
+        await generateCrop(buf, BUGS101_FRACS[i], join(dir, `${i + 1}.jpg`), cx, cy);
+        cropPaths.push(`daily/pool/${id}/${i + 1}.jpg`);
+      }
+      await generateReveal(buf, join(dir, 'full.jpg'));
+      const pool = loadPool();
+      pool.push({
+        id, answer_common: getBugs101Name(obs.taxon), answer_order: obs.taxon.order,
+        crops: cropPaths, reveal: `daily/pool/${id}/full.jpg`,
+        attribution: obs.attribution || '', wikipedia_summary: obs.wikipedia_summary || '',
+        inat_url: obs.inat_url || '', center_x: cx, center_y: cy, added: todayET(),
+      });
+      writeFileSync(POOL_FILE, JSON.stringify(pool, null, 2));
+      res.writeHead(200); res.end(JSON.stringify({ ok: true, poolSize: pool.length }));
+    } catch (err) { res.writeHead(500); res.end(err.message); }
+    return;
+  }
+
+  // --- API: POST skip a candidate ---
+  if (url.pathname === '/api/pool/skip' && req.method === 'POST') {
+    let body = ''; for await (const c of req) body += c;
+    const { id } = JSON.parse(body);
+    const skips = loadSkips();
+    if (!skips.includes(id)) skips.push(id);
+    writeFileSync(POOL_SKIP_FILE, JSON.stringify(skips, null, 2));
+    res.writeHead(200); res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // --- API: POST top up the schedule to today+90 ---
+  if (url.pathname === '/api/pool/topup' && req.method === 'POST') {
+    const pool = loadPool();
+    const schedule = existsSync(SCHEDULE_FILE) ? JSON.parse(readFileSync(SCHEDULE_FILE, 'utf-8')) : {};
+    const next = topUpSchedule(pool, schedule, todayET(), 90);
+    writeFileSync(SCHEDULE_FILE, JSON.stringify(next, null, 2));
+    res.writeHead(200); res.end(JSON.stringify({ ok: true, days: Object.keys(next).length }));
+    return;
+  }
+
+  // --- Serve preview images ---
+  if (url.pathname.startsWith('/pool-preview/')) {
+    const fp = join(POOL_DIR, '_preview', url.pathname.replace('/pool-preview/', ''));
+    if (existsSync(fp)) {
+      res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-cache' });
+      res.end(readFileSync(fp));
+      return;
+    }
+    res.writeHead(404); res.end('not found'); return;
   }
 
   // --- General Pool Review UI ---
@@ -924,7 +1032,8 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`\n\u{1FAB2} Daily Challenge Review Server\n`);
   console.log(`   http://localhost:${PORT}          — Daily challenge review`);
-  console.log(`   http://localhost:${PORT}/general   — General pool review\n`);
+  console.log(`   http://localhost:${PORT}/general   — General pool review`);
+  console.log(`   http://localhost:${PORT}/pool      — Pool builder (Bugs 101)\n`);
   console.log(`   Click the reveal image to set crop center.`);
   console.log(`   Hit "Re-crop" to regenerate crops from the server.`);
   console.log(`   Approve each mode individually. "Replace" picks a new candidate.`);

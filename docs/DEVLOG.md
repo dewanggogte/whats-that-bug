@@ -4,6 +4,26 @@ Interesting problems, non-obvious decisions, and lessons learned during developm
 
 ---
 
+## 2026-05-19: Daily challenge — designing the failure class out instead of fixing the job
+
+### The problem
+
+The daily challenge had shown "No challenge today" for ~19 days. The surface bug was "the content pipeline wasn't re-run," but that's a symptom: the architecture *had* a job — a manual/cron `generate-daily.mjs` step that produced N future days of one-shot, date-keyed manifest entries. Any job-shaped thing has a "didn't run / ran and failed silently" failure mode, and a 7-day buffer just delays the blank, it doesn't remove it.
+
+### Why it happened
+
+Root cause was structural, not operational. One-shot per-date content + a generation step you must remember to run = an outage is only ever one missed run away. Adding monitoring/cron would have been treating the symptom.
+
+### The fix
+
+Make day→bug a **pure deterministic function of the date over a reusable pool**, computed client-side: `schedule[today]` if present, else `pool[hashDate(today) % pool.length]`. There is no job to fail. A blank day is now impossible by construction as long as the pool is non-empty — the hash fallback holds even if the look-ahead schedule lapses for months. Crops are stored per-observation and reused, so manual review effort is decoupled from daily supply (review once, serve forever).
+
+### Key insight
+
+When a recurring outage traces to "the job didn't run," the highest-leverage fix is often to delete the job, not harden it. Also: before building data enrichment, trace the data to its render site — the spec called for backfilling `wikipedia_summary` from a curated store, but `renderReveal()` never displays that field, so the entire backfill was dead work and was cut. Verifying the consumer before building the producer saved a whole pipeline.
+
+---
+
 ## 2026-05-18: Self-describing option names + the getBugs101Name 9-file landmine
 
 **The problem:** In genus/taxonomic-scored sets (e.g. "Eye Candy"), option cards showed a bare species common name with the Latin genus as subtitle — e.g. `Quebec Emerald` / *Somatochlora*. The common name alone doesn't tell a player what kind of bug it is, and for distractors it's an arbitrary representative species of that genus.
