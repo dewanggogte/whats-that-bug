@@ -1,7 +1,7 @@
 // src/scripts/daily-ui.js
 /**
  * Daily challenge UI — DOM rendering and event handling.
- * Supports two modes: bugs101 (3 guesses) and allbugs (6 guesses).
+ * Bugs 101 only (3 guesses). Reads today's bug from the approved pool + schedule.
  *
  * Flow: initDaily() → showDailyRulesPopup() → renderGame() → submitGuess() → renderReveal()
  * On replay (already completed today): initDaily() → loadChallenge() → renderReveal()
@@ -10,7 +10,7 @@
 import {
   getTodayET, getChallengeNumber, validateGuess,
   loadDailyState, saveDailyResult, loadHistory,
-  calculateStreaks, getCountdownToReset,
+  calculateStreaks, getCountdownToReset, getTodaysEntry,
 } from './daily-engine.js';
 import { generateDailyShareText, getDailyFlavor } from './daily-share.js';
 import { copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
@@ -40,20 +40,18 @@ const BUGS101_OPTIONS = [
 
 // --- Module state ---
 let container = null;
-let mode = 'bugs101';
-let challenge = null;        // today's challenge object from manifest
+const mode = 'bugs101';
+let challenge = null;        // today's pool entry
 let today = null;            // YYYY-MM-DD
 let challengeNumber = 0;
 let currentGuess = 0;        // which crop we're showing (0-indexed)
 let guesses = [];            // array of { answer: string, correct: boolean }
-let maxGuesses = 3;
+const maxGuesses = 3;
 let solved = false;
 let gameOver = false;
 let sessionId = null;
 let shareClicked = false;
-let allSpeciesList = [];     // for allbugs autocomplete
-let selectedAnswer = '';     // currently selected autocomplete value
-let highlightedIndex = -1;   // keyboard nav index in dropdown
+let selectedAnswer = '';     // currently selected autocomplete/pill value
 
 function escapeHTML(str) {
   return String(str)
@@ -70,10 +68,6 @@ function escapeHTML(str) {
 export async function initDaily() {
   container = document.getElementById('daily-container');
   container.setAttribute('aria-live', 'polite');
-
-  const params = new URLSearchParams(window.location.search);
-  mode = params.get('mode') || 'bugs101';
-  maxGuesses = mode === 'bugs101' ? 3 : 6;
 
   today = getTodayET();
   challengeNumber = getChallengeNumber(today);
@@ -107,34 +101,6 @@ export async function initDaily() {
 
   logDailyStart(sessionId, mode, today, challengeNumber);
 
-  // Load species list for allbugs autocomplete — merge from both
-  // observations.json (main game pool) and candidates.json (curated daily pool)
-  // so the daily answer is always in the autocomplete.
-  if (mode === 'allbugs') {
-    const speciesSet = new Map();
-    try {
-      const obsRes = await fetch(`${base}/data/observations.json`);
-      const observations = await obsRes.json();
-      for (const obs of observations) {
-        if (obs.taxon?.species && !speciesSet.has(obs.taxon.species)) {
-          speciesSet.set(obs.taxon.species, obs.taxon.common_name || obs.taxon.species);
-        }
-      }
-    } catch { /* observations may not be available */ }
-    try {
-      const candRes = await fetch(`${base}/data/daily/candidates.json`);
-      const candidates = await candRes.json();
-      for (const c of candidates) {
-        if (c.taxon?.species && !speciesSet.has(c.taxon.species)) {
-          speciesSet.set(c.taxon.species, c.taxon.common_name || c.taxon.species);
-        }
-      }
-    } catch { /* candidates may not be available */ }
-    allSpeciesList = Array.from(speciesSet.entries())
-      .map(([species, common]) => ({ species, common, label: `${common} (${species})` }))
-      .sort((a, b) => a.common.localeCompare(b.common));
-  }
-
   // Show rules popup once per day, then start game
   if (hasSeenDailyRulesToday()) {
     renderGame();
@@ -164,8 +130,8 @@ function markDailyRulesSeenToday() {
 }
 
 function showDailyRulesPopup(onDismiss) {
-  const modeLabel = mode === 'bugs101' ? 'Bugs 101 Daily' : 'All Bugs Daily';
-  const guessInfo = mode === 'bugs101' ? '3 guesses \u00b7 Name the type' : '6 guesses \u00b7 Name the species';
+  const modeLabel = 'Bugs 101 Daily';
+  const guessInfo = '3 guesses \u00b7 Name the type';
 
   const items = [
     ['\ud83d\udcf7', "You're looking at a close-up of an insect"],
@@ -209,12 +175,16 @@ function showDailyRulesPopup(onDismiss) {
 
 async function loadChallenge() {
   try {
-    const res = await fetch(`${base}/data/daily/manifest.json`);
-    if (!res.ok) throw new Error('Manifest not found');
-    const manifest = await res.json();
+    const [poolRes, schedRes] = await Promise.all([
+      fetch(`${base}/data/daily/approved-pool.json`),
+      fetch(`${base}/data/daily/daily-schedule.json`),
+    ]);
+    if (!poolRes.ok) throw new Error('Pool not found');
+    const pool = await poolRes.json();
+    const schedule = schedRes.ok ? await schedRes.json() : {};
 
-    const todayChallenge = manifest.challenges.find(c => c.date === today && c.approved);
-    if (!todayChallenge) {
+    const entry = getTodaysEntry(pool, schedule, today);
+    if (!entry) {
       container.innerHTML = `<div class="container" style="text-align:center;padding-top:80px;">
         <h2>No challenge today</h2>
         <p class="subtitle">Check back tomorrow!</p>
@@ -223,7 +193,7 @@ async function loadChallenge() {
       return false;
     }
 
-    challenge = todayChallenge;
+    challenge = entry;
     return true;
   } catch (err) {
     container.innerHTML = `<div class="container" style="text-align:center;padding-top:80px;">
@@ -234,9 +204,9 @@ async function loadChallenge() {
   }
 }
 
-/** Returns the mode-specific challenge data block. */
+/** Returns today's pool entry. */
 function getChallengeData() {
-  return mode === 'bugs101' ? challenge.bugs101 : challenge.allbugs;
+  return challenge;
 }
 
 /** Returns the correct answer text for display and validation. */
@@ -253,34 +223,19 @@ function getCrops() {
 
 function renderGame() {
   const crops = getCrops();
-  const modeLabel = mode === 'bugs101' ? 'Bugs 101 Daily' : 'All Bugs Daily';
+  const modeLabel = 'Bugs 101 Daily';
 
-  // Build input area: pill grid for bugs101, text search for allbugs
-  let inputAreaHTML;
-  if (mode === 'bugs101') {
-    inputAreaHTML = `
-      <div class="daily-pill-grid" id="pill-grid">
-        ${BUGS101_OPTIONS.map(name =>
-          `<button class="daily-pill" data-value="${escapeHTML(name)}">${escapeHTML(name)}</button>`
-        ).join('')}
-      </div>
-      <div class="daily-input-row">
-        <button class="daily-submit" id="submit-btn" disabled>Go</button>
-      </div>
-    `;
-  } else {
-    inputAreaHTML = `
-      <div class="daily-input-row">
-        <div class="daily-input-wrapper">
-          <input type="text" class="daily-input" id="guess-input"
-            placeholder="Type species name..."
-            autocomplete="off" autocorrect="off" spellcheck="false">
-          <div class="daily-autocomplete" id="autocomplete"></div>
+  // Build input area: pill grid
+  const inputAreaHTML = `
+        <div class="daily-pill-grid" id="pill-grid">
+          ${BUGS101_OPTIONS.map(name =>
+            `<button class="daily-pill" data-value="${escapeHTML(name)}">${escapeHTML(name)}</button>`
+          ).join('')}
         </div>
-        <button class="daily-submit" id="submit-btn" disabled>Go</button>
-      </div>
-    `;
-  }
+        <div class="daily-input-row">
+          <button class="daily-submit" id="submit-btn" disabled>Go</button>
+        </div>
+      `;
 
   container.innerHTML = `
     <div class="container">
@@ -304,11 +259,7 @@ function renderGame() {
 
   renderHistoryStrip();
 
-  if (mode === 'bugs101') {
-    setupPillGrid();
-  } else {
-    setupAutocomplete();
-  }
+  setupPillGrid();
   setupSubmit();
 }
 
@@ -377,100 +328,6 @@ function setupPillGrid() {
   });
 }
 
-// ===== AUTOCOMPLETE (All Bugs) =====
-
-function setupAutocomplete() {
-  const input = document.getElementById('guess-input');
-  const dropdown = document.getElementById('autocomplete');
-  const submitBtn = document.getElementById('submit-btn');
-
-  // Filter and show matches as user types
-  input.addEventListener('input', () => {
-    const query = input.value.trim().toLowerCase();
-    selectedAnswer = '';
-    submitBtn.disabled = true;
-    highlightedIndex = -1;
-
-    if (query.length < 1) {
-      dropdown.classList.remove('open');
-      return;
-    }
-
-    // allbugs: search both common name and scientific name
-    const matches = allSpeciesList
-      .filter(s =>
-        s.common.toLowerCase().includes(query) ||
-        s.species.toLowerCase().includes(query)
-      )
-      .slice(0, 15)
-      .map(s => ({ label: s.common, value: s.common, scientific: s.species }));
-
-    if (matches.length === 0) {
-      dropdown.classList.remove('open');
-      return;
-    }
-
-    dropdown.innerHTML = matches.map((m, i) => {
-      const sci = m.scientific ? `<span class="scientific">${escapeHTML(m.scientific)}</span>` : '';
-      return `<div class="daily-autocomplete-item" data-value="${escapeHTML(m.value)}" data-idx="${i}">${escapeHTML(m.label)}${sci}</div>`;
-    }).join('');
-    dropdown.classList.add('open');
-
-    // Click to select an autocomplete item
-    dropdown.querySelectorAll('.daily-autocomplete-item').forEach(item => {
-      item.addEventListener('click', () => {
-        selectedAnswer = item.getAttribute('data-value');
-        input.value = selectedAnswer;
-        dropdown.classList.remove('open');
-        submitBtn.disabled = false;
-      });
-    });
-  });
-
-  // Keyboard navigation: ArrowDown/ArrowUp to move, Enter to select/submit
-  input.addEventListener('keydown', (e) => {
-    const items = dropdown.querySelectorAll('.daily-autocomplete-item');
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
-      updateHighlight(items);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      highlightedIndex = Math.max(highlightedIndex - 1, 0);
-      updateHighlight(items);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (highlightedIndex >= 0 && items[highlightedIndex]) {
-        // Select the highlighted item
-        items[highlightedIndex].click();
-      } else if (selectedAnswer) {
-        // Submit the already-selected answer
-        submitGuess();
-      }
-    }
-  });
-
-  // Close dropdown when clicking outside the input wrapper
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.daily-input-wrapper')) {
-      dropdown.classList.remove('open');
-    }
-  });
-}
-
-/** Update highlighted state across autocomplete items and sync selection. */
-function updateHighlight(items) {
-  items.forEach((item, i) => {
-    item.classList.toggle('highlighted', i === highlightedIndex);
-  });
-  if (highlightedIndex >= 0 && items[highlightedIndex]) {
-    selectedAnswer = items[highlightedIndex].getAttribute('data-value');
-    document.getElementById('guess-input').value = selectedAnswer;
-    document.getElementById('submit-btn').disabled = false;
-  }
-}
-
 // ===== GUESS SUBMISSION =====
 
 function setupSubmit() {
@@ -531,17 +388,9 @@ function submitGuess() {
       selectedAnswer = '';
       document.getElementById('submit-btn').disabled = true;
 
-      if (mode === 'bugs101') {
-        // Deselect any selected pill
-        const prev = document.querySelector('.daily-pill.selected');
-        if (prev) prev.classList.remove('selected');
-      } else {
-        const input = document.getElementById('guess-input');
-        if (input) {
-          input.value = '';
-          input.focus();
-        }
-      }
+      // Deselect any selected pill
+      const prev = document.querySelector('.daily-pill.selected');
+      if (prev) prev.classList.remove('selected');
     }
   }
 }
@@ -571,7 +420,7 @@ function renderReveal() {
   const history = loadHistory(mode);
   const streaks = calculateStreaks(history, today);
   const countdown = getCountdownToReset();
-  const modeLabel = mode === 'bugs101' ? 'Bugs 101 Daily' : 'All Bugs Daily';
+  const modeLabel = 'Bugs 101 Daily';
 
   // Pull saved state — handles both fresh finish and page-reload replay
   const existingResult = loadDailyState(mode, today);
@@ -589,7 +438,7 @@ function renderReveal() {
 
   // Display name and scientific/order name depend on mode
   const speciesName = data.answer_common;
-  const scientificName = mode === 'bugs101' ? data.answer_order : data.answer_species;
+  const scientificName = data.answer_order;
 
   // Flavor text for share section
   const flavorText = getDailyFlavor(guessCount, wasSolved);
