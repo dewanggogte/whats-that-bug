@@ -64,7 +64,8 @@ const DESIRED_ORDERS = [
 const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
 const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];
 const BUTTERFLY_FAMILIES = ['Nymphalidae', 'Papilionidae', 'Pieridae', 'Lycaenidae', 'Riodinidae', 'Hesperiidae'];
-const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae', 'Tettigoniidae'];
+const CRICKET_FAMILIES = ['Gryllidae', 'Rhaphidophoridae', 'Anostostomatidae'];
+const TERMITE_FAMILIES = ['Termitidae', 'Rhinotermitidae', 'Kalotermitidae', 'Hodotermitidae', 'Mastotermitidae', 'Stylotermitidae', 'Archotermopsidae', 'Serritermitidae'];
 const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
 const CICADA_FAMILIES = ['Cicadidae'];
 const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
@@ -89,6 +90,7 @@ function getBugs101Name(taxon) {
     return 'Moth';
   }
   if (taxon.order === 'Orthoptera') {
+    if (taxon.family === 'Tettigoniidae') return 'Katydid';
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
     return 'Grasshopper';
   }
@@ -104,7 +106,6 @@ function getBugs101Name(taxon) {
     return 'True Bug';
   }
   if (taxon.order === 'Coleoptera') {
-    if (taxon.family === 'Coccinellidae') return 'Ladybug';
     if (taxon.family === 'Lucanidae') return 'Stag Beetle';
     if (taxon.family === 'Scarabaeidae') return 'Scarab';
     if (taxon.family === 'Cerambycidae') return 'Longhorn Beetle';
@@ -122,10 +123,13 @@ function getBugs101Name(taxon) {
     if (taxon.family === 'Tipulidae' || taxon.family === 'Limoniidae') return 'Crane Fly';
     return 'Fly';
   }
+  if (taxon.order === 'Blattodea') {
+    return TERMITE_FAMILIES.includes(taxon.family) ? 'Termite' : 'Cockroach';
+  }
   const names = {
     'Ixodida': 'Tick', 'Scorpiones': 'Scorpion', 'Opiliones': 'Harvestman',
     'Mantodea': 'Mantis', 'Phasmida': 'Stick Insect', 'Neuroptera': 'Lacewing',
-    'Blattodea': 'Cockroach', 'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
+    'Dermaptera': 'Earwig', 'Ephemeroptera': 'Mayfly',
     'Trichoptera': 'Caddisfly', 'Scolopendromorpha': 'Centipede',
     'Isopoda': 'Woodlouse', 'Julida': 'Millipede',
   };

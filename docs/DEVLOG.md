@@ -4,6 +4,18 @@ Interesting problems, non-obvious decisions, and lessons learned during developm
 
 ---
 
+## 2026-05-18: Self-describing option names + the getBugs101Name 9-file landmine
+
+**The problem:** In genus/taxonomic-scored sets (e.g. "Eye Candy"), option cards showed a bare species common name with the Latin genus as subtitle — e.g. `Quebec Emerald` / *Somatochlora*. The common name alone doesn't tell a player what kind of bug it is, and for distractors it's an arbitrary representative species of that genus.
+
+**The fix:** A display-layer `withGroupNoun()` in `game-ui.js` appends the lay group noun from the existing `getBugs101Name()` (`Quebec Emerald` → `Quebec Emerald Dragonfly`), skipping when the name already contains that word (`Wheel Bug`, `Lady Beetle`).
+
+**Why it got bigger:** Sweeping all 4,032 observations showed ~67 double-noun / wrong-noun artifacts (`Asian Lady Beetle Ladybug`, `Woodland Meadow Katydid Cricket`, `… Termite Cockroach`). Root cause: `getBugs101Name` returned a vernacular that didn't match iNaturalist's common name. Fixed by `Coccinellidae→Beetle`, splitting `Tettigoniidae→Katydid` out of the cricket families, and adding a `TERMITE_FAMILIES→Termite` branch in Blattodea.
+
+**Key insight (the landmine):** `getBugs101Name` is **copy-pasted across 6 files**, of which 4 produce the answer label (`game-engine.js`, `review-server.mjs`, `generate-daily.mjs`, `fetch-daily-candidates.mjs`) and 2 are a deliberately coarser `getBugs101Category` for set bucketing (`fetch-data.mjs`, `rebuild-sets.mjs`). It's also coupled to 3 hardcoded allow-lists (`daily-ui.js` autocomplete, `review-server.mjs` ×2, `generate-daily.mjs`). Any category change has a **9-file blast radius**, and the two function variants are intentionally *not* equivalent. The coarse variant only affects `bugs_101` set membership, not the displayed answer, so it was deliberately left untouched. Changing only the client copy would silently desync daily-challenge categorization from the runtime.
+
+---
+
 ## 2026-04-17: Full UI Revamp + Profile Page
 
 ### The UI Revamp (20 commits)

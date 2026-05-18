@@ -55,6 +55,15 @@ function tweenCounter(el, target, duration = 500, suffix = '') {
 
 // getBugs101Name is imported from game-engine.js
 
+// Append the lay group noun (Dragonfly, Moth, Beetle...) to a species common
+// name so genus/taxonomic-scored options are self-describing. Skip when the
+// common name already contains that exact word (e.g. "Lady Beetle", "Wheel Bug").
+function withGroupNoun(taxon) {
+  const noun = getBugs101Name(taxon).split(' ').pop();
+  const re = new RegExp(`\\b${noun}\\b`, 'i');
+  return re.test(taxon.common_name) ? taxon.common_name : `${taxon.common_name} ${noun}`;
+}
+
 const base = window.__BASE || '';
 
 
@@ -435,7 +444,7 @@ function renderRound() {
       <div class="choices stagger-in" id="choices">
         ${choices.map((choice, i) => {
           const scoring = session.setDef.scoring;
-          const displayName = scoring === 'binary' ? getBugs101Name(choice.taxon) : choice.taxon.common_name;
+          const displayName = scoring === 'binary' ? getBugs101Name(choice.taxon) : withGroupNoun(choice.taxon);
           const displayLatin = scoring === 'binary' ? choice.taxon.order : choice.taxon.genus;
           return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">

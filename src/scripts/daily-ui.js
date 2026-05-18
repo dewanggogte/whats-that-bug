@@ -31,10 +31,10 @@ const BUGS101_OPTIONS = [
   'Ant', 'Aphid', 'Bee', 'Beetle', 'Bumble Bee', 'Butterfly', 'Caddisfly',
   'Centipede', 'Cicada', 'Cockroach', 'Crane Fly', 'Cricket', 'Damselfly',
   'Dragonfly', 'Earwig', 'Fly', 'Grasshopper', 'Harvestman', 'Hawk Moth',
-  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Lacewing', 'Ladybug',
+  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Katydid', 'Lacewing',
   'Longhorn Beetle', 'Mantis', 'Mayfly', 'Millipede', 'Mosquito', 'Moth', 'Orb Weaver',
   'Planthopper', 'Scarab', 'Scorpion', 'Silk Moth', 'Spider', 'Stag Beetle',
-  'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Tick', 'True Bug',
+  'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Termite', 'Tick', 'True Bug',
   'Wasp', 'Water Bug', 'Weevil', 'Woodlouse',
 ];
 
