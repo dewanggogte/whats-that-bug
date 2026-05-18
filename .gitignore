@@ -22,3 +22,4 @@ scripts/flagged-observations.json
 scripts/review-candidates.json
 scripts/backfill-leaderboard.mjs
 data/
+public/data/daily/pool/_preview/
