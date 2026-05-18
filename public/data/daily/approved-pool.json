@@ -1,22 +1,5 @@
 [
   {
-    "id": 79066650,
-    "answer_common": "Tick",
-    "answer_order": "Ixodida",
-    "crops": [
-      "daily/pool/79066650/1.jpg",
-      "daily/pool/79066650/2.jpg",
-      "daily/pool/79066650/3.jpg"
-    ],
-    "reveal": "daily/pool/79066650/full.jpg",
-    "attribution": "(c) ponpon42, some rights reserved (CC BY)",
-    "wikipedia_summary": "Carios vespertilionis, also known as the short-legged bat tick, is an argasid tick parasite of bats. It is a widely-distributed species, found widely ",
-    "inat_url": "https://www.inaturalist.org/observations/79066650",
-    "center_x": 0.246,
-    "center_y": 0.527,
-    "added": "2026-05-17"
-  },
-  {
     "id": 34519923,
     "answer_common": "Spider",
     "answer_order": "Araneae",
@@ -544,23 +527,6 @@
     "added": "2026-05-17"
   },
   {
-    "id": 320312390,
-    "answer_common": "Centipede",
-    "answer_order": "Scolopendromorpha",
-    "crops": [
-      "daily/pool/320312390/1.jpg",
-      "daily/pool/320312390/2.jpg",
-      "daily/pool/320312390/3.jpg"
-    ],
-    "reveal": "daily/pool/320312390/full.jpg",
-    "attribution": "(c) Dan Vickers, some rights reserved (CC BY)",
-    "wikipedia_summary": "",
-    "inat_url": "https://www.inaturalist.org/observations/320312390",
-    "center_x": 0.5,
-    "center_y": 0.5,
-    "added": "2026-05-17"
-  },
-  {
     "id": 20169754,
     "answer_common": "Grasshopper",
     "answer_order": "Orthoptera",
@@ -643,23 +609,6 @@
     "inat_url": "https://www.inaturalist.org/observations/38476485",
     "center_x": 0.312,
     "center_y": 0.593,
-    "added": "2026-05-17"
-  },
-  {
-    "id": 65827847,
-    "answer_common": "Aphid",
-    "answer_order": "Hemiptera",
-    "crops": [
-      "daily/pool/65827847/1.jpg",
-      "daily/pool/65827847/2.jpg",
-      "daily/pool/65827847/3.jpg"
-    ],
-    "reveal": "daily/pool/65827847/full.jpg",
-    "attribution": "(c) Paul Cook, some rights reserved (CC BY)",
-    "wikipedia_summary": "",
-    "inat_url": "https://www.inaturalist.org/observations/65827847",
-    "center_x": 0.721,
-    "center_y": 0.507,
     "added": "2026-05-17"
   },
   {
