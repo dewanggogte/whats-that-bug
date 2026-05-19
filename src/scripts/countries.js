@@ -1,5 +1,5 @@
 /**
- * Country list with flag emojis for the leaderboard country selector.
+ * Country list with flag emojis for the profile country selector.
  */
 
 export const COUNTRIES = [

@@ -6,8 +6,6 @@
 import { SessionState, calculateTimedScore, getBugs101Name } from './game-engine.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
-import { isLeaderboardEligible, fetchLeaderboards, checkTop10, checkPersonalBest } from './leaderboard.js';
-import { showLoadingSpinner, showCelebrationPopup, showPersonalBestPopup } from './leaderboard-ui.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { loadPercentiles, renderPercentileCard } from './percentiles.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
@@ -83,7 +81,6 @@ let timeRemaining = 60;
 const PRELOAD_AHEAD = 3;
 let roundCache = [];
 let displayRound = 0;
-let prefetchedLeaderboards = null;
 // Preload percentile data so it's ready at game-over
 loadPercentiles();
 
@@ -175,17 +172,7 @@ export async function initGame() {
   // Pre-generate first few rounds and start loading their images
   roundCache = [];
   displayRound = 0;
-  prefetchedLeaderboards = null;
   preloadRounds();
-
-  // Prefetch leaderboard data at session start so the end-of-game check
-  // doesn't depend on a cold Google Apps Script response within 3 seconds.
-  // This is critical for streak mode where games often end before round 8.
-  if (isLeaderboardEligible(currentSetKey)) {
-    fetchLeaderboards()
-      .then(data => { prefetchedLeaderboards = data; })
-      .catch(() => {});
-  }
 
   // Show rules popup once per day, then start game
   const startGame = () => {
@@ -735,81 +722,6 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
   container.querySelector('#next-btn').addEventListener('click', startRound);
 }
 
-// ===== LEADERBOARD CHECK =====
-
-async function handleLeaderboardCheck(score, streak, renderResultsFn) {
-  const isStreak = currentSetKey.includes('streak');
-  const value = isStreak ? streak : score;
-
-  if (!isLeaderboardEligible(currentSetKey) || value <= 0) {
-    renderResultsFn();
-    return;
-  }
-
-  const dismissSpinner = showLoadingSpinner('Checking leaderboard...');
-
-  // Show a reassuring "Almost there..." message if still waiting at 2 seconds.
-  const almostThereTimer = setTimeout(() => {
-    const msgEl = document.querySelector('.lb-loading-card p');
-    if (msgEl) msgEl.textContent = 'Almost there...';
-  }, 2000);
-
-  // Build the fetch promise — use prefetched data if available, otherwise fetch fresh.
-  const fetchPromise = prefetchedLeaderboards
-    ? Promise.resolve(prefetchedLeaderboards)
-    : fetchLeaderboards();
-
-  // Race the fetch against a 3-second hard timeout.
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Leaderboard check timed out')), 3000)
-  );
-
-  try {
-    const allBoards = await Promise.race([fetchPromise, timeoutPromise]);
-    clearTimeout(almostThereTimer);
-    // Clear prefetch cache so the next session fetches fresh data.
-    prefetchedLeaderboards = null;
-
-    const board = allBoards?.[currentSetKey] || [];
-
-    dismissSpinner();
-
-    const { qualifies, rank } = checkTop10(board, value, isStreak);
-    const { isPersonalBest, previousBest } = checkPersonalBest(currentSetKey, value, isStreak);
-
-    if (qualifies) {
-      await showCelebrationPopup({
-        rank,
-        score,
-        streak,
-        setKey: currentSetKey,
-        sessionId: session.sessionId,
-        board,
-        questionsAnswered: session.questionsAnswered,
-        correctCount: session.correctCount,
-      });
-      renderResultsFn();
-    } else if (isPersonalBest) {
-      await showPersonalBestPopup({
-        score,
-        streak,
-        previousBest,
-        setKey: currentSetKey,
-        board,
-      });
-      renderResultsFn();
-    } else {
-      renderResultsFn();
-    }
-  } catch (err) {
-    clearTimeout(almostThereTimer);
-    prefetchedLeaderboards = null;
-    console.warn('Leaderboard check failed:', err);
-    dismissSpinner();
-    renderResultsFn();
-  }
-}
-
 // ===== ACHIEVEMENT TOAST =====
 
 function showAchievementToast(achievement) {
@@ -1068,6 +980,9 @@ function renderTimeTrialSummary() {
   const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = session.totalScore > prevBest;
+  if (isNewBest) {
+    localStorage.setItem(storageKey, session.totalScore.toString());
+  }
 
   const emojiGrid = session.history.map((h, i) => {
     const emoji = h.score > 0 ? '🟩' : '🟥';
@@ -1102,10 +1017,9 @@ function renderTimeTrialSummary() {
     ? `<div class="new-best-badge">New Personal Best!</div>`
     : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} pts</p>` : '';
 
-  handleLeaderboardCheck(session.totalScore, 0, () => {
-    const isStreak = false;
-    const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, isStreak);
-    container.innerHTML = `
+  const isStreak = false;
+  const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, isStreak);
+  container.innerHTML = `
     <div class="container">
       <div class="summary">
         <div class="summary-set-label">Time Trial</div>
@@ -1154,21 +1068,20 @@ function renderTimeTrialSummary() {
       ${renderSessionFeedbackForm()}
     </div>
   `;
-    attachShareHandlers(shareText);
-    attachPlayAgainHandlers();
-    attachSessionFeedbackHandlers();
+  attachShareHandlers(shareText);
+  attachPlayAgainHandlers();
+  attachSessionFeedbackHandlers();
 
-    // Tween the score counter
-    tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, ' pts');
+  // Tween the score counter
+  tweenCounter(container.querySelector('.summary-score'), session.totalScore, 600, ' pts');
 
-    // Check session-end achievements
-    if (achievementsModule) {
-      const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
-      newAchievements.forEach((ach, i) => {
-        setTimeout(() => showAchievementToast(ach), i * 1500);
-      });
-    }
-  });
+  // Check session-end achievements
+  if (achievementsModule) {
+    const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
+    newAchievements.forEach((ach, i) => {
+      setTimeout(() => showAchievementToast(ach), i * 1500);
+    });
+  }
 }
 
 function renderStreakGameOver(picked, correct) {
@@ -1178,6 +1091,9 @@ function renderStreakGameOver(picked, correct) {
   const storageKey = `best_${currentSetKey}`;
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = streakCount > prevBest;
+  if (isNewBest) {
+    localStorage.setItem(storageKey, streakCount.toString());
+  }
 
   // Only green emojis
   const emojiGrid = Array(streakCount).fill(null).map((_, i) =>
@@ -1224,10 +1140,9 @@ function renderStreakGameOver(picked, correct) {
 
   const totalRounds = streakCount + 1;
 
-  handleLeaderboardCheck(0, streakCount, () => {
-    const isStreak = true;
-    const percentileHTML = renderPercentileCard(streakCount, currentSetKey, isStreak);
-    container.innerHTML = `
+  const isStreak = true;
+  const percentileHTML = renderPercentileCard(streakCount, currentSetKey, isStreak);
+  container.innerHTML = `
     <div class="container">
       <div class="summary">
         <div class="summary-set-label">Streaks</div>
@@ -1279,21 +1194,20 @@ function renderStreakGameOver(picked, correct) {
       ${renderSessionFeedbackForm()}
     </div>
   `;
-    attachShareHandlers(shareText);
-    attachPlayAgainHandlers();
-    attachSessionFeedbackHandlers();
+  attachShareHandlers(shareText);
+  attachPlayAgainHandlers();
+  attachSessionFeedbackHandlers();
 
-    // Tween the streak counter
-    tweenCounter(container.querySelector('.summary-score'), streakCount, 400, '');
+  // Tween the streak counter
+  tweenCounter(container.querySelector('.summary-score'), streakCount, 400, '');
 
-    // Check session-end achievements
-    if (achievementsModule) {
-      const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
-      newAchievements.forEach((ach, i) => {
-        setTimeout(() => showAchievementToast(ach), i * 1500);
-      });
-    }
-  });
+  // Check session-end achievements
+  if (achievementsModule) {
+    const newAchievements = achievementsModule.checkSessionAchievements(session, currentSetKey);
+    newAchievements.forEach((ach, i) => {
+      setTimeout(() => showAchievementToast(ach), i * 1500);
+    });
+  }
 }
 
 function renderStreakSummary() {

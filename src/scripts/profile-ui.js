@@ -83,11 +83,11 @@ export function initProfilePage() {
       <div class="profile-fields" id="profile-fields">
         <div class="profile-field">
           <label for="profile-name">Name</label>
-          <input type="text" id="profile-name" class="lb-input" placeholder="Anonymous Bug Hunter" maxlength="30" value="${escapeHTML(profile.name || '')}">
+          <input type="text" id="profile-name" class="profile-input" placeholder="Anonymous Bug Hunter" maxlength="30" value="${escapeHTML(profile.name || '')}">
         </div>
         <div class="profile-field">
           <label for="profile-country">Country</label>
-          <select id="profile-country" class="lb-select">
+          <select id="profile-country" class="profile-select">
             ${renderCountryOptions(profile.country || '')}
           </select>
         </div>
