@@ -5,7 +5,7 @@
 
 import { SessionState, calculateTimedScore, getBugs101Name } from './game-engine.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
-import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto } from './feedback.js';
+import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto, logRoundDisplayed } from './feedback.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { loadPercentiles, renderPercentileCard } from './percentiles.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
@@ -442,6 +442,32 @@ function renderRound() {
       </div>
     </div>
   `;
+
+  // Track when the round's photo finishes loading (or errors). Lets us tell
+  // "saw the photo, didn't tap" from "image never loaded" in the funnel.
+  const photoImg = container.querySelector('.photo-hero img');
+  if (photoImg) {
+    const imgStart = performance.now();
+    let imgFired = false;
+    const fire = (error) => {
+      if (imgFired) return;
+      imgFired = true;
+      const entry = performance.getEntriesByName(photoImg.currentSrc || photoImg.src).pop();
+      const imageDurMs = entry ? Math.round(entry.responseEnd - entry.requestStart) : null;
+      logRoundDisplayed(
+        session.sessionId, displayRound, correct.id,
+        Math.round(performance.now() - imgStart), error,
+        currentSetKey, session.mode,
+        { image_dur_ms: imageDurMs },
+      );
+    };
+    if (photoImg.complete && photoImg.naturalWidth > 0) {
+      fire(false);
+    } else {
+      photoImg.addEventListener('load', () => fire(false), { once: true });
+      photoImg.addEventListener('error', () => fire(true), { once: true });
+    }
+  }
 
   // Attach click handlers
   const choiceEls = container.querySelectorAll('.choice');

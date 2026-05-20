@@ -12,7 +12,10 @@ import Base from '../layouts/Base.astro';
     </div>
   </div>
   <script>
+    import { logPlayLanding } from '../scripts/feedback.js';
     import { initGame } from '../scripts/game-ui.js';
+    const setParam = new URLSearchParams(window.location.search).get('set');
+    logPlayLanding(setParam);
     initGame();
   </script>
 </Base>

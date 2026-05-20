@@ -104,6 +104,42 @@ export function flush() {
     });
 }
 
+// --- Client context (P0 fields shipped on session_start) ---
+// Synchronous, null-safe, no consent burden. ~120 bytes.
+function collectClientContext() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return {};
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const scr = typeof window.screen !== 'undefined' ? window.screen : null;
+  return {
+    viewport_w: window.innerWidth,
+    viewport_h: window.innerHeight,
+    dpr: window.devicePixelRatio,
+    orientation: scr?.orientation?.type || (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'),
+    lang: navigator.language,
+    langs: (navigator.languages || []).slice(0, 3).join(','),
+    conn_type: conn?.effectiveType || null,
+    downlink: conn?.downlink ?? null,
+    rtt: conn?.rtt ?? null,
+    save_data: conn?.saveData || false,
+    prefers_reduced_motion: typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false,
+  };
+}
+
+// --- LCP observer: capture Largest Contentful Paint for the page lifetime ---
+// Browsers stop firing LCP after first user interaction, so the last value wins.
+let lcpMs = null;
+if (typeof PerformanceObserver !== 'undefined') {
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        lcpMs = Math.round(entry.startTime);
+      }
+    }).observe({ type: 'largest-contentful-paint', buffered: true });
+  } catch { /* unsupported entry type */ }
+}
+
 // --- Page unload: sendBeacon for anything remaining in the queue ---
 // This is the ONLY place sendBeacon is used. It handles:
 // - Events queued but not yet flushed (waiting for timer/batch threshold)
@@ -162,8 +198,39 @@ export function logSessionStart(sessionId, setName, mode) {
     referrer: sessionStorage.getItem('original_referrer') || document.referrer || '',
     device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
     mode: mode || 'classic',
+    ...collectClientContext(),
   });
   flush();
+}
+
+// Fired from /play before any game logic runs. Gives a denominator for
+// "landed on /play but never started a session" — currently invisible
+// because session_start only fires after data loads + rules popup.
+export function logPlayLanding(setName) {
+  enqueue({
+    type: 'play_landing',
+    set: setName || null,
+    referrer: sessionStorage.getItem('original_referrer') || document.referrer || '',
+    device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    ...collectClientContext(),
+  });
+  flush();
+}
+
+// Fired when a round's image either loads or errors. Lets us distinguish
+// "saw the photo, didn't tap" from "image never loaded".
+export function logRoundDisplayed(sessionId, round, observationId, imageLoadMs, imageError, setName, mode, extraData) {
+  enqueue({
+    type: 'round_displayed',
+    session_id: sessionId,
+    round,
+    observation_id: observationId,
+    image_load_ms: imageLoadMs,
+    image_error: imageError,
+    set: setName,
+    mode: mode || 'classic',
+    ...(extraData || {}),
+  });
 }
 
 export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, completed, shareClicked, mode, extraData) {
@@ -176,6 +243,7 @@ export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, comp
     completed,
     share_clicked: shareClicked,
     mode: mode || 'classic',
+    lcp_ms: lcpMs,
     ...(extraData || {}),
   });
   flush();
