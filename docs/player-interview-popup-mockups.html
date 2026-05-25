@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Player Interview Popup Mockups</title>
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --surface: #ffffff;
+      --surface-warm: #fff8f0;
+      --text: #2c2420;
+      --text-secondary: #81756b;
+      --muted: #9a8f85;
+      --accent: #b85a3b;
+      --accent-dark: #8a3f28;
+      --accent-soft: #f4dfd1;
+      --green: #126f4b;
+      --green-soft: #e8f4ee;
+      --border: #ece8e2;
+      --shadow: 0 18px 56px rgba(44, 36, 32, 0.18);
+      --font-display: Georgia, 'Times New Roman', serif;
+      --font-ui: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(184, 90, 59, 0.12), transparent 32rem),
+        linear-gradient(180deg, #fffdf9 0%, var(--bg) 42%, #f3eee7 100%);
+      color: var(--text);
+      font-family: var(--font-ui);
+      line-height: 1.45;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 44px 0 64px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 28px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      line-height: 1.08;
+    }
+
+    h1 {
+      max-width: 740px;
+      font-size: clamp(2.2rem, 5vw, 4.4rem);
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 16px 0 0;
+      color: var(--text-secondary);
+      font-size: 1.02rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: max-content;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .legend-card {
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+    }
+
+    .legend-card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.88rem;
+    }
+
+    .legend-card span {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .mockups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .mockup {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: 0 16px 44px rgba(44, 36, 32, 0.09);
+    }
+
+    .mockup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .mockup-title {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .mockup-title strong {
+      font-size: 0.98rem;
+    }
+
+    .mockup-title span {
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+    }
+
+    .tag {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 540px;
+      padding: 28px;
+      background:
+        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.58)),
+        radial-gradient(circle at 78% 10%, rgba(184, 90, 59, 0.4), transparent 18rem),
+        linear-gradient(135deg, #35251f, #171411);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fake-page {
+      position: absolute;
+      inset: 28px;
+      opacity: 0.38;
+      color: #fff;
+      pointer-events: none;
+    }
+
+    .fake-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 26px;
+      font-weight: 800;
+    }
+
+    .fake-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .fake-card {
+      min-height: 86px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .modal {
+      position: relative;
+      z-index: 2;
+      width: min(390px, 100%);
+      border: 1px solid rgba(236, 232, 226, 0.96);
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .modal-inner {
+      padding: 26px 24px 22px;
+    }
+
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: default;
+    }
+
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 58px;
+      margin-bottom: 14px;
+      border-radius: 50%;
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .icon svg {
+      width: 30px;
+      height: 30px;
+    }
+
+    .modal h2 {
+      font-size: 1.42rem;
+      letter-spacing: -0.02em;
+    }
+
+    .modal p {
+      margin: 12px 0 0;
+      color: var(--text-secondary);
+      font-size: 0.96rem;
+    }
+
+    .modal p.primary-copy {
+      color: var(--text);
+    }
+
+    .proof {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .proof span {
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--bg);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+      text-align: left;
+    }
+
+    .question-list li {
+      position: relative;
+      padding-left: 21px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .question-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.62em;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: translateY(-50%);
+    }
+
+    .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      font-weight: 800;
+      font-size: 0.94rem;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 3px 0 var(--accent-dark);
+    }
+
+    .btn-outline {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+      box-shadow: 0 2px 0 var(--border);
+    }
+
+    .text-btn {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .note {
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--border);
+      background: #fffdf9;
+    }
+
+    .note strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.84rem;
+    }
+
+    .note p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.84rem;
+    }
+
+    .variant-b .modal {
+      overflow: hidden;
+      border-color: #ead7ca;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top right, rgba(232, 165, 75, 0.18), transparent 9rem),
+        linear-gradient(180deg, #fffaf4 0%, var(--surface) 54%);
+      box-shadow: 0 22px 64px rgba(44, 36, 32, 0.24);
+      text-align: left;
+    }
+
+    .variant-b .modal::before {
+      content: '';
+      display: block;
+      height: 8px;
+      background: linear-gradient(90deg, var(--accent), #e8a54b, var(--green));
+    }
+
+    .variant-b .modal-inner {
+      padding: 24px 24px 22px;
+    }
+
+    .variant-b .desktop-version {
+      display: block;
+    }
+
+    .variant-b .mobile-version {
+      display: none;
+    }
+
+    .variant-b .invite-heading {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .variant-b .chat-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      box-shadow: 0 8px 22px rgba(184, 90, 59, 0.16);
+    }
+
+    .variant-b .chat-icon svg {
+      width: 27px;
+      height: 27px;
+    }
+
+    .variant-b .eyebrow,
+    .variant-d .eyebrow {
+      display: inline-flex;
+      color: var(--accent-dark);
+      font-size: 0.77rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .variant-b h2 {
+      margin-top: 3px;
+      font-size: 1.5rem;
+    }
+
+    .variant-b .primary-copy {
+      margin-top: 14px;
+      padding: 14px 15px;
+      border: 1px solid #f0dfd2;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--text);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+
+    .variant-b .question-list {
+      margin-top: 12px;
+      gap: 7px;
+    }
+
+    .variant-b .question-list li {
+      padding: 10px 12px 10px 38px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    }
+
+    .variant-b .question-list li::before {
+      content: '✓';
+      left: 12px;
+      top: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 900;
+      background: var(--green);
+    }
+
+    .variant-b .actions {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 18px;
+    }
+
+    .variant-b .text-btn {
+      grid-column: 1 / -1;
+      text-align: center;
+    }
+
+    .variant-b .mobile-copy {
+      margin-top: 14px;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .variant-b .mobile-points {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .variant-b .mobile-points span {
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .mobile-only-preview .stage {
+      align-items: flex-end;
+      padding: 28px 18px;
+    }
+
+    .mobile-only-preview .modal {
+      width: min(360px, 100%);
+      border-radius: 24px 24px 0 0;
+    }
+
+    .mobile-only-preview .desktop-version {
+      display: none;
+    }
+
+    .mobile-only-preview .mobile-version {
+      display: block;
+    }
+
+    .mobile-only-preview .actions {
+      grid-template-columns: 1fr;
+    }
+
+    .mobile-only-preview .invite-heading {
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+    }
+
+    .mobile-only-preview .chat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+    }
+
+    .mobile-only-preview .chat-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .mobile-only-preview h2 {
+      font-size: 1.34rem;
+    }
+
+    .variant-c .modal {
+      overflow: hidden;
+      border-radius: 22px;
+    }
+
+    .variant-c .modal-top {
+      padding: 18px 22px;
+      background:
+        linear-gradient(135deg, rgba(18, 111, 75, 0.16), rgba(184, 90, 59, 0.1)),
+        var(--surface-warm);
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .variant-c .modal-top strong {
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .variant-c .modal-top span {
+      display: block;
+      margin-top: 3px;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+    }
+
+    .variant-c .quick-question {
+      margin-top: 16px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--bg);
+      text-align: left;
+    }
+
+    .variant-c .quick-question strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+
+    .choice-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .choice-row span {
+      padding: 9px 6px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--text-secondary);
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .variant-d .stage {
+      align-items: flex-end;
+      padding: 28px 18px;
+    }
+
+    .variant-d .modal {
+      width: min(460px, 100%);
+      border-radius: 24px 24px 0 0;
+      text-align: left;
+    }
+
+    .variant-d .modal-inner {
+      padding: 24px 24px 26px;
+    }
+
+    .variant-d .title-row {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .variant-d .icon {
+      width: 48px;
+      height: 48px;
+      margin: 0;
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .variant-d .actions {
+      grid-template-columns: 1fr;
+    }
+
+    .mini-calendar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .mini-calendar span {
+      padding: 10px 8px;
+      border-radius: 12px;
+      background: var(--bg);
+      color: var(--text-secondary);
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .mockups,
+      .legend {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        align-items: start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        width: min(100% - 20px, 1200px);
+        padding-top: 26px;
+      }
+
+      .stage {
+        min-height: 560px;
+        padding: 18px 12px;
+        align-items: flex-end;
+      }
+
+      .fake-page {
+        inset: 18px;
+      }
+
+      .modal {
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+      }
+
+      .modal-inner {
+        padding: 24px 18px 22px;
+      }
+
+      .variant-b .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .variant-b .desktop-version {
+        display: none;
+      }
+
+      .variant-b .mobile-version {
+        display: block;
+      }
+
+      .desktop-only-preview .desktop-version {
+        display: block;
+      }
+
+      .desktop-only-preview .mobile-version {
+        display: none;
+      }
+
+      .variant-b .invite-heading {
+        grid-template-columns: 44px 1fr;
+        gap: 10px;
+      }
+
+      .variant-b .chat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+      }
+
+      .variant-b .chat-icon svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .variant-b h2 {
+        font-size: 1.34rem;
+      }
+
+      .choice-row,
+      .mini-calendar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <span class="pill">Static mockups</span>
+        <h1>Popup concepts for inviting regular players to chat</h1>
+        <p>These are visual and copy directions only. The trigger logic can be wired later for players with multiple sessions across multiple days.</p>
+      </div>
+      <span class="pill">Calendly: calendly.com/dewanggogte/what-s-that-bug</span>
+    </section>
+
+    <section class="legend" aria-label="Suggested trigger notes">
+      <div class="legend-card">
+        <strong>Audience</strong>
+        <span>Repeat players, for example 5+ sessions across 3+ different days.</span>
+      </div>
+      <div class="legend-card">
+        <strong>Cadence</strong>
+        <span>Ask once, then snooze for 30 days if dismissed.</span>
+      </div>
+      <div class="legend-card">
+        <strong>Goal</strong>
+        <span>Learn why they return, what feels fun or annoying, and how they keep the link handy.</span>
+      </div>
+    </section>
+
+    <section class="mockups">
+      <article class="mockup variant-a">
+        <div class="mockup-header">
+          <div class="mockup-title">
+            <strong>Option A: Personal note</strong>
+            <span>Warm, direct, best all-purpose candidate.</span>
+          </div>
+          <span class="tag">Recommended</span>
+        </div>
+        <div class="stage">
+          <div class="fake-page">
+            <div class="fake-nav"><span>What's That Bug?</span><span>12 sessions</span></div>
+            <div class="fake-grid"><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div></div>
+          </div>
+          <div class="modal">
+            <button class="close" aria-label="Close">&times;</button>
+            <div class="modal-inner">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H9l-5 4V5.5z"/><path d="M8 8h8"/><path d="M8 11h5"/></svg>
+              </span>
+              <h2>Can I ask you about the game?</h2>
+              <p class="primary-copy">You have been back a few times, which makes your opinion especially useful.</p>
+              <p>I am doing short 15 minute chats to learn what regular players like, what gets annoying, and how people remember to come back.</p>
+              <div class="proof">
+                <span>12 sessions</span>
+                <span>5 play days</span>
+                <span>15 minutes</span>
+              </div>
+              <div class="actions">
+                <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Pick a time</a>
+                <button class="text-btn">Maybe later</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <strong>Why choose this</strong>
+          <p>Feels human and low pressure. It explains why the player is seeing it without overloading them.</p>
+        </div>
+      </article>
+
+      <article class="mockup variant-b desktop-only-preview">
+        <div class="mockup-header">
+          <div class="mockup-title">
+            <strong>Option B1: Desktop/tablet version</strong>
+            <span>Fuller copy for larger screens.</span>
+          </div>
+          <span class="tag">Explicit</span>
+        </div>
+        <div class="stage">
+          <div class="fake-page">
+            <div class="fake-nav"><span>What's That Bug?</span><span>Badges 4</span></div>
+            <div class="fake-grid"><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div></div>
+          </div>
+          <div class="modal">
+            <button class="close" aria-label="Close">&times;</button>
+            <div class="modal-inner">
+              <div class="desktop-version">
+                <div class="invite-heading">
+                  <span class="chat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v5A3.5 3.5 0 0 1 15.5 14H10l-5 4V5.5z"/><path d="M9 7h6"/><path d="M9 10h4"/><path d="M17 17h1.5A2.5 2.5 0 0 0 21 14.5V9"/></svg>
+                  </span>
+                  <div>
+                    <h2>Help decide what's next for bugs</h2>
+                  </div>
+                </div>
+                <p class="primary-copy">Hey! I'm inviting some players to have a short chat with me to improve this game. Would you be interested in a 15-min online conversation? I want to know:</p>
+                <ul class="question-list">
+                  <li>What keeps you coming back?</li>
+                  <li>What parts are confusing or frustrating?</li>
+                  <li>How do you usually save or reopen the game?</li>
+                  <li>What would make it worth sharing?</li>
+                </ul>
+                <div class="actions">
+                  <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Schedule chat</a>
+                  <a class="btn btn-outline" href="mailto:hello@dewanggogte.com">Email instead</a>
+                  <button class="text-btn">No thanks</button>
+                </div>
+              </div>
+              <div class="mobile-version">
+                <div class="invite-heading">
+                  <span class="chat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v5A3.5 3.5 0 0 1 15.5 14H10l-5 4V5.5z"/><path d="M9 7h6"/><path d="M9 10h4"/><path d="M17 17h1.5A2.5 2.5 0 0 0 21 14.5V9"/></svg>
+                  </span>
+                  <div>
+                    <h2>Help improve the bug game?</h2>
+                  </div>
+                </div>
+                <p class="mobile-copy">You have played a few times. Want to do a quick 15-min chat about what keeps you coming back and what should change?</p>
+                <div class="mobile-points" aria-label="Conversation topics">
+                  <span>Why you return</span>
+                  <span>What's confusing</span>
+                  <span>How you reopen it</span>
+                  <span>What you'd share</span>
+                </div>
+                <div class="actions">
+                  <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Schedule chat</a>
+                  <button class="text-btn">No thanks</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <strong>Why choose this</strong>
+          <p>Sets expectations clearly. Best if you want fewer but more prepared calls.</p>
+        </div>
+      </article>
+
+      <article class="mockup variant-b mobile-only-preview">
+        <div class="mockup-header">
+          <div class="mockup-title">
+            <strong>Option B2: Mobile version</strong>
+            <span>Shorter copy for smaller screens.</span>
+          </div>
+          <span class="tag">Mobile</span>
+        </div>
+        <div class="stage">
+          <div class="fake-page">
+            <div class="fake-nav"><span>What's That Bug?</span><span>Badges 4</span></div>
+            <div class="fake-grid"><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div></div>
+          </div>
+          <div class="modal">
+            <button class="close" aria-label="Close">&times;</button>
+            <div class="modal-inner">
+              <div class="mobile-version">
+                <div class="invite-heading">
+                  <span class="chat-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v5A3.5 3.5 0 0 1 15.5 14H10l-5 4V5.5z"/><path d="M9 7h6"/><path d="M9 10h4"/><path d="M17 17h1.5A2.5 2.5 0 0 0 21 14.5V9"/></svg>
+                  </span>
+                  <div>
+                    <h2>Help improve the bug game?</h2>
+                  </div>
+                </div>
+                <p class="mobile-copy">You have played a few times. Want to do a quick 15-min chat about what keeps you coming back and what should change?</p>
+                <div class="mobile-points" aria-label="Conversation topics">
+                  <span>Why you return</span>
+                  <span>What's confusing</span>
+                  <span>How you reopen it</span>
+                  <span>What you'd share</span>
+                </div>
+                <div class="actions">
+                  <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Schedule chat</a>
+                  <button class="text-btn">No thanks</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <strong>Why choose this</strong>
+          <p>Shows the actual compact version without needing to resize the browser.</p>
+        </div>
+      </article>
+
+      <article class="mockup variant-c">
+        <div class="mockup-header">
+          <div class="mockup-title">
+            <strong>Option C: Survey first</strong>
+            <span>Gets a tiny signal before asking for a call.</span>
+          </div>
+          <span class="tag">Lower friction</span>
+        </div>
+        <div class="stage">
+          <div class="fake-page">
+            <div class="fake-nav"><span>What's That Bug?</span><span>Streak 8</span></div>
+            <div class="fake-grid"><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div></div>
+          </div>
+          <div class="modal">
+            <div class="modal-top">
+              <strong>You are one of the regulars now</strong>
+              <span>That makes your feedback more useful than a random rating.</span>
+            </div>
+            <button class="close" aria-label="Close">&times;</button>
+            <div class="modal-inner">
+              <h2>Would you talk with me for 15 minutes?</h2>
+              <p>I am trying to understand why people come back to this bug game, and what should change before I build more.</p>
+              <div class="quick-question">
+                <strong>Quick gut check: how has the game felt lately?</strong>
+                <div class="choice-row">
+                  <span>Fun</span>
+                  <span>Mixed</span>
+                  <span>Confusing</span>
+                </div>
+              </div>
+              <div class="actions">
+                <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Book a chat</a>
+                <button class="text-btn">Skip for now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <strong>Why choose this</strong>
+          <p>The small question makes it feel participatory, but it adds implementation work if you want to store the answer.</p>
+        </div>
+      </article>
+
+      <article class="mockup variant-d">
+        <div class="mockup-header">
+          <div class="mockup-title">
+            <strong>Option D: Mobile bottom sheet</strong>
+            <span>Compact, friendly, optimized for phones.</span>
+          </div>
+          <span class="tag">Mobile first</span>
+        </div>
+        <div class="stage">
+          <div class="fake-page">
+            <div class="fake-nav"><span>What's That Bug?</span><span>Daily solved</span></div>
+            <div class="fake-grid"><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div><div class="fake-card"></div></div>
+          </div>
+          <div class="modal">
+            <button class="close" aria-label="Close">&times;</button>
+            <div class="modal-inner">
+              <span class="eyebrow">A quick favor</span>
+              <div class="title-row">
+                <span class="icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 0 1 8 0"/><path d="M6 10h12l-1 8a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3l-1-8z"/><path d="M9 14h6"/></svg>
+                </span>
+                <h2>Got time for a bug chat?</h2>
+              </div>
+              <p class="primary-copy">You have played across multiple days. I would love to hear what is working and what is not.</p>
+              <div class="mini-calendar">
+                <span>15 min</span>
+                <span>Casual</span>
+                <span>No prep</span>
+              </div>
+              <div class="actions">
+                <a class="btn btn-primary" href="https://calendly.com/dewanggogte/what-s-that-bug">Open Calendly</a>
+                <button class="text-btn">Not right now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note">
+          <strong>Why choose this</strong>
+          <p>Least intrusive on mobile. The tradeoff is that it has less room for the specific research questions.</p>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

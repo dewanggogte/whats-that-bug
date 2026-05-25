@@ -277,9 +277,10 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
 
 <script>
   import { runOnboarding } from '../scripts/onboarding.js';
+  import { maybeShowInterviewPrompt } from '../scripts/interview-prompt.js';
   import { maybeShowSupportPrompt } from '../scripts/support-prompt.js';
   runOnboarding();
-  maybeShowSupportPrompt();
+  if (!maybeShowInterviewPrompt()) maybeShowSupportPrompt();
 </script>
 
 <script>

@@ -1314,6 +1314,224 @@ a {
   color: var(--text);
 }
 
+/* --- Player Interview Prompt Modal --- */
+.interview-card {
+  position: relative;
+  overflow: hidden;
+  max-width: 430px;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border-color: var(--border);
+  background:
+    radial-gradient(circle at top right, rgba(232, 165, 75, 0.18), transparent 9rem),
+    linear-gradient(180deg, var(--warning-bg) 0%, var(--surface) 54%);
+  text-align: left;
+}
+
+.interview-card::before {
+  content: '';
+  display: block;
+  height: 8px;
+  background: linear-gradient(90deg, var(--accent), #e8a54b, var(--success));
+}
+
+.interview-card .interview-desktop,
+.interview-card .interview-mobile {
+  padding: 24px;
+}
+
+.interview-mobile {
+  display: none;
+}
+
+.interview-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.interview-close:hover {
+  color: var(--text);
+}
+
+.interview-heading {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding-right: 28px;
+}
+
+.interview-heading .onboarding-title {
+  font-size: 1.5rem;
+}
+
+.interview-chat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: var(--warning-bg);
+  color: var(--accent);
+  box-shadow: 0 8px 22px rgba(184, 90, 59, 0.16);
+}
+
+.interview-chat-icon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.interview-copy {
+  margin-top: 14px;
+  padding: 14px 15px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.96rem;
+  line-height: 1.5;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.interview-questions {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.interview-questions li {
+  position: relative;
+  padding: 10px 12px 10px 38px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.interview-questions li::before {
+  content: '✓';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--success);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.interview-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.interview-primary,
+.interview-secondary {
+  width: 100%;
+}
+
+.interview-dismiss {
+  grid-column: 1 / -1;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.interview-dismiss:hover {
+  color: var(--text);
+}
+
+.interview-mobile-copy {
+  margin-top: 14px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.interview-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.interview-points span {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+@media (max-width: 600px) {
+  .interview-card .interview-desktop {
+    display: none;
+  }
+
+  .interview-card .interview-mobile {
+    display: block;
+    padding: 24px 18px 22px;
+  }
+
+  .interview-heading {
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+  }
+
+  .interview-heading .onboarding-title {
+    font-size: 1.34rem;
+  }
+
+  .interview-chat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .interview-chat-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .interview-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .interview-points {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* =============================================
    View Transitions
    ============================================= */

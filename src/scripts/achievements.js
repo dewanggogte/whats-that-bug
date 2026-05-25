@@ -110,10 +110,16 @@ export function checkSessionAchievements(session, setKey) {
     }
   }
 
-  // Track session count
+  // Track session count and distinct play days
   const stats = getPlayerStats();
   const sessionCount = (stats.session_count || 0) + 1;
-  updatePlayerStats({ session_count: sessionCount, last_played: new Date().toISOString() });
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const playDates = Array.isArray(stats.play_dates) ? [...stats.play_dates] : [];
+  const lastPlayedDate = typeof stats.last_played === 'string' ? stats.last_played.slice(0, 10) : '';
+  if (lastPlayedDate && !playDates.includes(lastPlayedDate)) playDates.push(lastPlayedDate);
+  if (!playDates.includes(today)) playDates.push(today);
+  updatePlayerStats({ session_count: sessionCount, last_played: now.toISOString(), play_dates: playDates });
 
   // First Flight — any completed session
   award('first_flight');
