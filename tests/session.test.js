@@ -182,3 +182,41 @@ describe('SessionState — streak mode', () => {
     expect(session.currentStreak).toBe(1);
   });
 });
+
+describe('SessionState mode as runtime parameter', () => {
+  it('uses the mode argument passed to the constructor', () => {
+    const session = new SessionState(
+      observations,
+      taxonomy,
+      setDef,
+      'bugs_101',
+      null,
+      'time_trial'
+    );
+    expect(session.mode).toBe('time_trial');
+  });
+
+  it('ignores any mode field on setDef when mode arg is provided', () => {
+    const setDefWithMode = { ...setDef, mode: 'streak' };
+    const session = new SessionState(
+      observations,
+      taxonomy,
+      setDefWithMode,
+      'bugs_101',
+      null,
+      'classic'
+    );
+    expect(session.mode).toBe('classic');
+  });
+
+  it('defaults to classic when no mode arg is given', () => {
+    const session = new SessionState(
+      observations,
+      taxonomy,
+      setDef,
+      'bugs_101',
+      null
+    );
+    expect(session.mode).toBe('classic');
+  });
+});
