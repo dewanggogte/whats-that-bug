@@ -206,10 +206,11 @@ export function logSessionStart(sessionId, setName, mode) {
 // Fired from /play before any game logic runs. Gives a denominator for
 // "landed on /play but never started a session" — currently invisible
 // because session_start only fires after data loads + rules popup.
-export function logPlayLanding(setName) {
+export function logPlayLanding(setName, mode) {
   enqueue({
     type: 'play_landing',
     set: setName || null,
+    mode: mode || null,
     referrer: sessionStorage.getItem('original_referrer') || document.referrer || '',
     device: /Mobi/.test(navigator.userAgent) ? 'mobile' : 'desktop',
     ...collectClientContext(),

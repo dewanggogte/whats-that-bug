@@ -1,0 +1,37 @@
+---
+import Base from '../../../layouts/Base.astro';
+import setsData from '../../../../public/data/sets.json';
+
+export function getStaticPaths() {
+  const validModes = ['classic', 'time_trial', 'streak'];
+  return Object.entries(setsData)
+    .filter(([, setDef]) => !setDef.mode)
+    .flatMap(([set]) =>
+      validModes.map((mode) => ({ params: { set, mode } }))
+    );
+}
+
+const { set, mode } = Astro.params;
+---
+
+<Base
+  title="Identify This Bug — What's That Bug?"
+  description="Can you identify the insect from its photo? Four choices, one correct answer. Test your bug identification skills with real research-grade photos."
+  canonicalPath={`/${set}/${mode}/play`}
+>
+  <div id="game-container" data-set={set} data-mode={mode}>
+    <div class="container" style="text-align: center; padding-top: 80px;">
+      <p class="subtitle">Loading bugs...</p>
+    </div>
+  </div>
+  <script>
+    import { logPlayLanding } from '../../../scripts/feedback.js';
+    import { initGame } from '../../../scripts/game-ui.js';
+
+    const el = document.getElementById('game-container');
+    const setKey = el.dataset.set;
+    const mode = el.dataset.mode;
+    logPlayLanding(setKey, mode);
+    initGame(setKey, mode);
+  </script>
+</Base>

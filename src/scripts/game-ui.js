@@ -128,7 +128,7 @@ let container = null;
 /**
  * Initialize the game. Called from play.astro.
  */
-export async function initGame() {
+export async function initGame(setKey = 'all_bugs', mode = 'classic') {
   container = document.getElementById('game-container');
   container.setAttribute('aria-live', 'polite');
 
@@ -154,8 +154,7 @@ export async function initGame() {
     return;
   }
 
-  const params = new URLSearchParams(window.location.search);
-  currentSetKey = params.get('set') || 'all_bugs';
+  currentSetKey = setKey;
   const setDef = sets[currentSetKey];
 
   if (!setDef) {
@@ -163,7 +162,7 @@ export async function initGame() {
     return;
   }
 
-  session = new SessionState(observations, taxonomy, setDef, currentSetKey, difficulty);
+  session = new SessionState(observations, taxonomy, setDef, currentSetKey, difficulty, mode);
   logSessionStart(session.sessionId, currentSetKey, session.mode);
   sessionEndSent = false;
   shared = false;
