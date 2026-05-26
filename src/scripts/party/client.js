@@ -22,7 +22,7 @@ export async function requestCreateRoom() {
   return res.json();
 }
 
-export function createPartyClient({ roomCode, userId, displayName, createToken, onMessage, onClose, onOpen }) {
+export function createPartyClient({ roomCode, userId, displayName, createToken, rejoinToken, onMessage, onClose, onOpen }) {
   const socket = new PartySocket({
     host: getPartyHost(),
     room: roomCode,
@@ -35,6 +35,7 @@ export function createPartyClient({ roomCode, userId, displayName, createToken, 
       userId,
       displayName,
       createToken,
+      rejoinToken,
     }));
   });
 

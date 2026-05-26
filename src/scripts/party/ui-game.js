@@ -55,12 +55,12 @@ function newSessionId() {
   });
 }
 
-export async function initGameUI(container, { code, userId, state, gameStarted, client, isHost }) {
+export async function initGameUI(container, { code, playerId, state, gameStarted, client, isHost }) {
   if (_advanceTimer) clearTimeout(_advanceTimer);
   const observations = await fetch(`${base}/data/observations.json`).then(r => r.json());
   _ctx = {
     code,
-    userId,
+    playerId,
     client,
     observations,
     setMeta: gameStarted.setMeta,
@@ -114,7 +114,7 @@ export async function initGameUI(container, { code, userId, state, gameStarted, 
 
 export function applyState(state) {
   if (!_ctx || !state) return;
-  _ctx.isHost = state.hostId === _ctx.userId;
+  _ctx.isHost = state.hostId === _ctx.playerId;
   _ctx.leaderboard = state.players.map(p => ({
     id: p.id,
     displayName: p.displayName,
@@ -175,8 +175,8 @@ export function applyQuestionResult({ questionIndex, score, correctChoiceIndex }
 export function applyGameOver({ finalLeaderboard, durationMs }, opts = {}) {
   if (!_ctx) return;
   if (_advanceTimer) clearTimeout(_advanceTimer);
-  const myEntry = finalLeaderboard.find(p => p.id === _ctx.userId);
-  const myRank = finalLeaderboard.findIndex(p => p.id === _ctx.userId) + 1 || null;
+  const myEntry = finalLeaderboard.find(p => p.id === _ctx.playerId);
+  const myRank = finalLeaderboard.findIndex(p => p.id === _ctx.playerId) + 1 || null;
   logMultiplayerEvent('mp_session_end', {
     session_id: _ctx.sessionId,
     room_code: _ctx.code,

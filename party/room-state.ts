@@ -2,7 +2,9 @@ export type Mode = 'classic' | 'time_trial' | 'streak';
 export type Status = 'lobby' | 'playing' | 'ended';
 
 export type Player = {
-  id: string;
+  id: string;             // public per-room player id
+  userId: string;         // private stable wtb_user_id
+  rejoinToken: string;    // private bearer token for this room seat
   connectionId: string | null;
   displayName: string;
   connected: boolean;
@@ -29,6 +31,7 @@ export type RoomState = {
   totalQuestions: number;
   startedAt: number | null;
   endedAt: number | null;
+  winsAwarded: boolean;
 };
 
 export const MAX_PLAYERS = 5;
@@ -44,13 +47,14 @@ export function emptyRoom(code: string): RoomState {
     totalQuestions: 0,
     startedAt: null,
     endedAt: null,
+    winsAwarded: false,
   };
 }
 
 export function addPlayer(state: RoomState, p: Omit<Player, 'connected' | 'score' | 'streak' | 'finished' | 'wins'>): RoomState {
   if (state.status !== 'lobby') return state;
   if (state.players.length >= MAX_PLAYERS) return state;
-  if (state.players.some(x => x.id === p.id)) return state;
+  if (state.players.some(x => x.userId === p.userId)) return state;
   const newPlayer: Player = {
     ...p,
     connected: true,
@@ -68,7 +72,14 @@ export function addPlayer(state: RoomState, p: Omit<Player, 'connected' | 'score
 
 export function rejoinPlayer(state: RoomState, userId: string, connectionId: string): RoomState {
   const players = state.players.map(p =>
-    p.id === userId ? { ...p, connectionId, connected: true } : p
+    p.userId === userId ? { ...p, connectionId, connected: true } : p
+  );
+  return { ...state, players };
+}
+
+export function rejoinPlayerWithToken(state: RoomState, playerId: string, connectionId: string, rejoinToken: string): RoomState {
+  const players = state.players.map(p =>
+    p.id === playerId ? { ...p, connectionId, rejoinToken, connected: true } : p
   );
   return { ...state, players };
 }
@@ -123,6 +134,7 @@ export function startGame(state: RoomState, hostId: string, questions: Question[
     totalQuestions,
     startedAt: now,
     endedAt: null,
+    winsAwarded: false,
   };
 }
 
@@ -170,13 +182,15 @@ export function endGameByHost(state: RoomState, hostId: string, now: number = Da
 }
 
 export function awardWins(state: RoomState): RoomState {
-  if (state.players.length === 0) return state;
+  if (state.status !== 'ended') return state;
+  if (state.winsAwarded) return state;
+  if (state.players.length === 0) return { ...state, winsAwarded: true };
   const maxScore = Math.max(...state.players.map(p => p.score));
-  if (maxScore <= 0) return state;
+  if (maxScore <= 0) return { ...state, winsAwarded: true };
   const players = state.players.map(p =>
     p.score === maxScore ? { ...p, wins: p.wins + 1 } : p
   );
-  return { ...state, players };
+  return { ...state, players, winsAwarded: true };
 }
 
 export function resetToLobby(state: RoomState, hostId: string): RoomState {
@@ -197,5 +211,6 @@ export function resetToLobby(state: RoomState, hostId: string): RoomState {
     totalQuestions: 0,
     startedAt: null,
     endedAt: null,
+    winsAwarded: false,
   };
 }

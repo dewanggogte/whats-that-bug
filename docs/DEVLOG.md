@@ -101,3 +101,15 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 **The fix:** Keep a single static `/party` page and have the client read a room code from either `?code=ABCD` or the current path. Vercel rewrites `/party/:code` to `/party`, preserving pretty production share links without changing the whole app to SSR. Local Astro dev uses the query-string route.
 
 **Key insight:** Adding realtime infrastructure does not automatically make the web app server-rendered. Static hosting constraints still shape URL design, even when live game state is handled elsewhere.
+
+---
+
+## 2026-05-26: Multiplayer rejoin identity split
+
+**The problem:** Party state broadcast each player's stable `userId`, and reconnects trusted that ID alone. Anyone who saw the public state could reconnect as another player by sending their ID.
+
+**Why it happened:** The first implementation used one identifier for two jobs: a private browser identity and a public in-room player ID. That made host checks and roster rendering convenient, but it turned the public roster into a bearer credential.
+
+**The fix:** Split identity into a public per-room `playerId`, a private stable `userId`, and a private rotating `rejoinToken`. Public state only includes the player ID. Rejoins must present the current token, and successful rejoins rotate it.
+
+**Key insight:** If an identifier is broadcast to untrusted clients, treat it as display data, not authentication. Resume flows need a separate secret, even for casual game lobbies.

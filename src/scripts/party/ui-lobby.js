@@ -16,6 +16,8 @@ export async function initPartyRoom(code) {
 
   const userId = getUserId();
   const displayName = await promptForName(code);
+  const partySession = loadPartySession(code) || {};
+  let playerId = partySession.playerId || null;
   const [sets] = await Promise.all([
     fetch(`${base}/data/sets.json`).then(r => r.json()),
   ]);
@@ -26,18 +28,23 @@ export async function initPartyRoom(code) {
   let fatalShown = false;
   const createToken = sessionStorage.getItem(`wtb_party_create_${code}`) || undefined;
 
-  const FATAL_ERROR_CODES = new Set(['ROOM_NOT_FOUND', 'GAME_IN_PROGRESS', 'ROOM_FULL', 'AT_CAPACITY']);
+  const FATAL_ERROR_CODES = new Set(['ROOM_NOT_FOUND', 'GAME_IN_PROGRESS', 'ROOM_FULL', 'AT_CAPACITY', 'BAD_REJOIN_TOKEN', 'CONFIG_ERROR']);
 
   const client = createPartyClient({
     roomCode: code,
     userId,
     displayName,
     createToken,
+    rejoinToken: partySession.rejoinToken,
     onOpen: () => {
       if (!fatalShown) content.innerHTML = '<div class="party-panel"><p>Connecting...</p></div>';
     },
     onMessage: (msg) => {
-      if (msg.type === 'state') {
+      if (msg.type === 'identified') {
+        playerId = msg.playerId;
+        savePartySession(code, { displayName, playerId, rejoinToken: msg.rejoinToken });
+        sessionStorage.removeItem(`wtb_party_create_${code}`);
+      } else if (msg.type === 'state') {
         currentState = msg.state;
         if (gameStartedMsg && currentState.status === 'lobby') {
           gameStartedMsg = null;
@@ -55,7 +62,7 @@ export async function initPartyRoom(code) {
       } else if (msg.type === 'question-result') {
         applyQuestionResult(msg);
       } else if (msg.type === 'game-over') {
-        applyGameOver(msg, { client, isHost: currentState?.hostId === userId });
+        applyGameOver(msg, { client, isHost: currentState?.hostId === playerId });
       } else if (msg.type === 'kicked') {
         alert('You were removed from the party.');
         window.location.href = `${base}/party`;
@@ -84,7 +91,7 @@ export async function initPartyRoom(code) {
       return;
     }
 
-    const isHost = currentState.hostId === userId;
+    const isHost = currentState.hostId === playerId;
     const role = isHost ? 'host' : 'guest';
 
     if (renderedAs !== role) {
@@ -148,7 +155,7 @@ export async function initPartyRoom(code) {
           ${!p.connected ? '<span class="offline-pill">Disconnected</span>' : ''}
           ${p.wins > 0 ? `<span class="wins-pill" title="${p.wins} ${p.wins === 1 ? 'win' : 'wins'} this party">🏆 ${p.wins}</span>` : ''}
         </span>
-        ${isHost && p.id !== userId ? `<button class="btn-mini kick" data-id="${escapeHtml(p.id)}">Kick</button>` : ''}
+        ${isHost && p.id !== playerId ? `<button class="btn-mini kick" data-id="${escapeHtml(p.id)}">Kick</button>` : ''}
       </li>
     `).join('');
     list.querySelectorAll('button.kick').forEach(btn => {
@@ -251,11 +258,11 @@ export async function initPartyRoom(code) {
   function renderGame(msg) {
     initGameUI(content, {
       code,
-      userId,
+      playerId,
       state: currentState,
       gameStarted: msg,
       client,
-      isHost: currentState?.hostId === userId,
+      isHost: currentState?.hostId === playerId,
     });
   }
 

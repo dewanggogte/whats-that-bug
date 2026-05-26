@@ -6,7 +6,6 @@ import {
   type Mode,
   emptyRoom,
   addPlayer,
-  rejoinPlayer,
   markDisconnected,
   kickPlayer,
   setSelection,
@@ -18,13 +17,14 @@ import {
   resetToLobby,
   connectedPlayerCount,
   awardWins,
+  rejoinPlayerWithToken,
   MAX_PLAYERS,
 } from './room-state';
 import { mulberry32, hashString, seededShuffle } from './rng';
 import { observations, taxonomy, type Observation } from './data-loader';
 import { scoreAnswer, calculateTimedScore, type Scoring } from './scoring';
 import { generateBugs101Distractors, generateGenusDistractors, generateDistractors } from '../src/scripts/game-engine.js';
-import { generateCode } from './codes';
+import { reserveRoomCode } from './codes';
 import { checkRateLimit } from './rate-limit';
 import { createToken, verifyCreateToken } from './create-token';
 
@@ -42,7 +42,7 @@ type SetMeta = {
   observationIndexes: number[];
 };
 
-type PublicPlayer = Omit<RoomState['players'][number], 'connectionId'>;
+type PublicPlayer = Omit<RoomState['players'][number], 'connectionId' | 'userId' | 'rejoinToken'>;
 type PublicState = Omit<RoomState, 'players' | 'questions'> & {
   players: PublicPlayer[];
   questions: [];
@@ -62,7 +62,7 @@ const SETS: Record<string, SetMeta> = Object.fromEntries(
 
 export default class Room implements Party.Server {
   state: RoomState;
-  connToUser = new Map<string, string>();
+  connToPlayer = new Map<string, string>();
   createdAt = Date.now();
   lastActivity = Date.now();
   atCapacity = false;
@@ -105,8 +105,16 @@ export default class Room implements Party.Server {
       return withCors(Response.json({ error: 'RATE_LIMITED', retryAfterMs: limit.retryAfterMs }, { status: 429 }));
     }
 
-    const code = generateCode();
-    const token = await createToken(code, getCreateSecret(this.room));
+    const secret = getCreateSecret(this.room);
+    if (!secret) {
+      return withCors(Response.json({ error: 'CONFIG_ERROR', message: 'PARTY_CREATE_SECRET is required' }, { status: 500 }));
+    }
+
+    const code = await reserveRoomCode(this.room.storage);
+    if (!code) {
+      return withCors(Response.json({ error: 'CODE_EXHAUSTED' }, { status: 503 }));
+    }
+    const token = await createToken(code, secret);
     return withCors(Response.json({ code, createToken: token }));
   }
 
@@ -145,9 +153,9 @@ export default class Room implements Party.Server {
   }
 
   onClose(conn: Party.Connection) {
-    const userId = this.connToUser.get(conn.id);
-    this.connToUser.delete(conn.id);
-    if (!userId) return;
+    const playerId = this.connToPlayer.get(conn.id);
+    this.connToPlayer.delete(conn.id);
+    if (!playerId) return;
     this.state = markDisconnected(this.state, conn.id);
     this.broadcastState();
   }
@@ -163,7 +171,13 @@ export default class Room implements Party.Server {
     }
 
     if (this.state.players.length === 0) {
-      const allowedToCreate = await verifyCreateToken(msg.createToken, this.room.id, getCreateSecret(this.room));
+      const secret = getCreateSecret(this.room);
+      if (!secret) {
+        this.sendError(sender, 'CONFIG_ERROR', 'PARTY_CREATE_SECRET is required');
+        sender.close();
+        return;
+      }
+      const allowedToCreate = await verifyCreateToken(msg.createToken, this.room.id, secret);
       if (!allowedToCreate) {
         this.sendError(sender, 'ROOM_NOT_FOUND', 'No active room with that code');
         sender.close();
@@ -171,13 +185,26 @@ export default class Room implements Party.Server {
       }
     }
 
-    const existing = this.state.players.find(p => p.id === userId);
+    let playerId: string;
+    let rejoinToken: string;
+    const existing = this.state.players.find(p => p.userId === userId);
     if (existing) {
-      this.state = rejoinPlayer(this.state, userId, sender.id);
+      if (typeof msg.rejoinToken !== 'string' || msg.rejoinToken !== existing.rejoinToken) {
+        this.sendError(sender, 'BAD_REJOIN_TOKEN', 'Refresh token missing or invalid for this room');
+        sender.close();
+        return;
+      }
+      playerId = existing.id;
+      rejoinToken = randomToken();
+      if (existing.connectionId && existing.connectionId !== sender.id) {
+        this.connToPlayer.delete(existing.connectionId);
+        this.room.getConnection(existing.connectionId)?.close();
+      }
+      this.state = rejoinPlayerWithToken(this.state, playerId, sender.id, rejoinToken);
       this.state = {
         ...this.state,
         players: this.state.players.map(p =>
-          p.id === userId ? { ...p, displayName: cleanName, connectionId: sender.id } : p
+          p.id === playerId ? { ...p, displayName: cleanName, connectionId: sender.id } : p
         ),
       };
     } else {
@@ -191,30 +218,41 @@ export default class Room implements Party.Server {
         sender.close();
         return;
       }
-      this.state = addPlayer(this.state, { id: userId, connectionId: sender.id, displayName: cleanName, nextQuestionIndex: 0, questionStartedAt: null });
+      playerId = randomPlayerId();
+      rejoinToken = randomToken();
+      this.state = addPlayer(this.state, {
+        id: playerId,
+        userId,
+        rejoinToken,
+        connectionId: sender.id,
+        displayName: cleanName,
+        nextQuestionIndex: 0,
+        questionStartedAt: null,
+      });
     }
 
-    this.connToUser.set(sender.id, userId);
+    this.connToPlayer.set(sender.id, playerId);
+    sender.send(JSON.stringify({ type: 'identified', playerId, rejoinToken }));
     this.broadcastState();
     if (this.state.status === 'playing') {
-      this.sendGameStarted(sender, userId);
+      this.sendGameStarted(sender, playerId);
     }
   }
 
   private handleSetSelection(msg: any, sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
     const { setKey, mode } = msg;
     if (!SETS[setKey]) return this.sendError(sender, 'UNKNOWN_SET', `Unknown set: ${setKey}`);
     if (!isMode(mode)) return this.sendError(sender, 'UNKNOWN_MODE', `Unknown mode: ${String(mode)}`);
-    this.state = setSelection(this.state, userId, setKey, mode);
+    this.state = setSelection(this.state, playerId, setKey, mode);
     this.broadcastState();
   }
 
   private handleStartGame(sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
-    if (this.state.hostId !== userId) return this.sendError(sender, 'NOT_HOST', 'Only host can start');
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
+    if (this.state.hostId !== playerId) return this.sendError(sender, 'NOT_HOST', 'Only host can start');
     if (!this.state.selection) return this.sendError(sender, 'NO_SELECTION', 'Pick a set and mode first');
     if (connectedPlayerCount(this.state) < 2) return this.sendError(sender, 'NOT_ENOUGH_PLAYERS', 'Need at least 2 connected players');
 
@@ -222,14 +260,14 @@ export default class Room implements Party.Server {
     const setMeta = SETS[setKey];
     const questions = buildQuestionSequence(this.room.id, setMeta, mode);
     const totalQuestions = mode === 'classic' ? questions.length : -1;
-    this.state = startGame(this.state, userId, questions, totalQuestions);
+    this.state = startGame(this.state, playerId, questions, totalQuestions);
     this.broadcastGameStarted();
     this.broadcastState();
   }
 
   private handleSubmitAnswer(msg: any, sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
     if (this.state.status !== 'playing') return this.sendError(sender, 'NOT_PLAYING', 'Game not in progress');
 
     const { questionIndex, choiceIndex } = msg;
@@ -240,7 +278,7 @@ export default class Room implements Party.Server {
       return this.sendError(sender, 'BAD_CHOICE_INDEX', 'No such choice');
     }
 
-    const player = this.state.players.find(p => p.id === userId);
+    const player = this.state.players.find(p => p.id === playerId);
     if (!player || player.finished) return this.sendError(sender, 'ALREADY_FINISHED', 'You are done');
     if (questionIndex !== player.nextQuestionIndex) {
       return this.sendError(sender, 'OUT_OF_ORDER_ANSWER', 'Answer the next unanswered question only');
@@ -259,7 +297,7 @@ export default class Room implements Party.Server {
       ? calculateTimedScore(elapsedMs)
       : baseScore;
 
-    this.state = applyAnswer(this.state, userId, questionIndex, score, now);
+    this.state = applyAnswer(this.state, playerId, questionIndex, score, now);
 
     sender.send(JSON.stringify({
       type: 'question-result',
@@ -269,11 +307,11 @@ export default class Room implements Party.Server {
       correctObservationIndex: q.correctObservationIndex,
     }));
 
-    const updatedPlayer = this.state.players.find(p => p.id === userId);
+    const updatedPlayer = this.state.players.find(p => p.id === playerId);
     if (this.state.selection!.mode === 'streak' && score !== 100) {
-      this.state = markFinished(this.state, userId);
+      this.state = markFinished(this.state, playerId);
     } else if (updatedPlayer && updatedPlayer.nextQuestionIndex >= this.state.questions.length) {
-      this.state = markFinished(this.state, userId);
+      this.state = markFinished(this.state, playerId);
     }
 
     this.broadcastLeaderboard();
@@ -282,34 +320,35 @@ export default class Room implements Party.Server {
   }
 
   private handleTimeUp(sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return;
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return;
     if (this.state.selection?.mode !== 'time_trial') return;
-    this.state = markFinished(this.state, userId);
+    this.state = markFinished(this.state, playerId);
     this.state = maybeEndGame(this.state);
     this.finalizeIfEnded();
   }
 
   private handleStreakBroken(sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return;
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return;
     if (this.state.selection?.mode !== 'streak') return;
-    this.state = markFinished(this.state, userId);
+    this.state = markFinished(this.state, playerId);
     this.state = maybeEndGame(this.state);
     this.finalizeIfEnded();
   }
 
   private handleEndGame(sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
-    this.state = endGameByHost(this.state, userId);
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
+    this.state = endGameByHost(this.state, playerId);
     this.finalizeIfEnded();
   }
 
   private finalizeIfEnded() {
     if (this.state.status === 'ended') {
+      const alreadyFinalized = this.state.winsAwarded;
       this.state = awardWins(this.state);
-      this.broadcastGameOver();
+      if (!alreadyFinalized) this.broadcastGameOver();
       this.broadcastState();
     } else {
       this.broadcastState();
@@ -317,39 +356,40 @@ export default class Room implements Party.Server {
   }
 
   private handlePlayAgain(sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
-    if (this.state.hostId !== userId) return this.sendError(sender, 'NOT_HOST', 'Only host can restart the room');
+    const playerId = this.connToPlayer.get(sender.id);
+    if (!playerId) return this.sendError(sender, 'NOT_IDENTIFIED', 'identify first');
+    if (this.state.hostId !== playerId) return this.sendError(sender, 'NOT_HOST', 'Only host can restart the room');
     const before = this.state.status;
-    this.state = resetToLobby(this.state, userId);
+    this.state = resetToLobby(this.state, playerId);
     if (this.state.status === 'lobby' && before !== 'lobby') this.broadcastState();
   }
 
   private handleKick(msg: any, sender: Party.Connection) {
-    const userId = this.connToUser.get(sender.id);
-    if (!userId) return;
-    const playerId = typeof msg.playerId === 'string' ? msg.playerId : '';
-    const target = this.state.players.find(p => p.id === playerId);
-    this.state = kickPlayer(this.state, userId, playerId);
-    if (target && !this.state.players.find(p => p.id === playerId)) {
-      for (const [connId, uId] of this.connToUser) {
-        if (uId !== playerId) continue;
+    const kickerId = this.connToPlayer.get(sender.id);
+    if (!kickerId) return;
+    const targetId = typeof msg.playerId === 'string' ? msg.playerId : '';
+    const target = this.state.players.find(p => p.id === targetId);
+    this.state = kickPlayer(this.state, kickerId, targetId);
+    if (target && !this.state.players.find(p => p.id === targetId)) {
+      for (const [connId, connectedPlayerId] of this.connToPlayer) {
+        if (connectedPlayerId !== targetId) continue;
         const conn = this.room.getConnection(connId);
         if (conn) {
           conn.send(JSON.stringify({ type: 'kicked' }));
           conn.close();
         }
+        this.connToPlayer.delete(connId);
         break;
       }
       this.broadcastState();
     }
   }
 
-  private gameStartedPayload(userId?: string) {
+  private gameStartedPayload(playerId?: string) {
     if (!this.state.selection) return null;
     const { setKey, mode } = this.state.selection;
     const setMeta = SETS[setKey];
-    const player = userId ? this.state.players.find(p => p.id === userId) : null;
+    const player = playerId ? this.state.players.find(p => p.id === playerId) : null;
     return {
       type: 'game-started',
       questions: this.state.questions,
@@ -368,8 +408,8 @@ export default class Room implements Party.Server {
     if (payload) this.room.broadcast(JSON.stringify(payload));
   }
 
-  private sendGameStarted(conn: Party.Connection, userId: string) {
-    const payload = this.gameStartedPayload(userId);
+  private sendGameStarted(conn: Party.Connection, playerId: string) {
+    const payload = this.gameStartedPayload(playerId);
     if (payload) conn.send(JSON.stringify(payload));
   }
 
@@ -378,12 +418,13 @@ export default class Room implements Party.Server {
       code: this.state.code,
       hostId: this.state.hostId,
       status: this.state.status,
-      players: this.state.players.map(({ connectionId: _connectionId, ...player }) => player),
+      players: this.state.players.map(({ connectionId: _connectionId, userId: _userId, rejoinToken: _rejoinToken, ...player }) => player),
       selection: this.state.selection,
       questions: [],
       totalQuestions: this.state.totalQuestions,
       startedAt: this.state.startedAt,
       endedAt: this.state.endedAt,
+      winsAwarded: this.state.winsAwarded,
     };
   }
 
@@ -448,8 +489,19 @@ function sanitizeElapsedMs(value: unknown): number {
   return Math.max(0, Math.min(60_000, value));
 }
 
-function getCreateSecret(room: Party.Room): string {
-  return (room.env as any)?.PARTY_CREATE_SECRET || 'dev-create-secret-change-me';
+function getCreateSecret(room: Party.Room): string | null {
+  const secret = (room.env as any)?.PARTY_CREATE_SECRET;
+  return typeof secret === 'string' && secret.length > 0 ? secret : null;
+}
+
+function randomPlayerId(): string {
+  return `p_${randomToken().slice(0, 16)}`;
+}
+
+function randomToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function withCors(res: Response): Response {

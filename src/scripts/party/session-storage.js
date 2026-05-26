@@ -9,9 +9,10 @@ export function loadPartySession(code) {
   }
 }
 
-export function savePartySession(code, { displayName }) {
+export function savePartySession(code, next) {
   try {
-    localStorage.setItem(KEY_PREFIX + code, JSON.stringify({ displayName, savedAt: Date.now() }));
+    const previous = loadPartySession(code) || {};
+    localStorage.setItem(KEY_PREFIX + code, JSON.stringify({ ...previous, ...definedOnly(next), savedAt: Date.now() }));
   } catch { /* ignore */ }
 }
 
@@ -36,4 +37,8 @@ export function pruneOldPartySessions() {
       }
     }
   } catch { /* ignore */ }
+}
+
+function definedOnly(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
 }
