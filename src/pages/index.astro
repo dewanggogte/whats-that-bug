@@ -9,9 +9,9 @@ const PRIMARY_SETS = [
 ];
 
 const MODES = [
-  { key: 'classic', label: 'Classic', detail: '10 rounds' },
-  { key: 'time_trial', label: 'Time Trial', detail: '60 seconds' },
-  { key: 'streak', label: 'Streaks', detail: 'One miss ends' },
+  { key: 'classic', icon: '🔟', label: 'Classic', detail: '10 rounds', description: 'A steady quiz with no timer.' },
+  { key: 'time_trial', icon: '⏱️', label: 'Time Trial', detail: '60 seconds', description: 'Race the clock for max points.' },
+  { key: 'streak', icon: '🎯', label: 'Streaks', detail: 'One miss ends', description: 'Keep going until you miss.' },
 ];
 
 const THEMED_SETS = [
@@ -61,20 +61,22 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
       <div class="play-cards">
         {primaryGroup.map(set => (
           <div class="set-choice-wrap">
-            <button type="button" class="play-card set-choice-card" data-set-card aria-expanded="false" aria-controls={`mode-${set.key}`}>
+            <button
+              type="button"
+              class="play-card set-choice-card"
+              data-set-card
+              data-set-key={set.key}
+              data-set-name={set.name}
+              data-set-icon={set.icon}
+              data-set-subtitle={set.subtitle}
+              data-set-detail={set.detail}
+              aria-haspopup="dialog"
+            >
               <span class="play-card-icon">{set.icon}</span>
               <span class="play-card-title">{set.name}</span>
               <span class="play-card-subtitle">{set.subtitle}</span>
               <span class="play-card-detail">{set.detail}</span>
             </button>
-            <div class="mode-picker" id={`mode-${set.key}`} hidden>
-              {MODES.map(mode => (
-                <a href={`/${set.key}/${mode.key}/play`}>
-                  <strong>{mode.label}</strong>
-                  <span>{mode.detail}</span>
-                </a>
-              ))}
-            </div>
           </div>
         ))}
       </div>
@@ -87,19 +89,21 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
       <div class="themed-buttons">
         {themedGroup.map(set => (
           <div class="themed-set-wrap">
-            <button type="button" class="themed-btn set-choice-card" data-set-card aria-expanded="false" aria-controls={`mode-${set.key}`}>
+            <button
+              type="button"
+              class="themed-btn set-choice-card"
+              data-set-card
+              data-set-key={set.key}
+              data-set-name={set.name}
+              data-set-icon={set.icon}
+              data-set-subtitle={set.countLabel}
+              data-set-detail="Themed deep dive"
+              aria-haspopup="dialog"
+            >
               <span class="themed-btn-icon">{set.icon}</span>
               <span class="themed-btn-label">{set.name}</span>
               <span class="themed-btn-meta">{set.countLabel}</span>
             </button>
-            <div class="mode-picker mode-picker-compact" id={`mode-${set.key}`} hidden>
-              {MODES.map(mode => (
-                <a href={`/${set.key}/${mode.key}/play`}>
-                  <strong>{mode.label}</strong>
-                  <span>{mode.detail}</span>
-                </a>
-              ))}
-            </div>
           </div>
         ))}
       </div>
@@ -163,6 +167,29 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
           <summary>Can I compete with others?</summary>
           <p>Not directly right now. Time Trial and Streak modes are focused on personal bests and shareable scores.</p>
         </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="mode-overlay" id="mode-overlay" role="dialog" aria-modal="true" aria-labelledby="mode-overlay-title" hidden>
+    <button type="button" class="mode-overlay-close" id="mode-overlay-close" aria-label="Close mode picker">&times;</button>
+    <div class="mode-overlay-panel" id="mode-overlay-panel">
+      <div class="mode-overlay-hero">
+        <span class="mode-overlay-hero-icon" id="mode-overlay-icon"></span>
+        <p class="mode-overlay-eyebrow">Choose your mode</p>
+        <h2 id="mode-overlay-title"></h2>
+        <p id="mode-overlay-subtitle"></p>
+        <span id="mode-overlay-detail"></span>
+      </div>
+      <div class="mode-overlay-modes">
+        {MODES.map(mode => (
+          <a href="/" class="mode-overlay-mode" data-mode-link data-mode-key={mode.key}>
+            <span class="mode-overlay-mode-icon">{mode.icon}</span>
+            <strong>{mode.label}</strong>
+            <span class="mode-overlay-mode-detail">{mode.detail}</span>
+            <span class="mode-overlay-mode-desc">{mode.description}</span>
+          </a>
+        ))}
       </div>
     </div>
   </div>
@@ -241,20 +268,49 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
   </script>
 
 <script>
+  const overlay = document.getElementById('mode-overlay');
+  const panel = document.getElementById('mode-overlay-panel');
+  const closeBtn = document.getElementById('mode-overlay-close');
+  const iconEl = document.getElementById('mode-overlay-icon');
+  const titleEl = document.getElementById('mode-overlay-title');
+  const subtitleEl = document.getElementById('mode-overlay-subtitle');
+  const detailEl = document.getElementById('mode-overlay-detail');
+  let lastTrigger = null;
+
+  function closeModeOverlay() {
+    overlay.hidden = true;
+    document.body.classList.remove('mode-overlay-open');
+    if (lastTrigger) lastTrigger.focus();
+  }
+
+  function openModeOverlay(card) {
+    lastTrigger = card;
+    const setKey = card.dataset.setKey;
+    const basePath = window.__BASE || '';
+    iconEl.textContent = card.dataset.setIcon || '';
+    titleEl.textContent = card.dataset.setName || '';
+    subtitleEl.textContent = card.dataset.setSubtitle || '';
+    detailEl.textContent = card.dataset.setDetail || '';
+    overlay.querySelectorAll('[data-mode-link]').forEach((link) => {
+      link.href = `${basePath}/${setKey}/${link.dataset.modeKey}/play`;
+    });
+    overlay.hidden = false;
+    document.body.classList.add('mode-overlay-open');
+    overlay.querySelector('[data-mode-link]')?.focus();
+  }
+
   document.querySelectorAll('[data-set-card]').forEach((card) => {
     card.addEventListener('click', () => {
-      const wasOpen = card.getAttribute('aria-expanded') === 'true';
-      document.querySelectorAll('[data-set-card]').forEach((otherCard) => {
-        otherCard.setAttribute('aria-expanded', 'false');
-        const picker = document.getElementById(otherCard.getAttribute('aria-controls'));
-        if (picker) picker.hidden = true;
-      });
-      if (!wasOpen) {
-        card.setAttribute('aria-expanded', 'true');
-        const picker = document.getElementById(card.getAttribute('aria-controls'));
-        if (picker) picker.hidden = false;
-      }
+      openModeOverlay(card);
     });
+  });
+
+  closeBtn.addEventListener('click', closeModeOverlay);
+  overlay.addEventListener('click', (event) => {
+    if (!panel.contains(event.target)) closeModeOverlay();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (!overlay.hidden && event.key === 'Escape') closeModeOverlay();
   });
 </script>
 
