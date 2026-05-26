@@ -100,8 +100,7 @@ import Base from '../../layouts/Base.astro';
     }
 
     function roomUrl(code) {
-      if (import.meta.env.DEV) return `${base}/party?code=${code}`;
-      return `${base}/party/${code}`;
+      return `${base}/party?code=${code}`;
     }
 
     function readRoomCodeFromUrl() {
