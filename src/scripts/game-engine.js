@@ -274,9 +274,44 @@ export function generateDistractors(correct, taxonomy, observations) {
 const ROUNDS_PER_SESSION = 10;
 const RECENT_SESSIONS_TO_TRACK = 3;
 
-function getRecentlyUsedIds(setKey) {
+export function modeKey(setKey, mode) {
+  return `${setKey}_${mode || 'classic'}`;
+}
+
+export function bestStorageKey(setKey, mode) {
+  return `best_${modeKey(setKey, mode)}`;
+}
+
+export function recentStorageKey(setKey, mode) {
+  return `recent_${modeKey(setKey, mode)}`;
+}
+
+function copyStorageValue(oldKey, newKey) {
+  if (oldKey === newKey) return;
   try {
-    const raw = localStorage.getItem(`recent_${setKey}`);
+    if (localStorage.getItem(newKey) !== null) return;
+    const oldValue = localStorage.getItem(oldKey);
+    if (oldValue !== null) localStorage.setItem(newKey, oldValue);
+  } catch { /* localStorage unavailable */ }
+}
+
+export function migrateBestStorageKey(setKey, mode) {
+  const key = bestStorageKey(setKey, mode);
+  if ((mode || 'classic') === 'classic') copyStorageValue(`best_${setKey}`, key);
+  if (setKey === 'all_bugs' && mode === 'time_trial') copyStorageValue('best_time_trial', key);
+  if (setKey === 'all_bugs' && mode === 'streak') copyStorageValue('best_streak', key);
+  return key;
+}
+
+function migrateRecentStorageKey(setKey, mode) {
+  const key = recentStorageKey(setKey, mode);
+  if ((mode || 'classic') === 'classic') copyStorageValue(`recent_${setKey}`, key);
+  return key;
+}
+
+function getRecentlyUsedIds(setKey, mode) {
+  try {
+    const raw = localStorage.getItem(migrateRecentStorageKey(setKey, mode));
     if (!raw) return new Set();
     const sessions = JSON.parse(raw);
     return new Set(sessions.flat());
@@ -285,14 +320,15 @@ function getRecentlyUsedIds(setKey) {
   }
 }
 
-function saveUsedIds(setKey, ids) {
+function saveUsedIds(setKey, mode, ids) {
   try {
-    const raw = localStorage.getItem(`recent_${setKey}`);
+    const key = migrateRecentStorageKey(setKey, mode);
+    const raw = localStorage.getItem(key);
     const sessions = raw ? JSON.parse(raw) : [];
     sessions.unshift([...ids]);
     // Keep only the last N sessions
     while (sessions.length > RECENT_SESSIONS_TO_TRACK) sessions.pop();
-    localStorage.setItem(`recent_${setKey}`, JSON.stringify(sessions));
+    localStorage.setItem(key, JSON.stringify(sessions));
   } catch { /* localStorage unavailable */ }
 }
 
@@ -317,7 +353,7 @@ export class SessionState {
     this.streakBroken = false;
 
     const fullPool = setDef.observation_ids.map(i => observations[i]).filter(Boolean);
-    const recentIds = getRecentlyUsedIds(setKey);
+    const recentIds = getRecentlyUsedIds(setKey, mode);
     const freshPool = fullPool.filter(obs => !recentIds.has(obs.id));
     // Prioritize fresh observations, but backfill from recent if needed
     if (freshPool.length >= ROUNDS_PER_SESSION) {
@@ -475,7 +511,7 @@ export class SessionState {
     });
     // Save used IDs after last round (classic mode only) so next session avoids repeats
     if (this.mode === 'classic' && this.isComplete) {
-      saveUsedIds(this.setKey, this._usedObservationIds);
+      saveUsedIds(this.setKey, this.mode, this._usedObservationIds);
     }
     return { score, correct };
   }

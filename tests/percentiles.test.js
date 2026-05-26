@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computePercentile, getScoreBucket, buildHistogramData } from '../src/scripts/percentiles.js';
+import { computePercentile, getScoreBucket, buildHistogramData, percentileDataKey } from '../src/scripts/percentiles.js';
 
 describe('computePercentile', () => {
   const distribution = { '0': 5, '1': 10, '2': 20, '3': 30, '4': 20, '5': 10, '10': 5 };
@@ -63,5 +63,15 @@ describe('buildHistogramData', () => {
     const result = buildHistogramData(distribution, true, 5);
     const highlightedIdx = result.buckets.findIndex((_, i) => result.highlighted[i]);
     expect(highlightedIdx).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('percentileDataKey', () => {
+  it('maps bugs_101 time trial to existing percentile data', () => {
+    expect(percentileDataKey('bugs_101', 'time_trial')).toBe('bugs_101_time_trial');
+  });
+
+  it('returns null when no historical mode data exists for a set', () => {
+    expect(percentileDataKey('beetles', 'time_trial')).toBeNull();
   });
 });

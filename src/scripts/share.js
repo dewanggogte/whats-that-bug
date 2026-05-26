@@ -15,7 +15,11 @@ export function getClassicFlavor(correctCount) {
   return 'Bugs are tricky! Give it a shot 👀';
 }
 
-export function generateShareText(totalScore, history, setName, bestStreak) {
+function shareUrl(setKey, mode) {
+  return `https://dewanggogte.com/games/bugs/${setKey}/${mode}/play?ref=share`;
+}
+
+export function generateShareText(totalScore, history, setName, bestStreak, setKey) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
   const correctCount = history.filter(h => h.score === 100).length;
   const flavor = getClassicFlavor(correctCount);
@@ -28,7 +32,7 @@ export function generateShareText(totalScore, history, setName, bestStreak) {
     `${correctCount}/10 · Streak: ${bestStreak} · ${setName}`,
     flavor,
     '',
-    'https://dewanggogte.com/games/bugs/?ref=share',
+    shareUrl(setKey, 'classic'),
   ].join('\n');
 }
 
@@ -53,7 +57,7 @@ export function generateTimeTrialShareText(totalScore, history, correctCount, to
     '',
     flavor,
     '',
-    `https://dewanggogte.com/games/bugs/?ref=share&mode=time_trial`,
+    shareUrl(setKey, 'time_trial'),
   ].join('\n');
 }
 
@@ -78,7 +82,7 @@ export function generateStreakShareText(streakCount, history, setKey) {
     '',
     flavor,
     '',
-    `https://dewanggogte.com/games/bugs/?ref=share&mode=streak`,
+    shareUrl(setKey, 'streak'),
   ].join('\n');
 }
 

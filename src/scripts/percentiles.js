@@ -98,16 +98,30 @@ export function buildHistogramData(distribution, isStreak, playerScore = null) {
   return { buckets: boundaries, counts, labels, highlighted };
 }
 
+export function percentileDataKey(setKey, mode) {
+  const key = `${setKey}:${mode}`;
+  return {
+    'bugs_101:time_trial': 'bugs_101_time_trial',
+    'bugs_101:streak': 'bugs_101_streak',
+    'all_bugs:time_trial': 'time_trial',
+    'all_bugs:streak': 'streak',
+  }[key] || null;
+}
+
 /**
  * Render the percentile card HTML for the game-over screen.
  * Returns an HTML string, or empty string if data unavailable.
  */
-export function renderPercentileCard(score, setKey, isStreak) {
+export function renderPercentileCard(score, setKey, mode) {
   if (!percentileData) return '';
 
-  const setData = percentileData[setKey];
+  const dataKey = percentileDataKey(setKey, mode);
+  if (!dataKey) return '';
+
+  const setData = percentileData[dataKey];
   if (!setData || !setData.distribution || !setData.totalSessions) return '';
 
+  const isStreak = mode === 'streak';
   const percentile = computePercentile(score, setData.distribution, setData.totalSessions);
   const topPercent = 100 - percentile;
   const histogram = buildHistogramData(setData.distribution, isStreak, score);

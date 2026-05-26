@@ -32,35 +32,35 @@ describe('generateShareText', () => {
   ];
 
   it('includes the game name and score', () => {
-    const text = generateShareText(700, history, 'Beetles', 4);
+    const text = generateShareText(700, history, 'Beetles', 4, 'beetles');
     expect(text).toContain('What\'s That Bug?');
     expect(text).toContain('700/1000');
   });
 
   it('generates correct emoji grid', () => {
-    const text = generateShareText(700, history, 'Beetles', 4);
+    const text = generateShareText(700, history, 'Beetles', 4, 'beetles');
     expect(text).toContain('🟩🟩🟨🟩🟥🟩🟨🟩🟩🟨');
   });
 
   it('includes correct count and streak', () => {
-    const text = generateShareText(700, history, 'Beetles', 4);
+    const text = generateShareText(700, history, 'Beetles', 4, 'beetles');
     expect(text).toContain('6/10');
     expect(text).toContain('Streak: 4');
   });
 
   it('includes the set name', () => {
-    const text = generateShareText(700, history, 'Beetles', 4);
+    const text = generateShareText(700, history, 'Beetles', 4, 'beetles');
     expect(text).toContain('Beetles');
   });
 
   it('includes a flavor line based on performance', () => {
-    const text = generateShareText(700, history, 'Beetles', 4);
+    const text = generateShareText(700, history, 'Beetles', 4, 'beetles');
     expect(text).toContain('Not bad');
   });
 
   it('shows expert flavor for 8+ correct', () => {
     const goodHistory = Array(8).fill({ score: 100 }).concat([{ score: 0 }, { score: 0 }]);
-    const text = generateShareText(800, goodHistory, 'Beetles', 8);
+    const text = generateShareText(800, goodHistory, 'Beetles', 8, 'beetles');
     expect(text).toContain('Bug expert');
   });
 });
@@ -73,30 +73,30 @@ describe('generateTimeTrialShareText', () => {
   ];
 
   it('includes Time Trial label', () => {
-    const text = generateTimeTrialShareText(425, history, 7, 9);
+    const text = generateTimeTrialShareText(425, history, 7, 9, 'beetles');
     expect(text).toContain('Time Trial');
   });
 
   it('includes score and accuracy', () => {
-    const text = generateTimeTrialShareText(425, history, 7, 9);
+    const text = generateTimeTrialShareText(425, history, 7, 9, 'beetles');
     expect(text).toContain('425 pts');
     expect(text).toContain('7/9 correct');
     expect(text).toContain('60s');
   });
 
   it('includes emoji grid', () => {
-    const text = generateTimeTrialShareText(425, history, 7, 9);
+    const text = generateTimeTrialShareText(425, history, 7, 9, 'beetles');
     expect(text).toContain('🟩');
   });
 
   it('includes mode-specific share URL', () => {
-    const text = generateTimeTrialShareText(425, history, 7, 9);
-    expect(text).toContain('mode=time_trial');
+    const text = generateTimeTrialShareText(425, history, 7, 9, 'beetles');
+    expect(text).toContain('/beetles/time_trial/play?ref=share');
   });
 
   it('picks flavor line based on accuracy', () => {
     const perfectHistory = Array(10).fill({ score: 100 });
-    const text = generateTimeTrialShareText(1000, perfectHistory, 10, 10);
+    const text = generateTimeTrialShareText(1000, perfectHistory, 10, 10, 'beetles');
     expect(text).toContain('Lightning fast');
   });
 });
@@ -104,27 +104,27 @@ describe('generateTimeTrialShareText', () => {
 describe('generateStreakShareText', () => {
   it('includes streak count', () => {
     const history = Array(14).fill({ score: 100 });
-    const text = generateStreakShareText(14, history);
+    const text = generateStreakShareText(14, history, 'beetles');
     expect(text).toContain('14');
     expect(text).toContain('in a row');
   });
 
   it('includes all-green emoji grid with no trailing red', () => {
     const history = Array(5).fill({ score: 100 });
-    const text = generateStreakShareText(5, history);
+    const text = generateStreakShareText(5, history, 'beetles');
     expect(text).toContain('🟩🟩🟩🟩🟩');
     expect(text).not.toContain('🟥');
   });
 
   it('includes mode-specific share URL', () => {
     const history = Array(3).fill({ score: 100 });
-    const text = generateStreakShareText(3, history);
-    expect(text).toContain('mode=streak');
+    const text = generateStreakShareText(3, history, 'beetles');
+    expect(text).toContain('/beetles/streak/play?ref=share');
   });
 
   it('picks flavor line based on streak length', () => {
     const longHistory = Array(20).fill({ score: 100 });
-    const text = generateStreakShareText(20, longHistory);
+    const text = generateStreakShareText(20, longHistory, 'beetles');
     expect(text).toContain('Unstoppable');
   });
 });

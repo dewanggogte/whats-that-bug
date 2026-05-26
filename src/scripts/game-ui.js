@@ -3,7 +3,7 @@
  * Supports three modes: classic (10 rounds), time_trial (60s), streak (until wrong).
  */
 
-import { SessionState, calculateTimedScore, getBugs101Name } from './game-engine.js';
+import { SessionState, calculateTimedScore, getBugs101Name, migrateBestStorageKey } from './game-engine.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto, logRoundDisplayed } from './feedback.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
@@ -815,24 +815,24 @@ function showMilestoneBanner(milestone) {
  * Returns { text: string, link: string, linkText: string } or null.
  */
 function getPostSessionRecommendation(totalScore, setKey, mode) {
-  if (setKey === 'bugs_101' && totalScore >= 800) {
+  if (mode === 'classic' && setKey === 'bugs_101' && totalScore >= 800) {
     return {
       text: "You're crushing Bugs 101!",
-      link: `${base}/play?set=all_bugs`,
+      link: `${base}/all_bugs/classic/play`,
       linkText: 'Try All Bugs →',
     };
   }
 
-  if (mode === 'classic' && totalScore >= 700 && !setKey.includes('time_trial')) {
+  if (mode === 'classic' && totalScore >= 700) {
     return {
       text: 'Nice score! Think you can do it under pressure?',
-      link: `${base}/play?set=${setKey.replace('bugs_101', 'bugs_101_time_trial').replace('all_bugs', 'time_trial')}`,
+      link: `${base}/${setKey}/time_trial/play`,
       linkText: 'Try Time Trial →',
     };
   }
 
   if (mode === 'streak') {
-    const bestKey = `best_${setKey}`;
+    const bestKey = migrateBestStorageKey(setKey, 'streak');
     const best = parseInt(localStorage.getItem(bestKey) || '0', 10);
     if (best > 0) {
       return {
@@ -889,9 +889,9 @@ function renderClassicSummary() {
   playSessionEnd();
   const exactCount = session.history.filter(h => h.score === 100).length;
   const missCount = session.history.filter(h => h.score < 100).length;
-  const shareText = generateShareText(session.totalScore, session.history, session.setDef.name, session.bestStreak);
+  const shareText = generateShareText(session.totalScore, session.history, session.setDef.name, session.bestStreak, currentSetKey);
 
-  const storageKey = `best_${currentSetKey}`;
+  const storageKey = migrateBestStorageKey(currentSetKey, 'classic');
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   if (session.totalScore > prevBest) {
     localStorage.setItem(storageKey, session.totalScore.toString());
@@ -1002,7 +1002,7 @@ function renderTimeTrialSummary() {
   const totalQ = session.questionsAnswered;
   const shareText = generateTimeTrialShareText(session.totalScore, session.history, correctCount, totalQ, currentSetKey);
 
-  const storageKey = `best_${currentSetKey}`;
+  const storageKey = migrateBestStorageKey(currentSetKey, 'time_trial');
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = session.totalScore > prevBest;
   if (isNewBest) {
@@ -1042,8 +1042,7 @@ function renderTimeTrialSummary() {
     ? `<div class="new-best-badge">New Personal Best!</div>`
     : prevBest > 0 ? `<p class="subtitle" style="margin-top:4px;">Personal best: ${prevBest} pts</p>` : '';
 
-  const isStreak = false;
-  const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, isStreak);
+  const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, session.mode);
   container.innerHTML = `
     <div class="container">
       <div class="summary">
@@ -1113,7 +1112,7 @@ function renderStreakGameOver(picked, correct) {
   const streakCount = session.currentStreak;
   const shareText = generateStreakShareText(streakCount, session.history, currentSetKey);
 
-  const storageKey = `best_${currentSetKey}`;
+  const storageKey = migrateBestStorageKey(currentSetKey, 'streak');
   const prevBest = parseInt(localStorage.getItem(storageKey) || '0', 10);
   const isNewBest = streakCount > prevBest;
   if (isNewBest) {
@@ -1165,8 +1164,7 @@ function renderStreakGameOver(picked, correct) {
 
   const totalRounds = streakCount + 1;
 
-  const isStreak = true;
-  const percentileHTML = renderPercentileCard(streakCount, currentSetKey, isStreak);
+  const percentileHTML = renderPercentileCard(streakCount, currentSetKey, session.mode);
   container.innerHTML = `
     <div class="container">
       <div class="summary">

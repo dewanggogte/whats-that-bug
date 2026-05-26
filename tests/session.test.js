@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SessionState } from '../src/scripts/game-engine.js';
+import { SessionState, bestStorageKey, migrateBestStorageKey } from '../src/scripts/game-engine.js';
 
 const observations = [
   { id: 1, taxon: { species: 'A', common_name: 'A', genus: 'G1', family: 'F1', order: 'O1' } },
@@ -218,5 +218,40 @@ describe('SessionState mode as runtime parameter', () => {
       null
     );
     expect(session.mode).toBe('classic');
+  });
+});
+
+describe('set-mode storage keys', () => {
+  const store = {};
+
+  beforeEach(() => {
+    Object.keys(store).forEach(k => delete store[k]);
+    global.localStorage = {
+      getItem: k => store[k] ?? null,
+      setItem: (k, v) => { store[k] = String(v); },
+      removeItem: k => { delete store[k]; },
+    };
+  });
+
+  it('migrates best_bugs_101 to best_bugs_101_classic', () => {
+    localStorage.setItem('best_bugs_101', '800');
+    const key = migrateBestStorageKey('bugs_101', 'classic');
+    expect(key).toBe('best_bugs_101_classic');
+    expect(localStorage.getItem(key)).toBe('800');
+    expect(localStorage.getItem('best_bugs_101')).toBe('800');
+  });
+
+  it('migrates best_time_trial to best_all_bugs_time_trial', () => {
+    localStorage.setItem('best_time_trial', '1200');
+    const key = migrateBestStorageKey('all_bugs', 'time_trial');
+    expect(key).toBe('best_all_bugs_time_trial');
+    expect(localStorage.getItem(key)).toBe('1200');
+    expect(localStorage.getItem('best_time_trial')).toBe('1200');
+  });
+
+  it('does not collide time trial and streak best keys for the same set', () => {
+    expect(bestStorageKey('beetles', 'time_trial')).toBe('best_beetles_time_trial');
+    expect(bestStorageKey('beetles', 'streak')).toBe('best_beetles_streak');
+    expect(bestStorageKey('beetles', 'time_trial')).not.toBe(bestStorageKey('beetles', 'streak'));
   });
 });
