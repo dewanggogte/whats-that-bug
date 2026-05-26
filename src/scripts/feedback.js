@@ -336,3 +336,11 @@ export function logDailyComplete(sessionId, mode, solved, guessesUsed, date, sha
     win_streak: winStreak,
   });
 }
+
+export function logMultiplayerEvent(eventName, payload = {}) {
+  if (typeof window !== 'undefined' && window.umami?.track) {
+    try {
+      window.umami.track(eventName, payload);
+    } catch { /* ignore */ }
+  }
+}

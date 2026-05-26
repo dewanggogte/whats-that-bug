@@ -109,21 +109,23 @@ export function calculateTimedScore(timeMs) {
   return 10;
 }
 
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+const defaultRng = Math.random;
 
-function shuffle(arr) {
+function shuffleWith(arr, rng = defaultRng) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
-function pickRandomN(arr, n) {
-  return shuffle(arr).slice(0, n);
+function pickRandomWith(arr, rng = defaultRng) {
+  return arr[Math.floor(rng() * arr.length)];
+}
+
+function pickRandomNWith(arr, n, rng = defaultRng) {
+  return shuffleWith(arr, rng).slice(0, n);
 }
 
 /**
@@ -154,14 +156,14 @@ function conflictsWithUsed(candidate, usedCategories) {
  * Generate 3 distractors for Bugs 101 mode — each with a DIFFERENT category name.
  * Also prevents parent/child category pairs (e.g. "Butterfly" + "Swallowtail Butterfly").
  */
-export function generateBugs101Distractors(correct, taxonomy, observations) {
+export function generateBugs101Distractors(correct, taxonomy, observations, rng = defaultRng) {
   const correctCategory = getBugs101Name(correct.taxon);
   const distractors = [];
   const usedCategories = new Set([correctCategory]);
 
   // Build a pool of all observations, shuffled
   const allIndices = Object.values(taxonomy.order).flat();
-  const shuffled = shuffle(allIndices);
+  const shuffled = shuffleWith(allIndices, rng);
 
   for (const idx of shuffled) {
     if (distractors.length >= 3) break;
@@ -179,15 +181,16 @@ export function generateBugs101Distractors(correct, taxonomy, observations) {
  * Generate 3 distractors for genus-level scoring — each with a DIFFERENT genus.
  * Prioritizes same-family picks for difficulty, then same-order, then any.
  */
-export function generateGenusDistractors(correct, taxonomy, observations) {
+export function generateGenusDistractors(correct, taxonomy, observations, rng = defaultRng) {
   const distractors = [];
   const usedGenera = new Set([correct.taxon.genus]);
 
   // Tier 1: same family, different genus (up to 2)
-  const familyCandidates = shuffle(
+  const familyCandidates = shuffleWith(
     (taxonomy.family?.[correct.taxon.family] || [])
       .map(i => observations[i])
-      .filter(obs => obs && !usedGenera.has(obs.taxon.genus))
+      .filter(obs => obs && !usedGenera.has(obs.taxon.genus)),
+    rng
   );
   for (const pick of familyCandidates) {
     if (distractors.length >= 2) break;
@@ -198,10 +201,11 @@ export function generateGenusDistractors(correct, taxonomy, observations) {
 
   // Tier 2: same order, different genus — fill remaining
   if (distractors.length < 3) {
-    const orderCandidates = shuffle(
+    const orderCandidates = shuffleWith(
       (taxonomy.order?.[correct.taxon.order] || [])
         .map(i => observations[i])
-        .filter(obs => obs && !usedGenera.has(obs.taxon.genus))
+        .filter(obs => obs && !usedGenera.has(obs.taxon.genus)),
+      rng
     );
     for (const pick of orderCandidates) {
       if (distractors.length >= 3) break;
@@ -213,7 +217,7 @@ export function generateGenusDistractors(correct, taxonomy, observations) {
 
   // Tier 3: any order — fill remaining
   if (distractors.length < 3) {
-    const allIndices = shuffle(Object.values(taxonomy.order).flat());
+    const allIndices = shuffleWith(Object.values(taxonomy.order).flat(), rng);
     for (const idx of allIndices) {
       if (distractors.length >= 3) break;
       const pick = observations[idx];
@@ -226,7 +230,7 @@ export function generateGenusDistractors(correct, taxonomy, observations) {
   return distractors;
 }
 
-export function generateDistractors(correct, taxonomy, observations) {
+export function generateDistractors(correct, taxonomy, observations, rng = defaultRng) {
   const correctSpecies = correct.taxon.species;
   const distractors = [];
   const usedSpecies = new Set([correctSpecies]);
@@ -236,7 +240,7 @@ export function generateDistractors(correct, taxonomy, observations) {
       .map(i => observations[i])
       .filter(obs => !usedSpecies.has(obs.taxon.species));
     if (candidates.length === 0) return false;
-    const pick = pickRandom(candidates);
+    const pick = pickRandomWith(candidates, rng);
     distractors.push(pick);
     usedSpecies.add(pick.taxon.species);
     return true;
@@ -250,7 +254,7 @@ export function generateDistractors(correct, taxonomy, observations) {
     .map(i => observations[i])
     .filter(obs => !usedSpecies.has(obs.taxon.species) && obs.taxon.genus !== correct.taxon.genus);
   if (familyCandidates.length > 0) {
-    const pick = pickRandom(familyCandidates);
+    const pick = pickRandomWith(familyCandidates, rng);
     distractors.push(pick);
     usedSpecies.add(pick.taxon.species);
   }
@@ -261,7 +265,7 @@ export function generateDistractors(correct, taxonomy, observations) {
     const orderCandidates = (taxonomy.order?.[correct.taxon.order] || [])
       .map(i => observations[i])
       .filter(obs => !usedSpecies.has(obs.taxon.species));
-    const picks = pickRandomN(orderCandidates, needed);
+    const picks = pickRandomNWith(orderCandidates, needed, rng);
     for (const pick of picks) {
       distractors.push(pick);
       usedSpecies.add(pick.taxon.species);
@@ -333,13 +337,14 @@ function saveUsedIds(setKey, mode, ids) {
 }
 
 export class SessionState {
-  constructor(observations, taxonomy, setDef, setKey, difficulty = null, mode = 'classic') {
+  constructor(observations, taxonomy, setDef, setKey, difficulty = null, mode = 'classic', rng = null) {
     this.observations = observations;
     this.taxonomy = taxonomy;
     this.setDef = setDef;
     this.setKey = setKey;
     this._difficulty = difficulty;
     this.mode = mode;
+    this._rng = rng;
     this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     this.currentRound = 0;
     this.totalScore = 0;
@@ -361,7 +366,7 @@ export class SessionState {
     } else {
       // Put fresh first so they're picked before recent repeats
       const recentPool = fullPool.filter(obs => recentIds.has(obs.id));
-      this._pool = [...freshPool, ...shuffle(recentPool)];
+      this._pool = [...freshPool, ...shuffleWith(recentPool, this._rng || defaultRng)];
     }
   }
 
@@ -408,7 +413,7 @@ export class SessionState {
     if (this.mode === 'classic' && this._difficulty) {
       correct = this._pickByDifficulty(available);
     } else {
-      correct = pickRandom(available);
+      correct = pickRandomWith(available, this._rng || defaultRng);
     }
 
     this._usedObservationIds.add(correct.id);
@@ -418,19 +423,19 @@ export class SessionState {
     const scoring = this.setDef.scoring;
     let distractors;
     if (scoring === 'binary') {
-      distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+      distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
     } else if (scoring === 'genus') {
       if (this._difficulty && this.currentRound <= 3) {
         // Easy rounds: cross-order distractors for visual distinction
-        distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations);
+        distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
       } else {
-        distractors = generateGenusDistractors(correct, this.taxonomy, this.observations);
+        distractors = generateGenusDistractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
       }
     } else {
-      distractors = generateDistractors(correct, this.taxonomy, this.observations);
+      distractors = generateDistractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
     }
 
-    const choices = shuffle([correct, ...distractors]);
+    const choices = shuffleWith([correct, ...distractors], this._rng || defaultRng);
     return { correct, choices };
   }
 
@@ -449,7 +454,7 @@ export class SessionState {
     });
 
     if (tierPool.length > 0) {
-      return pickRandom(tierPool);
+      return pickRandomWith(tierPool, this._rng || defaultRng);
     }
 
     // Try adjacent tiers before falling back to fully random
@@ -464,10 +469,10 @@ export class SessionState {
         const d = this._difficulty[obs.id];
         return d ? d.tier === tier : tier === 'medium';
       });
-      if (fallback.length > 0) return pickRandom(fallback);
+      if (fallback.length > 0) return pickRandomWith(fallback, this._rng || defaultRng);
     }
 
-    return pickRandom(available);
+    return pickRandomWith(available, this._rng || defaultRng);
   }
 
   submitAnswer(pickedTaxon) {

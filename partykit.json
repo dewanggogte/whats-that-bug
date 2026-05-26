@@ -1,0 +1,6 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "wtb-party",
+  "main": "party/server.ts",
+  "compatibilityDate": "2026-05-20"
+}

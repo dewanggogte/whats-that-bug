@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SessionState, bestStorageKey, migrateBestStorageKey } from '../src/scripts/game-engine.js';
+import { mulberry32 } from '../src/scripts/rng.js';
 
 const observations = [
   { id: 1, taxon: { species: 'A', common_name: 'A', genus: 'G1', family: 'F1', order: 'O1' } },
@@ -218,6 +219,36 @@ describe('SessionState mode as runtime parameter', () => {
       null
     );
     expect(session.mode).toBe('classic');
+  });
+});
+
+describe('SessionState with seeded rng produces deterministic sequences', () => {
+  it('two sessions with the same seed produce the same correct sequence', () => {
+    const s1 = new SessionState(
+      observations,
+      taxonomy,
+      setDef,
+      'bugs_101',
+      null,
+      'classic',
+      mulberry32(7)
+    );
+    const s2 = new SessionState(
+      observations,
+      taxonomy,
+      setDef,
+      'bugs_101',
+      null,
+      'classic',
+      mulberry32(7)
+    );
+    const seq1 = [];
+    const seq2 = [];
+    for (let i = 0; i < 5; i++) {
+      seq1.push(s1.nextRound().correct.id);
+      seq2.push(s2.nextRound().correct.id);
+    }
+    expect(seq1).toEqual(seq2);
   });
 });
 

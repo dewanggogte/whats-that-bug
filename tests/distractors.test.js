@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateDistractors, generateBugs101Distractors, getBugs101Name } from '../src/scripts/game-engine.js';
+import { generateDistractors, generateBugs101Distractors, generateGenusDistractors, getBugs101Name } from '../src/scripts/game-engine.js';
+import { mulberry32 } from '../src/scripts/rng.js';
 
 const observations = [
   { id: 1, taxon: { species: 'Cotinis mutabilis', common_name: 'Figeater Beetle', genus: 'Cotinis', family: 'Scarabaeidae', order: 'Coleoptera' } },
@@ -122,5 +123,30 @@ describe('generateBugs101Distractors', () => {
       if (unrelated.length === result.length) sawMultipleOrders = true;
     }
     expect(sawMultipleOrders).toBe(true);
+  });
+});
+
+describe('distractor generation is deterministic with a seeded rng', () => {
+  it('generateBugs101Distractors produces identical output for same seed', () => {
+    const a = generateBugs101Distractors(bugs101Observations[0], bugs101Taxonomy, bugs101Observations, mulberry32(99));
+    const b = generateBugs101Distractors(bugs101Observations[0], bugs101Taxonomy, bugs101Observations, mulberry32(99));
+    expect(a.map(o => o.id)).toEqual(b.map(o => o.id));
+  });
+
+  it('generateGenusDistractors produces identical output for same seed', () => {
+    const a = generateGenusDistractors(observations[0], taxonomy, observations, mulberry32(99));
+    const b = generateGenusDistractors(observations[0], taxonomy, observations, mulberry32(99));
+    expect(a.map(o => o.id)).toEqual(b.map(o => o.id));
+  });
+
+  it('generateDistractors produces identical output for same seed', () => {
+    const a = generateDistractors(observations[0], taxonomy, observations, mulberry32(99));
+    const b = generateDistractors(observations[0], taxonomy, observations, mulberry32(99));
+    expect(a.map(o => o.id)).toEqual(b.map(o => o.id));
+  });
+
+  it('non-seeded calls still work', () => {
+    const a = generateDistractors(observations[0], taxonomy, observations);
+    expect(a).toHaveLength(3);
   });
 });

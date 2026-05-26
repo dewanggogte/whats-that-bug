@@ -1,0 +1,115 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Play with Friends — What's That Bug?" description="Create or join a private multiplayer party.">
+  <meta name="robots" content="noindex" slot="head" />
+
+  <div class="party-shell">
+    <div id="party-landing-view" class="party-landing">
+      <section class="party-hero-card">
+        <p class="party-eyebrow">Multiplayer beta</p>
+        <h1>Play with Friends</h1>
+        <p>Create a private room, share a 4-character code, and race through the same bug questions with a live leaderboard.</p>
+      </section>
+
+      <div class="party-landing-grid">
+        <section class="party-panel">
+          <h2>Create a Party</h2>
+          <p>Start a new room for 2-5 players. You choose the set and mode from the lobby.</p>
+          <button class="btn btn-primary party-wide-btn" id="create-room">Create Room</button>
+        </section>
+
+        <section class="party-panel">
+          <h2>Join a Party</h2>
+          <label class="party-label" for="join-code">Room code</label>
+          <input class="party-code-input" id="join-code" type="text" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters" />
+          <button class="btn btn-outline party-wide-btn" id="join-room">Join</button>
+        </section>
+      </div>
+    </div>
+
+    <div id="party-room-view" class="party-room" data-code="" hidden>
+      <section id="name-prompt" class="party-panel name-prompt">
+        <p class="party-eyebrow" id="room-eyebrow">Room</p>
+        <h1>Join Party</h1>
+        <label class="party-label" for="display-name">Your name</label>
+        <input class="party-name-input" id="display-name" type="text" maxlength="20" autocomplete="off" />
+        <button class="btn btn-primary party-wide-btn" id="enter-room">Enter Room</button>
+      </section>
+      <section id="party-content" hidden></section>
+    </div>
+  </div>
+
+  <script>
+    import { requestCreateRoom } from '../../scripts/party/client.js';
+    import { isValidCodeShape } from '../../scripts/party/codes-client.js';
+    import { initPartyRoom } from '../../scripts/party/ui-lobby.js';
+
+    const base = window.__BASE || '';
+    const landingView = document.getElementById('party-landing-view');
+    const roomView = document.getElementById('party-room-view');
+    const createBtn = document.getElementById('create-room');
+    const joinBtn = document.getElementById('join-room');
+    const codeInput = document.getElementById('join-code');
+
+    const initialCode = readRoomCodeFromUrl();
+    if (initialCode) {
+      showRoom(initialCode);
+    }
+
+    createBtn.addEventListener('click', async () => {
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating...';
+      try {
+        const { code, createToken } = await requestCreateRoom();
+        sessionStorage.setItem(`wtb_party_create_${code}`, createToken);
+        window.location.href = roomUrl(code);
+      } catch (err) {
+        alert('Could not create a room. Make sure the PartyKit dev server is running, then try again.');
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Room';
+      }
+    });
+
+    codeInput.addEventListener('input', () => {
+      codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 4);
+    });
+
+    function joinRoom() {
+      const code = codeInput.value.trim().toUpperCase();
+      if (!isValidCodeShape(code)) {
+        alert('Invalid code. Codes are 4 characters and exclude O, I, L, 0, and 1.');
+        codeInput.focus();
+        return;
+      }
+      window.location.href = roomUrl(code);
+    }
+
+    joinBtn.addEventListener('click', joinRoom);
+    codeInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') joinRoom();
+    });
+
+    function showRoom(code) {
+      landingView.hidden = true;
+      roomView.hidden = false;
+      roomView.dataset.code = code;
+      document.getElementById('room-eyebrow').textContent = `Room ${code}`;
+      initPartyRoom(code);
+    }
+
+    function roomUrl(code) {
+      if (import.meta.env.DEV) return `${base}/party?code=${code}`;
+      return `${base}/party/${code}`;
+    }
+
+    function readRoomCodeFromUrl() {
+      const fromQuery = new URLSearchParams(window.location.search).get('code');
+      if (fromQuery) return fromQuery.trim().toUpperCase();
+      const path = window.location.pathname.slice(base.length || 0);
+      const match = path.match(/^\/party\/([^/]+)$/);
+      return match ? decodeURIComponent(match[1]).trim().toUpperCase() : '';
+    }
+  </script>
+</Base>
