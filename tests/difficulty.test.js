@@ -116,10 +116,10 @@ describe('adaptive difficulty', () => {
   });
 
   it('does not use difficulty curve for non-classic modes', () => {
-    const ttSetDef = { ...setDef, mode: 'time_trial', scoring: 'binary' };
+    const ttSetDef = { ...setDef, scoring: 'binary' };
     // Should not crash — difficulty param is accepted but ignored
     const session = new SessionState(
-      observations, taxonomy, ttSetDef, 'test', difficulty
+      observations, taxonomy, ttSetDef, 'test', difficulty, 'time_trial'
     );
     const round = session.nextRound();
     expect(round).not.toBeNull();

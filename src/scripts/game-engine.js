@@ -297,13 +297,13 @@ function saveUsedIds(setKey, ids) {
 }
 
 export class SessionState {
-  constructor(observations, taxonomy, setDef, setKey, difficulty = null) {
+  constructor(observations, taxonomy, setDef, setKey, difficulty = null, mode = 'classic') {
     this.observations = observations;
     this.taxonomy = taxonomy;
     this.setDef = setDef;
     this.setKey = setKey;
     this._difficulty = difficulty;
-    this.mode = setDef.mode || 'classic';
+    this.mode = mode;
     this.sessionId = crypto.randomUUID?.() || Math.random().toString(36).slice(2);
     this.currentRound = 0;
     this.totalScore = 0;

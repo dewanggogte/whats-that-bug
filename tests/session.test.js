@@ -112,8 +112,8 @@ describe('SessionState — time_trial mode', () => {
   let session;
 
   beforeEach(() => {
-    const ttSetDef = { ...setDef, mode: 'time_trial', scoring: 'binary' };
-    session = new SessionState(observations, taxonomy, ttSetDef, 'time_trial');
+    const ttSetDef = { ...setDef, scoring: 'binary' };
+    session = new SessionState(observations, taxonomy, ttSetDef, 'bugs_101', null, 'time_trial');
   });
 
   it('is never "complete" by round count (unlimited rounds)', () => {
@@ -152,8 +152,8 @@ describe('SessionState — streak mode', () => {
   let session;
 
   beforeEach(() => {
-    const streakSetDef = { ...setDef, mode: 'streak', scoring: 'binary' };
-    session = new SessionState(observations, taxonomy, streakSetDef, 'streak');
+    const streakSetDef = { ...setDef, scoring: 'binary' };
+    session = new SessionState(observations, taxonomy, streakSetDef, 'bugs_101', null, 'streak');
   });
 
   it('is never "complete" by round count', () => {
