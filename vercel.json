@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/party/:code",
+      "destination": "/party"
+    }
+  ],
   "headers": [
     {
       "source": "/data/(observations|taxonomy|sets).json",

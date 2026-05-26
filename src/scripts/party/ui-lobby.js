@@ -73,15 +73,34 @@ export async function initPartyRoom(code) {
     },
   });
 
+  let renderedAs = null; // 'host' | 'guest' — track which skeleton is mounted
+
   function renderRoom() {
     if (!currentState) return;
     if (currentState.status === 'playing') return;
     if (currentState.status === 'ended') {
       content.innerHTML = `<section class="party-panel"><h1>Party ended</h1><p><a href="${base}/party">Create or join another party</a></p></section>`;
+      renderedAs = null;
       return;
     }
 
     const isHost = currentState.hostId === userId;
+    const role = isHost ? 'host' : 'guest';
+
+    if (renderedAs !== role) {
+      // First render or host changed — rebuild from scratch
+      fullRender(isHost);
+      renderedAs = role;
+    } else {
+      // Just patch the bits that can change without destroying open dropdowns
+      updatePlayerCountHeader();
+      updateRoster(isHost);
+      if (isHost) updateStartButton();
+      else updateGuestSelection();
+    }
+  }
+
+  function fullRender(isHost) {
     content.innerHTML = `
       <div class="party-lobby-grid">
         <section class="party-panel party-share-panel">
@@ -94,24 +113,12 @@ export async function initPartyRoom(code) {
         </section>
 
         <section class="party-panel lobby-roster">
-          <h2>Players (${connectedCount()} connected · ${currentState.players.length}/5 in room)</h2>
-          <ul class="party-player-list">
-            ${currentState.players.map(p => `
-              <li class="party-player ${p.id === currentState.hostId ? 'host' : ''} ${!p.connected ? 'disconnected' : ''}">
-                <span>
-                  <strong>${escapeHtml(p.displayName)}</strong>
-                  ${p.id === currentState.hostId ? '<span class="host-pill">Host</span>' : ''}
-                  ${!p.connected ? '<span class="offline-pill">Disconnected</span>' : ''}
-                  ${p.wins > 0 ? `<span class="wins-pill" title="${p.wins} ${p.wins === 1 ? 'win' : 'wins'} this party">🏆 ${p.wins}</span>` : ''}
-                </span>
-                ${isHost && p.id !== userId ? `<button class="btn-mini kick" data-id="${escapeHtml(p.id)}">Kick</button>` : ''}
-              </li>
-            `).join('')}
-          </ul>
+          <h2 id="player-count-header"></h2>
+          <ul class="party-player-list" id="player-list"></ul>
         </section>
       </div>
 
-      <section class="party-panel">
+      <section class="party-panel" id="controls-panel">
         ${isHost ? renderHostControls() : renderGuestSelection()}
       </section>
       <div id="error-bar" class="error-bar" hidden></div>
@@ -119,13 +126,51 @@ export async function initPartyRoom(code) {
 
     QRCode.toCanvas(document.getElementById('qr'), window.location.href, { width: 128 }).catch(() => {});
     document.getElementById('copy-link').addEventListener('click', copyRoomLink);
-    content.querySelectorAll('button.kick').forEach(btn => {
+    updatePlayerCountHeader();
+    updateRoster(isHost);
+    if (isHost) wireHostControls();
+  }
+
+  function updatePlayerCountHeader() {
+    const el = document.getElementById('player-count-header');
+    if (!el) return;
+    el.textContent = `Players (${connectedCount()} connected · ${currentState.players.length}/5 in room)`;
+  }
+
+  function updateRoster(isHost) {
+    const list = document.getElementById('player-list');
+    if (!list) return;
+    list.innerHTML = currentState.players.map(p => `
+      <li class="party-player ${p.id === currentState.hostId ? 'host' : ''} ${!p.connected ? 'disconnected' : ''}">
+        <span>
+          <strong>${escapeHtml(p.displayName)}</strong>
+          ${p.id === currentState.hostId ? '<span class="host-pill">Host</span>' : ''}
+          ${!p.connected ? '<span class="offline-pill">Disconnected</span>' : ''}
+          ${p.wins > 0 ? `<span class="wins-pill" title="${p.wins} ${p.wins === 1 ? 'win' : 'wins'} this party">🏆 ${p.wins}</span>` : ''}
+        </span>
+        ${isHost && p.id !== userId ? `<button class="btn-mini kick" data-id="${escapeHtml(p.id)}">Kick</button>` : ''}
+      </li>
+    `).join('');
+    list.querySelectorAll('button.kick').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.closest('.party-player')?.querySelector('strong')?.textContent || 'this player';
         if (confirm(`Kick ${name}?`)) client.send({ type: 'kick-player', playerId: btn.dataset.id });
       });
     });
-    if (isHost) wireHostControls();
+  }
+
+  function updateStartButton() {
+    const btn = document.getElementById('start-game');
+    if (!btn) return;
+    const connected = connectedCount();
+    btn.disabled = connected < 2;
+    btn.textContent = connected < 2 ? 'Need 2+ Connected Players' : 'Start Game';
+  }
+
+  function updateGuestSelection() {
+    const panel = document.getElementById('controls-panel');
+    if (!panel) return;
+    panel.innerHTML = renderGuestSelection();
   }
 
   function connectedCount() {

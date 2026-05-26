@@ -89,3 +89,15 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 **The fix:** Made `mode` a constructor argument on `SessionState`, read it from the path-based `/<set>/<mode>/play` route, and deleted all mode-as-set entries from `sets.json`. The old `/play` route redirects to the game homepage. The homepage became set-first: choose a content set, then choose classic, time trial, or streak.
 
 **Key insight:** Data shape decisions made for one consumer can become constraints for every future consumer. Prefer orthogonal parameters even when one consumer doesn't yet need both.
+
+---
+
+## 2026-05-26: Multiplayer party mode on a static Astro site
+
+**The problem:** Party rooms need arbitrary share URLs like `/party/ABCD`, but this site builds as static HTML. Astro cannot pre-render unknown dynamic routes without either `getStaticPaths()` for every code or switching the app to SSR.
+
+**Why it happened:** The realtime state belongs in PartyKit, but the room page itself still has to be served by Astro/Vercel. The original `/party/[code]` plan assumed server routing that the current static deployment does not provide.
+
+**The fix:** Keep a single static `/party` page and have the client read a room code from either `?code=ABCD` or the current path. Vercel rewrites `/party/:code` to `/party`, preserving pretty production share links without changing the whole app to SSR. Local Astro dev uses the query-string route.
+
+**Key insight:** Adding realtime infrastructure does not automatically make the web app server-rendered. Static hosting constraints still shape URL design, even when live game state is handled elsewhere.

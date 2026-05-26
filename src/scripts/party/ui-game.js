@@ -45,6 +45,16 @@ function waitForImage(url) {
   });
 }
 
+function newSessionId() {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  } catch { /* ignore */ }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export async function initGameUI(container, { code, userId, state, gameStarted, client, isHost }) {
   if (_advanceTimer) clearTimeout(_advanceTimer);
   const observations = await fetch(`${base}/data/observations.json`).then(r => r.json());
@@ -57,6 +67,9 @@ export async function initGameUI(container, { code, userId, state, gameStarted, 
     questions: gameStarted.questions,
     isHost,
     container,
+    sessionId: newSessionId(),
+    lastPickedChoiceIndex: null,
+    loggedDisplays: new Set(),
     leaderboard: state.players.map(p => ({
       id: p.id,
       displayName: p.displayName,
@@ -71,10 +84,13 @@ export async function initGameUI(container, { code, userId, state, gameStarted, 
   _timeUpSent = false;
   _preloadedImages.clear();
 
-  logMultiplayerEvent('mp_game_started', {
-    setKey: _ctx.setMeta.setKey,
+  logMultiplayerEvent('mp_session_start', {
+    session_id: _ctx.sessionId,
+    room_code: _ctx.code,
+    set: _ctx.setMeta.setKey,
     mode: _ctx.setMeta.mode,
-    players: state.players.length,
+    player_count: state.players.length,
+    resumed_at_round: gameStarted.resume?.nextQuestionIndex ? _currentQ + 1 : null,
   });
 
   if (_ctx.setMeta.mode === 'time_trial') {
@@ -119,6 +135,25 @@ export function applyLeaderboard(leaderboard) {
 
 export function applyQuestionResult({ questionIndex, score, correctChoiceIndex }) {
   if (!_ctx || questionIndex !== _currentQ) return;
+
+  const q = _ctx.questions[_currentQ];
+  const correctObs = q ? _ctx.observations[q.correctObservationIndex] : null;
+  const pickedObs = q && _ctx.lastPickedChoiceIndex != null
+    ? _ctx.observations[q.choiceObservationIndexes[_ctx.lastPickedChoiceIndex]]
+    : null;
+  logMultiplayerEvent('mp_round_complete', {
+    session_id: _ctx.sessionId,
+    room_code: _ctx.code,
+    round: _currentQ + 1,
+    observation_id: correctObs?.id ?? null,
+    user_answer: pickedObs?.taxon?.species ?? null,
+    correct_answer: correctObs?.taxon?.species ?? null,
+    score,
+    time_taken_ms: Date.now() - _startedAt,
+    set: _ctx.setMeta.setKey,
+    mode: _ctx.setMeta.mode,
+  });
+
   showResult(score, correctChoiceIndex);
 
   if (_ctx.setMeta.mode === 'streak' && score !== 100) {
@@ -140,12 +175,19 @@ export function applyQuestionResult({ questionIndex, score, correctChoiceIndex }
 export function applyGameOver({ finalLeaderboard, durationMs }, opts = {}) {
   if (!_ctx) return;
   if (_advanceTimer) clearTimeout(_advanceTimer);
-  logMultiplayerEvent('mp_game_ended', {
-    setKey: _ctx.setMeta.setKey,
+  const myEntry = finalLeaderboard.find(p => p.id === _ctx.userId);
+  const myRank = finalLeaderboard.findIndex(p => p.id === _ctx.userId) + 1 || null;
+  logMultiplayerEvent('mp_session_end', {
+    session_id: _ctx.sessionId,
+    room_code: _ctx.code,
+    set: _ctx.setMeta.setKey,
     mode: _ctx.setMeta.mode,
-    players: finalLeaderboard.length,
-    durationMs,
-    maxScore: finalLeaderboard[0]?.score || 0,
+    total_score: myEntry?.score ?? 0,
+    rounds_played: _ctx.loggedDisplays.size,
+    final_rank: myRank,
+    player_count: finalLeaderboard.length,
+    duration_ms: durationMs,
+    max_score: finalLeaderboard[0]?.score || 0,
   });
 
   const client = opts.client || _ctx.client;
@@ -240,10 +282,24 @@ function renderQuestion() {
     </div>
   `;
   _startedAt = Date.now();
+  _ctx.lastPickedChoiceIndex = null;
+
+  if (!_ctx.loggedDisplays.has(_currentQ)) {
+    _ctx.loggedDisplays.add(_currentQ);
+    logMultiplayerEvent('mp_round_displayed', {
+      session_id: _ctx.sessionId,
+      room_code: _ctx.code,
+      round: _currentQ + 1,
+      observation_id: correct.id,
+      set: _ctx.setMeta.setKey,
+      mode: _ctx.setMeta.mode,
+    });
+  }
 
   _ctx.container.querySelectorAll('.choice').forEach(btn => {
     btn.addEventListener('click', () => {
       const choiceIndex = parseInt(btn.dataset.choiceIndex, 10);
+      _ctx.lastPickedChoiceIndex = choiceIndex;
       _ctx.client.send({
         type: 'submit-answer',
         questionIndex: _currentQ,

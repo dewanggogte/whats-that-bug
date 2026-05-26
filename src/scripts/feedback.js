@@ -343,4 +343,9 @@ export function logMultiplayerEvent(eventName, payload = {}) {
       window.umami.track(eventName, payload);
     } catch { /* ignore */ }
   }
+  enqueue({
+    type: eventName,
+    ...payload,
+  });
+  if (eventName === 'mp_session_end') flush();
 }
