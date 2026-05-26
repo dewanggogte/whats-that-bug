@@ -17,13 +17,6 @@ interface Props {
 const { setKey, title, description, h1, intro, canonicalPath } = Astro.props;
 const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
 
-// Time trial/streak variants only exist for these sets
-const COMPETE_MODES = {
-  bugs_101: { timeTrial: 'bugs_101_time_trial', streak: 'bugs_101_streak' },
-  all_bugs: { timeTrial: 'time_trial', streak: 'streak' },
-};
-const compete = COMPETE_MODES[setKey] || null;
-
 const set = setsData[setKey];
 const speciesMap = buildSpeciesMap(observations);
 const speciesList = getSpeciesForSet(set, observations, speciesMap);
@@ -87,14 +80,12 @@ const gameData = {
     </div>
 
     <div class="landing-cta-section">
-      <a href={`/play?set=${setKey}`} class="landing-cta">Play Now</a>
-      {compete && (
-        <div class="landing-mode-links">
-          <a href={`/play?set=${compete.timeTrial}`}>Time Trial</a>
-          <span class="landing-mode-sep">&middot;</span>
-          <a href={`/play?set=${compete.streak}`}>Streaks</a>
-        </div>
-      )}
+      <a href={`/${setKey}/classic/play`} class="landing-cta">Play Now</a>
+      <div class="landing-mode-links">
+        <a href={`/${setKey}/time_trial/play`}>Time Trial</a>
+        <span class="landing-mode-sep">&middot;</span>
+        <a href={`/${setKey}/streak/play`}>Streaks</a>
+      </div>
     </div>
 
     <details class="landing-species-list">

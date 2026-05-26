@@ -2,7 +2,17 @@
 import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
-import { SET_TO_URL } from '../lib/species-utils.js';
+
+const PRIMARY_SETS = [
+  { key: 'bugs_101', icon: '🔰', subtitle: 'Identify by type', detail: 'Beginner' },
+  { key: 'all_bugs', icon: '🌍', subtitle: 'Identify the genus', detail: 'Expert' },
+];
+
+const MODES = [
+  { key: 'classic', label: 'Classic', detail: '10 rounds' },
+  { key: 'time_trial', label: 'Time Trial', detail: '60 seconds' },
+  { key: 'streak', label: 'Streaks', detail: 'One miss ends' },
+];
 
 const THEMED_SETS = [
   { key: 'backyard_basics', icon: '🏡' },
@@ -20,6 +30,11 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   ).size;
   return { key, name: set.name, icon, countLabel: `${uniqueSpecies} species` };
 });
+
+const primaryGroup = PRIMARY_SETS.map(set => ({
+  ...set,
+  name: setsData[set.key].name,
+}));
 ---
 <Base
   title="What's That Bug? — Free Insect Identification Game & Quiz"
@@ -44,52 +59,25 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
     <div class="homepage-section">
       <h2 class="homepage-section-title">Play</h2>
       <div class="play-cards">
-        <a href="/beginners" class="play-card">
-          <span class="play-card-icon">🔰</span>
-          <span class="play-card-title">Bugs 101</span>
-          <span class="play-card-subtitle">Identify by type</span>
-          <span class="play-card-detail">10 rounds · Beginner</span>
-        </a>
-        <a href="/expert" class="play-card">
-          <span class="play-card-icon">🌍</span>
-          <span class="play-card-title">All Bugs</span>
-          <span class="play-card-subtitle">Identify the genus</span>
-          <span class="play-card-detail">10 rounds · Expert</span>
-        </a>
+        {primaryGroup.map(set => (
+          <div class="set-choice-wrap">
+            <button type="button" class="play-card set-choice-card" data-set-card aria-expanded="false" aria-controls={`mode-${set.key}`}>
+              <span class="play-card-icon">{set.icon}</span>
+              <span class="play-card-title">{set.name}</span>
+              <span class="play-card-subtitle">{set.subtitle}</span>
+              <span class="play-card-detail">{set.detail}</span>
+            </button>
+            <div class="mode-picker" id={`mode-${set.key}`} hidden>
+              {MODES.map(mode => (
+                <a href={`/${set.key}/${mode.key}/play`}>
+                  <strong>{mode.label}</strong>
+                  <span>{mode.detail}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
-
-    <!-- Compete section -->
-    <div class="homepage-section">
-      <h2 class="homepage-section-title">Compete</h2>
-      <p class="homepage-section-subtitle">Race the clock or test your streak</p>
-      <div class="compete-grid">
-        <a href="/play?set=bugs_101_time_trial" class="compete-card">
-          <span class="compete-card-icon">⏱️</span>
-          <span class="compete-card-label">Time Trial</span>
-          <span class="compete-card-set">Bugs 101</span>
-        </a>
-        <a href="/play?set=bugs_101_streak" class="compete-card">
-          <span class="compete-card-icon">🎯</span>
-          <span class="compete-card-label">Streaks</span>
-          <span class="compete-card-set">Bugs 101</span>
-        </a>
-      </div>
-      <details class="expert-modes">
-        <summary class="expert-modes-toggle">I know what I'm doing</summary>
-        <div class="compete-grid" style="margin-top: 12px;">
-          <a href="/play?set=time_trial" class="compete-card">
-            <span class="compete-card-icon">⏱️</span>
-            <span class="compete-card-label">Time Trial</span>
-            <span class="compete-card-set">All Bugs</span>
-          </a>
-          <a href="/play?set=streak" class="compete-card">
-            <span class="compete-card-icon">🎯</span>
-            <span class="compete-card-label">Streaks</span>
-            <span class="compete-card-set">All Bugs</span>
-          </a>
-        </div>
-      </details>
     </div>
 
     <!-- Explore section -->
@@ -98,11 +86,21 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
       <p class="homepage-section-subtitle">Themed deep dives</p>
       <div class="themed-buttons">
         {themedGroup.map(set => (
-          <a href={SET_TO_URL[set.key] || `/play?set=${set.key}`} class="themed-btn">
-            <span class="themed-btn-icon">{set.icon}</span>
-            <span class="themed-btn-label">{set.name}</span>
-            <span class="themed-btn-meta">{set.countLabel}</span>
-          </a>
+          <div class="themed-set-wrap">
+            <button type="button" class="themed-btn set-choice-card" data-set-card aria-expanded="false" aria-controls={`mode-${set.key}`}>
+              <span class="themed-btn-icon">{set.icon}</span>
+              <span class="themed-btn-label">{set.name}</span>
+              <span class="themed-btn-meta">{set.countLabel}</span>
+            </button>
+            <div class="mode-picker mode-picker-compact" id={`mode-${set.key}`} hidden>
+              {MODES.map(mode => (
+                <a href={`/${set.key}/${mode.key}/play`}>
+                  <strong>{mode.label}</strong>
+                  <span>{mode.detail}</span>
+                </a>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -243,6 +241,24 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   </script>
 
 <script>
+  document.querySelectorAll('[data-set-card]').forEach((card) => {
+    card.addEventListener('click', () => {
+      const wasOpen = card.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('[data-set-card]').forEach((otherCard) => {
+        otherCard.setAttribute('aria-expanded', 'false');
+        const picker = document.getElementById(otherCard.getAttribute('aria-controls'));
+        if (picker) picker.hidden = true;
+      });
+      if (!wasOpen) {
+        card.setAttribute('aria-expanded', 'true');
+        const picker = document.getElementById(card.getAttribute('aria-controls'));
+        if (picker) picker.hidden = false;
+      }
+    });
+  });
+</script>
+
+<script>
   import { getTodayET, loadDailyState, loadHistory, calculateStreaks } from '../scripts/daily-engine.js';
 
   try {
@@ -287,6 +303,7 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   // --- Player Stats Card ---
   try {
     const { getEarnedAchievements, getSpeciesCount, ACHIEVEMENT_DEFS } = await import('../scripts/achievements.js');
+    const { migrateBestStorageKey } = await import('../scripts/game-engine.js');
     const stats = JSON.parse(localStorage.getItem('wtb_player_stats') || '{}');
     const speciesCount = getSpeciesCount();
     const sessionCount = stats.session_count || 0;
@@ -359,22 +376,22 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
 
         // Gather best scores
         const scoreKeys = [
-          { key: 'bugs_101', label: 'Bugs 101 Classic' },
-          { key: 'bugs_101_time_trial', label: 'Bugs 101 Time Trial' },
-          { key: 'bugs_101_streak', label: 'Bugs 101 Streak' },
-          { key: 'all_bugs', label: 'All Bugs Classic' },
-          { key: 'time_trial', label: 'All Bugs Time Trial' },
-          { key: 'streak', label: 'All Bugs Streak' },
-          { key: 'backyard_basics', label: 'Backyard Basics' },
-          { key: 'tiny_terrors', label: 'Tiny Terrors' },
-          { key: 'beetles', label: 'Beetles' },
-          { key: 'butterflies_moths', label: 'Butterflies & Moths' },
-          { key: 'spiders', label: 'Spiders' },
-          { key: 'eye_candy', label: 'Eye Candy' },
+          { setKey: 'bugs_101', mode: 'classic', label: 'Bugs 101 Classic' },
+          { setKey: 'bugs_101', mode: 'time_trial', label: 'Bugs 101 Time Trial' },
+          { setKey: 'bugs_101', mode: 'streak', label: 'Bugs 101 Streak' },
+          { setKey: 'all_bugs', mode: 'classic', label: 'All Bugs Classic' },
+          { setKey: 'all_bugs', mode: 'time_trial', label: 'All Bugs Time Trial' },
+          { setKey: 'all_bugs', mode: 'streak', label: 'All Bugs Streak' },
+          { setKey: 'backyard_basics', mode: 'classic', label: 'Backyard Basics' },
+          { setKey: 'tiny_terrors', mode: 'classic', label: 'Tiny Terrors' },
+          { setKey: 'beetles', mode: 'classic', label: 'Beetles' },
+          { setKey: 'butterflies_moths', mode: 'classic', label: 'Butterflies & Moths' },
+          { setKey: 'spiders', mode: 'classic', label: 'Spiders' },
+          { setKey: 'eye_candy', mode: 'classic', label: 'Eye Candy' },
         ];
 
         const scores = scoreKeys
-          .map(s => ({ ...s, score: localStorage.getItem(`best_${s.key}`) }))
+          .map(s => ({ ...s, score: localStorage.getItem(migrateBestStorageKey(s.setKey, s.mode)) }))
           .filter(s => s.score);
 
         return `

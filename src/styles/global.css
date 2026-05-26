@@ -3023,6 +3023,68 @@ a {
   gap: 12px;
 }
 
+.set-choice-wrap,
+.themed-set-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.set-choice-card {
+  width: 100%;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.play-card,
+button.themed-btn {
+  appearance: none;
+}
+
+.mode-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.mode-picker[hidden] {
+  display: none;
+}
+
+.mode-picker a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+}
+
+.mode-picker a:hover {
+  border-color: var(--accent);
+}
+
+.mode-picker strong {
+  font-size: 0.78rem;
+}
+
+.mode-picker span {
+  color: var(--text-secondary);
+  font-size: 0.66rem;
+}
+
+.mode-picker-compact {
+  grid-template-columns: 1fr;
+}
+
 .play-card {
   background: var(--surface);
   border: 1.5px solid var(--border);
