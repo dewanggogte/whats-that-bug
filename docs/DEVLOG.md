@@ -77,3 +77,15 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 - First version hid unearned badge names behind "???" — but this meant players had no idea what to aim for. Changed to show all badge names and descriptions, with locked ones grayed out. The description IS the goal ("Score 800+ in classic mode"), so hiding it defeats the purpose of a collectible system.
 
 **Apps Script note:** The Google Sheets webhook now receives a `user_id` field in every event. A `user_id` column needs to be manually added to the Feedback and Leaderboard sheets in the Apps Script editor.
+
+---
+
+## 2026-05-20: Set × mode refactor
+
+**The problem:** `sets.json` mixed content sets (`bugs_101`, `all_bugs`, themed sets) with mode-as-set aliases (`bugs_101_time_trial`, `bugs_101_streak`, `time_trial`, `streak`). Every new set would have needed duplicated entries for each mode, and the homepage had to expose separate cards for modes instead of letting players choose a set first.
+
+**Why it happened:** Mode was originally a property of the set so the homepage could link directly with one URL param. The shortcut didn't scale once all sets needed to support all modes.
+
+**The fix:** Made `mode` a constructor argument on `SessionState`, read it from the path-based `/<set>/<mode>/play` route, and deleted all mode-as-set entries from `sets.json`. The old `/play` route redirects to the game homepage. The homepage became set-first: choose a content set, then choose classic, time trial, or streak.
+
+**Key insight:** Data shape decisions made for one consumer can become constraints for every future consumer. Prefer orthogonal parameters even when one consumer doesn't yet need both.
