@@ -183,6 +183,19 @@ export default class Room implements Party.Server {
         sender.close();
         return;
       }
+    } else if (typeof msg.createToken === 'string') {
+      const secret = getCreateSecret(this.room);
+      if (!secret) {
+        this.sendError(sender, 'CONFIG_ERROR', 'PARTY_CREATE_SECRET is required');
+        sender.close();
+        return;
+      }
+      const isFreshCreate = await verifyCreateToken(msg.createToken, this.room.id, secret);
+      if (isFreshCreate) {
+        this.sendError(sender, 'ROOM_ALREADY_ACTIVE', 'That room code is already active');
+        sender.close();
+        return;
+      }
     }
 
     let playerId: string;
