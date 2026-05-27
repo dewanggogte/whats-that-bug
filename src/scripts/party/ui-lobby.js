@@ -44,6 +44,7 @@ export async function initPartyRoom(code) {
         playerId = msg.playerId;
         savePartySession(code, { displayName, playerId, rejoinToken: msg.rejoinToken });
         sessionStorage.removeItem(`wtb_party_create_${code}`);
+        if (currentState) renderRoom();
       } else if (msg.type === 'state') {
         currentState = msg.state;
         if (gameStartedMsg && currentState.status === 'lobby') {
