@@ -14,7 +14,7 @@ const VALID_BUGS101_NAMES = new Set([
   'Ant', 'Aphid', 'Bee', 'Beetle', 'Bumble Bee', 'Butterfly', 'Caddisfly',
   'Centipede', 'Cicada', 'Cockroach', 'Crane Fly', 'Cricket', 'Damselfly',
   'Dragonfly', 'Earwig', 'Fly', 'Grasshopper', 'Harvestman', 'Hawk Moth',
-  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Katydid', 'Lacewing',
+  'Honey Bee', 'Hover Fly', 'Jumping Spider', 'Bush Cricket', 'Lacewing',
   'Longhorn Beetle', 'Mantis', 'Mayfly', 'Millipede', 'Moth', 'Orb Weaver',
   'Planthopper', 'Scarab', 'Scorpion', 'Silk Moth', 'Spider', 'Stag Beetle',
   'Stick Insect', 'Stink Bug', 'Swallowtail', 'Tarantula', 'Termite', 'Tick', 'True Bug',
@@ -53,7 +53,7 @@ export function getBugs101Name(taxon) {
     return 'Moth';
   }
   if (taxon.order === 'Orthoptera') {
-    if (taxon.family === 'Tettigoniidae') return 'Katydid';
+    if (taxon.family === 'Tettigoniidae') return 'Bush Cricket';
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
     return 'Grasshopper';
   }

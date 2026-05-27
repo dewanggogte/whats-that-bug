@@ -90,7 +90,7 @@ function getBugs101Name(taxon) {
     return 'Moth';
   }
   if (taxon.order === 'Orthoptera') {
-    if (taxon.family === 'Tettigoniidae') return 'Katydid';
+    if (taxon.family === 'Tettigoniidae') return 'Bush Cricket';
     if (CRICKET_FAMILIES.includes(taxon.family)) return 'Cricket';
     return 'Grasshopper';
   }

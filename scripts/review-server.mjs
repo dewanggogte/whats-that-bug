@@ -360,7 +360,7 @@ function getReviewHTML() {
 <script>
 const B101_FRACS = ['12%', '35%', '65%'];
 const ALL_FRACS = ['8%', '15%', '25%', '38%', '55%', '75%'];
-const VALID_B101 = new Set(['Ant','Aphid','Bee','Beetle','Bumble Bee','Butterfly','Caddisfly','Centipede','Cicada','Cockroach','Crane Fly','Cricket','Damselfly','Dragonfly','Earwig','Fly','Grasshopper','Harvestman','Hawk Moth','Honey Bee','Hover Fly','Jumping Spider','Katydid','Lacewing','Longhorn Beetle','Mantis','Mayfly','Millipede','Moth','Orb Weaver','Planthopper','Scarab','Scorpion','Silk Moth','Spider','Stag Beetle','Stick Insect','Stink Bug','Swallowtail','Tarantula','Termite','Tick','True Bug','Wasp','Water Bug','Weevil','Woodlouse']);
+const VALID_B101 = new Set(['Ant','Aphid','Bee','Beetle','Bumble Bee','Butterfly','Caddisfly','Centipede','Cicada','Cockroach','Crane Fly','Cricket','Damselfly','Dragonfly','Earwig','Fly','Grasshopper','Harvestman','Hawk Moth','Honey Bee','Hover Fly','Jumping Spider','Bush Cricket','Lacewing','Longhorn Beetle','Mantis','Mayfly','Millipede','Moth','Orb Weaver','Planthopper','Scarab','Scorpion','Silk Moth','Spider','Stag Beetle','Stick Insect','Stink Bug','Swallowtail','Tarantula','Termite','Tick','True Bug','Wasp','Water Bug','Weevil','Woodlouse']);
 
 let manifest = null;
 let busy = false;
