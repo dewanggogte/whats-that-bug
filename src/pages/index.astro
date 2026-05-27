@@ -58,6 +58,7 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
     <!-- Play section — primary CTA -->
     <div class="homepage-section">
       <h2 class="homepage-section-title">Play</h2>
+      <p class="homepage-section-subtitle">Choose a set, then pick a mode to start right away.</p>
       <div class="play-cards">
         {primaryGroup.map(set => (
           <div class="set-choice-wrap">
@@ -79,19 +80,13 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
             </button>
           </div>
         ))}
-        <a href="/party" class="play-card party-card">
-          <span class="play-card-icon">🎉</span>
-          <span class="play-card-title">Play with Friends</span>
-          <span class="play-card-subtitle">Private 2-5 player room</span>
-          <span class="play-card-detail">Multiplayer</span>
-        </a>
       </div>
     </div>
 
     <!-- Explore section -->
     <div class="homepage-section">
-      <h2 class="homepage-section-title">Explore</h2>
-      <p class="homepage-section-subtitle">Themed deep dives</p>
+      <h2 class="homepage-section-title">More Sets</h2>
+      <p class="homepage-section-subtitle">Pick a themed set, then choose a mode to start.</p>
       <div class="themed-buttons">
         {themedGroup.map(set => (
           <div class="themed-set-wrap">
@@ -116,7 +111,7 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
     </div>
 
     <!-- How It Works -->
-    <div class="homepage-section">
+    <div class="homepage-section" id="how-it-works">
       <h2 class="homepage-section-title">How It Works</h2>
       <div class="how-it-works">
         <div class="how-step">
@@ -150,7 +145,7 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
     </div>
 
     <!-- FAQ -->
-    <div class="homepage-section">
+    <div class="homepage-section" id="faq">
       <h2 class="homepage-section-title">FAQ</h2>
       <div class="faq-list">
         <details class="faq-item" open>

@@ -15,6 +15,17 @@ const CANONICAL_BASE = 'https://dewanggogte.com/games/bugs';
 const resolvedOgImage = `${CANONICAL_BASE}${ogImage || '/og-default.png'}`;
 const resolvedCanonical = canonicalPath != null ? `${CANONICAL_BASE}${canonicalPath}` : undefined;
 const resolvedOgType = ogType || 'website';
+const learningLinks = [
+  { href: '/beginners', label: 'Bugs 101' },
+  { href: '/expert', label: 'Expert Challenge' },
+  { href: '/backyard-bugs', label: 'Backyard Bugs' },
+  { href: '/tiny-terrors', label: 'Tiny Terrors' },
+  { href: '/beetles', label: 'Beetles' },
+  { href: '/butterflies-and-moths', label: 'Butterflies & Moths' },
+  { href: '/spiders', label: 'Spiders' },
+  { href: '/eye-candy', label: 'Eye Candy' },
+  { href: '/genera', label: 'Genera Index' },
+];
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -92,7 +103,18 @@ const resolvedOgType = ogType || 'website';
   <header class="site-header">
     <div class="site-header-inner">
       <a href="/" class="site-logo">🪲 What's That Bug?</a>
-      <nav class="site-nav">
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/party" class="site-nav-link">Multiplayer</a>
+        <a href="/#how-it-works" class="site-nav-link">How It Works</a>
+        <a href="/#faq" class="site-nav-link">FAQ</a>
+        <details class="site-nav-menu">
+          <summary>Learning</summary>
+          <div class="site-nav-menu-panel">
+            {learningLinks.map(link => (
+              <a href={link.href}>{link.label}</a>
+            ))}
+          </div>
+        </details>
         <a href="/profile" class="header-avatar-link" id="header-avatar-link">
           <span class="header-avatar" id="header-avatar">🪲</span>
         </a>

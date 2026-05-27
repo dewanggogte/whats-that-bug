@@ -206,6 +206,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .site-logo {
@@ -224,7 +225,7 @@ body {
 .site-nav {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .site-nav a {
@@ -238,6 +239,60 @@ body {
   color: var(--accent);
 }
 
+.site-nav-link,
+.site-nav-menu summary {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav-menu {
+  position: relative;
+}
+
+.site-nav-menu summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.site-nav-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav-menu[open] summary,
+.site-nav-menu summary:hover {
+  color: var(--accent);
+}
+
+.site-nav-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 150;
+  min-width: 220px;
+  padding: 8px;
+  display: grid;
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.site-nav-menu-panel a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.site-nav-menu-panel a:hover {
+  background: var(--surface);
+}
+
 .site-nav #theme-toggle {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -246,6 +301,52 @@ body {
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .site-header-inner {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .site-logo {
+    font-size: 1rem;
+  }
+
+  .site-nav {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .site-nav-link,
+  .site-nav-menu summary {
+    font-size: 0.82rem;
+  }
+
+  .site-nav-menu-panel {
+    left: 50%;
+    right: auto;
+    max-width: calc(100vw - 24px);
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 520px) {
+  .site-logo {
+    width: 100%;
+  }
+
+  .site-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .site-nav-link,
+  .site-nav-menu summary {
+    font-size: 0.78rem;
+  }
 }
 
 /* =============================================
