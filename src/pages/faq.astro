@@ -1,0 +1,100 @@
+---
+import Base from '../layouts/Base.astro';
+
+const steps = [
+  {
+    title: 'Choose a set and mode',
+    text: 'Start with Bugs 101, Expert Challenge, or a themed set, then pick Classic, Time Trial, or Streaks.',
+  },
+  {
+    title: 'Identify the bug',
+    text: 'You get a real research-grade photo from iNaturalist and four possible identifications.',
+  },
+  {
+    title: 'Learn from each round',
+    text: 'Classic mode shows a learning card after each answer so the quiz also builds your field ID memory.',
+  },
+];
+
+const faqs = [
+  {
+    question: "What is What's That Bug?",
+    answer: "A free online insect identification game. You're shown a real photo of a bug and choose the correct identification from four options. It's like GeoGuessr, but for insects.",
+  },
+  {
+    question: 'How many insects are in the game?',
+    answer: 'Over 1,000 species across 17 orders, from beetles and butterflies to spiders and dragonflies. All photos are research-grade observations from iNaturalist.',
+  },
+  {
+    question: 'Is this game free?',
+    answer: 'Yes, completely free with no sign-up required.',
+  },
+  {
+    question: 'How does the Daily Challenge work?',
+    answer: "Every day, a new mystery insect is featured. You get one guess. Your streak tracks how many days in a row you've played and solved correctly.",
+  },
+  {
+    question: 'Can I compete with others?',
+    answer: 'Yes. Party mode lets you create a private multiplayer room for 2-5 players. Time Trial and Streak modes are also available for personal bests and shareable scores.',
+  },
+];
+
+const faqData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(faq => ({
+    '@type': 'Question',
+    name: faq.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: faq.answer,
+    },
+  })),
+};
+---
+<Base
+  title="FAQ - What's That Bug?"
+  description="How What's That Bug? works, plus answers to common questions about species coverage, daily challenges, and multiplayer."
+  canonicalPath="/faq"
+>
+  <div class="container info-page faq-page">
+    <div class="info-page-header">
+      <p class="info-page-kicker">FAQ</p>
+      <h1>How it works and common questions</h1>
+      <p>Choose a set, pick a mode, identify real bug photos, and learn as you go.</p>
+    </div>
+
+    <section class="info-page-section" aria-labelledby="how-it-works-title">
+      <h2 id="how-it-works-title" class="info-page-section-title">How It Works</h2>
+      <div class="info-card-list">
+        {steps.map((step, index) => (
+          <section class="info-card">
+            <span class="info-card-num">{index + 1}</span>
+            <div>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </div>
+          </section>
+        ))}
+      </div>
+    </section>
+
+    <section class="info-page-section" aria-labelledby="faq-title">
+      <h2 id="faq-title" class="info-page-section-title">Questions</h2>
+      <div class="faq-list">
+        {faqs.map((faq, index) => (
+          <details class="faq-item" open={index === 0}>
+            <summary>{faq.question}</summary>
+            <p>{faq.answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <div class="info-page-actions">
+      <a href="/" class="info-page-cta">Back to Home</a>
+    </div>
+  </div>
+
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(faqData)}></script>
+</Base>

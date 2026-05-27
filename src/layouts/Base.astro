@@ -85,6 +85,18 @@ const learningLinks = [
       if (match) base = match[1];
       window.__BASE = base;
 
+      // Keep root-relative links inside the subpath even before DOMContentLoaded.
+      document.addEventListener('click', function(event) {
+        if (!window.__BASE || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        var link = event.target.closest && event.target.closest('a[href^="/"]:not([href^="//"])');
+        if (!link || link.target || link.hasAttribute('download')) return;
+        var href = link.getAttribute('href');
+        if (!href || href === window.__BASE || href.startsWith(window.__BASE + '/')) return;
+
+        event.preventDefault();
+        window.location.href = window.__BASE + href;
+      });
+
       // Rewrite favicon and internal links for subpath
       if (window.__BASE) {
         var fav = document.getElementById('favicon');
@@ -92,7 +104,10 @@ const learningLinks = [
 
         document.addEventListener('DOMContentLoaded', function() {
           document.querySelectorAll('a[href^="/"]:not([href^="//"])').forEach(function(a) {
-            a.setAttribute('href', window.__BASE + a.getAttribute('href'));
+            var href = a.getAttribute('href');
+            if (href !== window.__BASE && !href.startsWith(window.__BASE + '/')) {
+              a.setAttribute('href', window.__BASE + href);
+            }
           });
         });
       }
@@ -104,9 +119,8 @@ const learningLinks = [
     <div class="site-header-inner">
       <a href="/" class="site-logo">🪲 What's That Bug?</a>
       <nav class="site-nav" aria-label="Primary">
-        <a href="/party" class="site-nav-link">Multiplayer</a>
-        <a href="/#how-it-works" class="site-nav-link">How It Works</a>
-        <a href="/#faq" class="site-nav-link">FAQ</a>
+        <a href="/party" class="site-nav-link site-nav-cta">Multiplayer</a>
+        <a href="/faq" class="site-nav-link">FAQ</a>
         <details class="site-nav-menu">
           <summary>Learning</summary>
           <div class="site-nav-menu-panel">
