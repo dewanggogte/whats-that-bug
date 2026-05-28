@@ -4,11 +4,12 @@
  */
 
 import { SessionState, calculateTimedScore, getBugs101Name, migrateBestStorageKey } from './game-engine.js';
+import { buildLearningCard } from './learning-card.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto, logRoundDisplayed } from './feedback.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { loadPercentiles, renderPercentileCard } from './percentiles.js';
-import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
+import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick } from './sounds.js';
 import { recordGenusSeen, getGenusCount } from './achievements.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
@@ -86,6 +87,9 @@ let roundStartTime = null;
 let currentSetKey = 'all_bugs';
 let sessionEndSent = false;
 let shared = false;
+let taxonTraits = {};
+let bugs101Tells = {};
+let speciesContent = {};
 
 // Time Trial state
 let timerInterval = null;
@@ -94,6 +98,7 @@ let timeRemaining = 60;
 // Preloading state — pre-generates up to 3 rounds and starts loading their images.
 // The _currentCorrect fix in handleAnswer() prevents scoring bugs regardless of cache depth.
 const PRELOAD_AHEAD = 3;
+const PRELOAD_MIN_MS = 450;
 let roundCache = [];
 let displayRound = 0;
 // Preload percentile data so it's ready at game-over
@@ -116,6 +121,45 @@ function getNextRound() {
     return roundCache.shift();
   }
   return session.nextRound();
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function waitForImageReady(src, timeoutMs = 1500) {
+  if (!src) return Promise.resolve();
+  return new Promise(resolve => {
+    const img = new Image();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    img.addEventListener('load', finish, { once: true });
+    img.addEventListener('error', finish, { once: true });
+    img.src = src;
+    if (img.complete) finish();
+    setTimeout(finish, timeoutMs);
+  });
+}
+
+function renderGamePreload() {
+  container.innerHTML = `
+    <div class="game-loading-screen">
+      <p>Game is starting... Please wait</p>
+    </div>
+  `;
+}
+
+async function holdPreloadScreen(startedAt) {
+  const firstImage = roundCache[0]?.correct?.photo_url;
+  const visibleFor = performance.now() - startedAt;
+  await Promise.all([
+    delay(Math.max(0, PRELOAD_MIN_MS - visibleFor)),
+    waitForImageReady(firstImage),
+  ]);
 }
 
 function sendSessionEnd() {
@@ -146,14 +190,19 @@ let container = null;
 export async function initGame(setKey = 'all_bugs', mode = 'classic') {
   container = document.getElementById('game-container');
   container.setAttribute('aria-live', 'polite');
+  const preloadStartedAt = performance.now();
+  renderGamePreload();
 
   let observations, taxonomy, sets, difficulty;
   try {
-    const [obsRes, taxRes, setsRes, diffRes] = await Promise.all([
+    const [obsRes, taxRes, setsRes, diffRes, traitsRes, tellsRes, speciesContentRes] = await Promise.all([
       fetch(`${base}/data/observations.json`),
       fetch(`${base}/data/taxonomy.json`),
       fetch(`${base}/data/sets.json`),
       fetch(`${base}/data/difficulty.json`).catch(() => ({ ok: false })),
+      fetch(`${base}/data/taxon-traits.json`).catch(() => ({ ok: false })),
+      fetch(`${base}/data/bugs101-tells.json`).catch(() => ({ ok: false })),
+      fetch(`${base}/data/species-content.json`).catch(() => ({ ok: false })),
     ]);
 
     if (!obsRes.ok || !taxRes.ok || !setsRes.ok) {
@@ -164,6 +213,9 @@ export async function initGame(setKey = 'all_bugs', mode = 'classic') {
     taxonomy = await taxRes.json();
     sets = await setsRes.json();
     difficulty = diffRes.ok ? await diffRes.json().catch(() => null) : null;
+    taxonTraits = traitsRes.ok ? await traitsRes.json().catch(() => ({})) : {};
+    bugs101Tells = tellsRes.ok ? await tellsRes.json().catch(() => ({})) : {};
+    speciesContent = speciesContentRes.ok ? await speciesContentRes.json().catch(() => ({})) : {};
   } catch (err) {
     container.innerHTML = `<div class="container"><p>Failed to load game data. Please refresh the page to try again.</p><p style="color:var(--text-secondary);font-size:13px;">${escapeHTML(err.message)}</p></div>`;
     return;
@@ -187,123 +239,13 @@ export async function initGame(setKey = 'all_bugs', mode = 'classic') {
   roundCache = [];
   displayRound = 0;
   preloadRounds();
+  await holdPreloadScreen(preloadStartedAt);
 
-  // Show rules popup once per day, then start game
-  const startGame = () => {
-    if (session.mode === 'time_trial') {
-      startTimeTrial();
-    } else {
-      startRound();
-    }
-  };
-
-  if (hasSeenRulesToday()) {
-    startGame();
+  if (session.mode === 'time_trial') {
+    startTimeTrial();
   } else {
-    showRulesPopup(startGame);
+    startRound();
   }
-}
-
-// ===== RULES POPUP =====
-
-const RULES_SEEN_KEY = 'wtb_rules_seen_date';
-
-function hasSeenRulesToday() {
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    return localStorage.getItem(RULES_SEEN_KEY) === today;
-  } catch { return false; }
-}
-
-function markRulesSeenToday() {
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem(RULES_SEEN_KEY, today);
-  } catch {}
-}
-
-function getRulesContent() {
-  const mode = session.mode;
-  const isBinary = session.setDef.scoring === 'binary';
-  const setName = session.setDef.name;
-  const task = isBinary ? 'Pick the bug type' : 'Identify the genus';
-
-  if (mode === 'time_trial') {
-    return {
-      title: `⏱️ ${setName}`,
-      items: [
-        ['⏱️', '60 seconds on the clock'],
-        ['🖼️', task],
-        ['✅', 'Faster = more points · Wrong = 0'],
-      ],
-    };
-  }
-
-  if (mode === 'streak') {
-    return {
-      title: `🎯 ${setName}`,
-      items: [
-        ['🎯', `${task} — don't miss`],
-        ['⏳', 'No time pressure'],
-        ['💀', 'One wrong = game over'],
-      ],
-    };
-  }
-
-  // Classic modes
-  if (isBinary) {
-    return {
-      title: `🔰 ${setName}`,
-      items: [
-        ['🖼️', task],
-        ['🔢', '10 rounds · 1,000 pts max'],
-        ['✅', 'Right = 100 pts · Wrong = 0'],
-      ],
-    };
-  }
-
-  return {
-    title: `${setName}`,
-    items: [
-      ['🖼️', task],
-      ['🔢', '10 rounds · 1,000 pts max'],
-      ['✅', 'Right = 100 pts · Wrong = 0'],
-    ],
-  };
-}
-
-function showRulesPopup(onDismiss) {
-  const { title, items } = getRulesContent();
-  const itemsHTML = items.map(([icon, text]) =>
-    `<div class="rules-item"><span class="rules-item-icon">${icon}</span><span>${text}</span></div>`
-  ).join('');
-
-  const overlay = document.createElement('div');
-  overlay.className = 'rules-overlay';
-  overlay.innerHTML = `
-    <div class="rules-card">
-      <button class="rules-close" aria-label="Close">&times;</button>
-      <div class="rules-title">${title}</div>
-      <div class="rules-items">${itemsHTML}</div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const dismiss = () => {
-    if (overlay.parentNode) {
-      overlay.remove();
-      markRulesSeenToday();
-      onDismiss();
-    }
-  };
-
-  overlay.querySelector('.rules-close').addEventListener('click', dismiss);
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) dismiss();
-  });
-
-  setTimeout(dismiss, 5000);
 }
 
 // ===== TIME TRIAL MODE =====
@@ -375,35 +317,38 @@ function renderRound() {
   let topBarHTML;
   if (mode === 'time_trial') {
     topBarHTML = `
-      <div class="timer-bar">
-        <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
-        <span class="timer-countdown">${timeRemaining}s</span>
-        <span class="timer-score" style="position:relative;">
+      <div class="game-hud timer-bar">
+        <a href="${base}/" class="game-back-link">← Sets</a>
+        <div class="game-hud-main">
+          <span class="timer-countdown">${timeRemaining}s</span>
+          <span class="timer-last-time" id="last-time"></span>
+        </div>
+        <span class="timer-score">
           ${session.totalScore} pts
           <span class="score-popup" id="score-popup"></span>
         </span>
       </div>
-      <div style="text-align:center;padding:2px 0;">
-        <span class="timer-last-time" id="last-time"></span>
-      </div>
     `;
   } else if (mode === 'streak') {
     topBarHTML = `
-      <div class="streak-bar">
-        <a href="${base}/" style="text-decoration:none;color:var(--accent);position:absolute;left:16px;">← Sets</a>
-        <span class="streak-count">${session.currentStreak}</span>
-        <span class="streak-label">streaks</span>
+      <div class="game-hud streak-bar">
+        <a href="${base}/" class="game-back-link">← Sets</a>
+        <div class="game-hud-main">
+          <span class="streak-count">${session.currentStreak}</span>
+          <span class="streak-label">streak</span>
+        </div>
+        <span class="game-hud-meta">${escapeHTML(session.setDef.name)}</span>
       </div>
     `;
   } else {
     const streakDisplay = session.currentStreak > 1
-      ? `<span style="color:var(--success);font-weight:600;font-size:0.85rem;margin-left:4px;">${session.currentStreak} streak</span>`
+      ? `<span class="game-hud-streak">${session.currentStreak} streak</span>`
       : '';
     topBarHTML = `
-      <div class="top-bar">
-        <a href="${base}/" style="text-decoration:none;color:var(--accent);">← Sets</a>
-        <span>Round ${displayRound} of 10 · ${session.totalScore} pts ${streakDisplay}</span>
-        <span>${session.setDef.name}</span>
+      <div class="game-hud top-bar">
+        <a href="${base}/" class="game-back-link">← Sets</a>
+        <span class="game-hud-main">Round ${displayRound}/10 · ${session.totalScore} pts ${streakDisplay}</span>
+        <span class="game-hud-meta">${escapeHTML(session.setDef.name)}</span>
       </div>
     `;
   }
@@ -434,7 +379,7 @@ function renderRound() {
       <div class="photo-hero">
         <img src="${escapeHTML(correct.photo_url)}" alt="Mystery bug" loading="eager">
         <span class="photo-credit">${escapeHTML(correct.attribution)}</span>
-        <button class="report-photo-btn" id="report-photo" title="Report bad photo">&#9873;</button>
+        <button class="report-photo-btn" id="report-photo" title="Report bad photo">Report photo</button>
       </div>
 
       <div class="round-prompt">
@@ -500,7 +445,7 @@ function renderRound() {
   container.querySelector('#report-photo')?.addEventListener('click', () => {
     logBadPhoto(session.sessionId, correct.id, correct.taxon.species, currentSetKey);
     const btn = container.querySelector('#report-photo');
-    btn.textContent = '\u2713';
+    btn.textContent = 'Reported';
     btn.disabled = true;
   });
 }
@@ -683,42 +628,69 @@ function handleStreakPostAnswer(score, picked, correct) {
 
 // ===== CLASSIC POST-ANSWER =====
 
+function renderLearningCardBody(card) {
+  const marksHTML = card.marks.length
+    ? `<ul class="learning-marks">${card.marks.map(mark => `<li>${escapeHTML(mark)}</li>`).join('')}</ul>`
+    : '';
+
+  return `
+    <p class="learning-verdict">${escapeHTML(card.verdict)}</p>
+    <div class="learning-comparison">
+      <div class="learning-compare-item guess">
+        <span>Your guess</span>
+        <strong>${escapeHTML(card.guessedName)}</strong>
+        ${card.guessedSci ? `<em>${escapeHTML(card.guessedSci)}</em>` : ''}
+      </div>
+      <div class="learning-compare-item answer">
+        <span>Answer</span>
+        <strong>${escapeHTML(card.answerName)}</strong>
+        ${card.answerSci ? `<em>${escapeHTML(card.answerSci)}</em>` : ''}
+      </div>
+    </div>
+    ${marksHTML}
+    ${card.funFact ? `<p class="learning-funfact">${escapeHTML(card.funFact)}</p>` : ''}
+  `;
+}
+
 function handleClassicPostAnswer(score, picked, correct, timeTaken) {
-  // Same as original: show learning card
   let feedbackClass, feedbackTitle;
   if (score === 100) { feedbackClass = 'exact'; feedbackTitle = 'Nailed it!'; }
   else { feedbackClass = 'miss'; feedbackTitle = 'Not quite'; }
 
-  let breadcrumb = '';
-  if (score < 100) {
-    const scoring = session.setDef.scoring;
-    if (scoring === 'binary') {
-      breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
-    } else {
-      breadcrumb = `You picked <em>${escapeHTML(picked.taxon.genus)}</em>, but this is <em>${escapeHTML(correct.taxon.genus)}</em>.`;
-    }
-  }
-
-  let blurb = correct.wikipedia_summary || '';
-  if (blurb && !blurb.match(/[.!?]$/)) {
-    const lastSentence = blurb.lastIndexOf('. ');
-    if (lastSentence > 40) blurb = blurb.slice(0, lastSentence + 1);
-    else {
-      const lastSpace = blurb.lastIndexOf(' ');
-      blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
-    }
-  }
-
   const badgeClass = score === 100 ? 'badge-success' : score >= 50 ? 'badge-warning' : 'badge-error';
+
+  let bodyHTML;
+  if (score === 100) {
+    let blurb = correct.wikipedia_summary || '';
+    if (blurb && !blurb.match(/[.!?]$/)) {
+      const lastSentence = blurb.lastIndexOf('. ');
+      if (lastSentence > 40) blurb = blurb.slice(0, lastSentence + 1);
+      else {
+        const lastSpace = blurb.lastIndexOf(' ');
+        blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
+      }
+    }
+    bodyHTML = `
+      <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
+      ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
+    `;
+  } else {
+    const card = buildLearningCard({
+      picked,
+      correct,
+      scoring: session.setDef.scoring,
+      traits: taxonTraits,
+      bugs101Tells,
+      speciesContent,
+    });
+    feedbackTitle = card.title;
+    bodyHTML = renderLearningCardBody(card);
+  }
 
   const feedbackHTML = `
     <div class="feedback-card ${feedbackClass} anim-slide-up" style="margin-top: 16px;">
       <div class="feedback-title">${feedbackTitle}</div>
-      <div class="feedback-body">
-        <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
-        ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
-        ${breadcrumb ? `<br><br>${breadcrumb}` : ''}
-      </div>
+      <div class="feedback-body">${bodyHTML}</div>
       <div style="margin-top: 8px;">
         <span class="badge ${badgeClass}">+${score} pts</span>
         <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="margin-left: 12px; font-size: 13px;">Learn more →</a>
@@ -937,38 +909,37 @@ function renderClassicSummary() {
 
   container.innerHTML = `
     <div class="container">
-      <div class="summary">
-        <div class="summary-set-label">${escapeHTML(session.setDef.name)}</div>
-        <div class="summary-score">${session.totalScore}</div>
-        <div class="summary-sub">out of 1,000</div>
+      <div class="summary result-summary">
+        <div class="result-hero">
+          <div class="summary-set-label">${escapeHTML(session.setDef.name)}</div>
+          <div class="summary-score">${session.totalScore}</div>
+          <div class="summary-sub">out of 1,000</div>
 
-        <div class="round-dots anim-fade-in">${roundDots}</div>
+          <div class="round-dots anim-fade-in">${roundDots}</div>
 
-        <div class="summary-stats">
-          <div class="summary-stat">
-            <div class="summary-stat-val">${exactCount}</div>
-            <div class="summary-stat-label">Correct</div>
-          </div>
-          <div class="summary-stat">
-            <div class="summary-stat-val">${session.bestStreak}</div>
-            <div class="summary-stat-label">Best Streak</div>
-          </div>
-          <div class="summary-stat">
-            <div class="summary-stat-val">${accuracy}%</div>
-            <div class="summary-stat-label">Accuracy</div>
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <div class="summary-stat-val">${exactCount}</div>
+              <div class="summary-stat-label">Correct</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-val">${session.bestStreak}</div>
+              <div class="summary-stat-label">Best Streak</div>
+            </div>
+            <div class="summary-stat">
+              <div class="summary-stat-val">${accuracy}%</div>
+              <div class="summary-stat-label">Accuracy</div>
+            </div>
           </div>
         </div>
 
-        ${potdCard}
-        ${genusLine}
-
+        ${renderResultActions()}
         ${renderShareSection(getClassicFlavor(exactCount))}
-
-        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-          <button class="btn btn-primary" id="play-again-btn">Play Again</button>
-          <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
+        <div class="result-secondary">
+          ${potdCard}
+          ${genusLine}
+          ${recHTML}
         </div>
-        ${recHTML}
       </div>
 
       ${renderSessionFeedbackForm()}
@@ -1054,48 +1025,46 @@ function renderTimeTrialSummary() {
   const percentileHTML = renderPercentileCard(session.totalScore, currentSetKey, session.mode);
   container.innerHTML = `
     <div class="container">
-      <div class="summary">
-        <div class="summary-set-label">Time Trial</div>
-        <div class="summary-score">${session.totalScore} pts</div>
-        ${newBestHTML}
+      <div class="summary result-summary">
+        <div class="result-hero">
+          <div class="summary-set-label">Time Trial</div>
+          <div class="summary-score">${session.totalScore} pts</div>
+          ${newBestHTML}
 
-        <div class="tt-stats">
-          <div class="tt-stat">
-            <div class="tt-stat-value">${correctCount}/${totalQ}</div>
-            <div class="tt-stat-label">Correct</div>
+          <div class="tt-stats">
+            <div class="tt-stat">
+              <div class="tt-stat-value">${correctCount}/${totalQ}</div>
+              <div class="tt-stat-label">Correct</div>
+            </div>
+            <div class="tt-stat">
+              <div class="tt-stat-value">${accuracy}%</div>
+              <div class="tt-stat-label">Accuracy</div>
+            </div>
+            <div class="tt-stat">
+              <div class="tt-stat-value">${avgPts}</div>
+              <div class="tt-stat-label">Avg pts/bug</div>
+            </div>
+            <div class="tt-stat">
+              <div class="tt-stat-value">${pps}</div>
+              <div class="tt-stat-label">Pts/second</div>
+            </div>
           </div>
-          <div class="tt-stat">
-            <div class="tt-stat-value">${accuracy}%</div>
-            <div class="tt-stat-label">Accuracy</div>
+
+          <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
+
+          <div class="tt-brackets">
+            ${brackets.fast > 0 ? `<span class="tt-bracket tt-bracket-fast">${brackets.fast} blazing</span>` : ''}
+            ${brackets.good > 0 ? `<span class="tt-bracket tt-bracket-good">${brackets.good} fast</span>` : ''}
+            ${brackets.ok > 0 ? `<span class="tt-bracket tt-bracket-ok">${brackets.ok} steady</span>` : ''}
+            ${brackets.slow > 0 ? `<span class="tt-bracket tt-bracket-slow">${brackets.slow} slow</span>` : ''}
           </div>
-          <div class="tt-stat">
-            <div class="tt-stat-value">${avgPts}</div>
-            <div class="tt-stat-label">Avg pts/bug</div>
-          </div>
-          <div class="tt-stat">
-            <div class="tt-stat-value">${pps}</div>
-            <div class="tt-stat-label">Pts/second</div>
-          </div>
+
+          ${percentileHTML}
         </div>
 
-        <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
-
-        <div class="tt-brackets">
-          ${brackets.fast > 0 ? `<span class="tt-bracket tt-bracket-fast">${brackets.fast} blazing</span>` : ''}
-          ${brackets.good > 0 ? `<span class="tt-bracket tt-bracket-good">${brackets.good} fast</span>` : ''}
-          ${brackets.ok > 0 ? `<span class="tt-bracket tt-bracket-ok">${brackets.ok} steady</span>` : ''}
-          ${brackets.slow > 0 ? `<span class="tt-bracket tt-bracket-slow">${brackets.slow} slow</span>` : ''}
-        </div>
-
-        ${percentileHTML}
-
+        ${renderResultActions()}
         ${renderShareSection(getTimeTrialFlavor(correctCount, totalQ))}
-
-        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-          <button class="btn btn-primary" id="play-again-btn">Play Again</button>
-          <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
-        </div>
-        ${renderRecommendation(session.totalScore, currentSetKey, session.mode)}
+        <div class="result-secondary">${renderRecommendation(session.totalScore, currentSetKey, session.mode)}</div>
       </div>
 
       ${renderSessionFeedbackForm()}
@@ -1150,74 +1119,55 @@ function renderStreakGameOver(picked, correct) {
     ? `<p class="subtitle" style="margin-top:4px;color:var(--accent);">Reached ${highest.streak} ${milestoneFireEmoji(highest.fires)}</p>`
     : '';
 
-  // Learning card content for the bug they got wrong
-  let breadcrumb = '';
-  const isBugs101Mode = session.setDef.scoring === 'binary';
-  if (isBugs101Mode) {
-    breadcrumb = `You guessed ${escapeHTML(getBugs101Name(picked.taxon))}, but this is a ${escapeHTML(getBugs101Name(correct.taxon))}.`;
-  } else if (picked.taxon.order === correct.taxon.order) {
-    breadcrumb = `Both are ${escapeHTML(correct.taxon.order)}, but different families — this is ${escapeHTML(correct.taxon.family_common || correct.taxon.family)}.`;
-  } else {
-    breadcrumb = `You guessed ${escapeHTML(picked.taxon.order)}, but this is ${escapeHTML(correct.taxon.order)}.`;
-  }
-
-  let blurb = correct.wikipedia_summary || '';
-  if (blurb && !blurb.match(/[.!?]$/)) {
-    const lastSentence = blurb.lastIndexOf('. ');
-    if (lastSentence > 40) blurb = blurb.slice(0, lastSentence + 1);
-    else {
-      const lastSpace = blurb.lastIndexOf(' ');
-      blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
-    }
-  }
-
   const totalRounds = streakCount + 1;
+  const learning = buildLearningCard({
+    picked,
+    correct,
+    scoring: session.setDef.scoring,
+    traits: taxonTraits,
+    bugs101Tells,
+    speciesContent,
+  });
 
   const percentileHTML = renderPercentileCard(streakCount, currentSetKey, session.mode);
   container.innerHTML = `
     <div class="container">
-      <div class="summary">
-        <div class="summary-set-label">Streaks</div>
-        <div class="summary-score">${streakCount}</div>
-        <p class="subtitle">in a row</p>
-        ${newBestHTML}
-        ${milestoneBadgeHTML}
+      <div class="summary result-summary">
+        <div class="result-hero">
+          <div class="summary-set-label">Streaks</div>
+          <div class="summary-score">${streakCount}</div>
+          <p class="summary-sub">in a row</p>
+          ${newBestHTML}
+          ${milestoneBadgeHTML}
 
-        <div class="tt-stats" style="margin-top:20px;">
-          <div class="tt-stat">
-            <div class="tt-stat-value">${streakCount}/${totalRounds}</div>
-            <div class="tt-stat-label">Correct</div>
+          <div class="tt-stats" style="margin-top:20px;">
+            <div class="tt-stat">
+              <div class="tt-stat-value">${streakCount}/${totalRounds}</div>
+              <div class="tt-stat-label">Correct</div>
+            </div>
+            <div class="tt-stat">
+              <div class="tt-stat-value">${totalRounds > 0 ? Math.round((streakCount / totalRounds) * 100) : 0}%</div>
+              <div class="tt-stat-label">Accuracy</div>
+            </div>
+            <div class="tt-stat" style="grid-column: span 2;">
+              <div class="tt-stat-value"><span class="streak-rank ${rankClass}">${rank}</span></div>
+              <div class="tt-stat-label">Rank</div>
+            </div>
           </div>
-          <div class="tt-stat">
-            <div class="tt-stat-value">${totalRounds > 0 ? Math.round((streakCount / totalRounds) * 100) : 0}%</div>
-            <div class="tt-stat-label">Accuracy</div>
-          </div>
-          <div class="tt-stat" style="grid-column: span 2;">
-            <div class="tt-stat-value"><span class="streak-rank ${rankClass}">${rank}</span></div>
-            <div class="tt-stat-label">Rank</div>
-          </div>
+
+          <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
+
+          ${percentileHTML}
         </div>
 
-        <div class="emoji-grid emoji-stagger">${emojiGrid}</div>
-
-        ${percentileHTML}
-
+        ${renderResultActions()}
         ${renderShareSection(getStreakFlavor(streakCount))}
+        <div class="result-secondary">${renderRecommendation(0, currentSetKey, session.mode)}</div>
       </div>
-
-      <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
-        <button class="btn btn-primary" id="play-again-btn">Play Again</button>
-        <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
-      </div>
-      ${renderRecommendation(0, currentSetKey, session.mode)}
 
       <div class="feedback-card miss" style="margin-top: 16px;">
         <div class="feedback-title">The one that got away</div>
-        <div class="feedback-body">
-          <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
-          ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
-          ${breadcrumb ? `<br><br>${breadcrumb}` : ''}
-        </div>
+        <div class="feedback-body">${renderLearningCardBody(learning)}</div>
         <div style="margin-top: 8px;">
           <a href="${escapeHTML(correct.inat_url)}" target="_blank" rel="noopener" style="font-size: 13px;">Learn more →</a>
         </div>
@@ -1258,11 +1208,20 @@ const IMESSAGE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height
 const TWITTER_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
 const CLIPBOARD_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 
+function renderResultActions() {
+  return `
+    <div class="result-actions">
+      <button class="btn btn-primary" id="play-again-btn">Play Again</button>
+      <a href="${base}/" class="btn btn-outline" id="change-set-btn">Change Set</a>
+    </div>
+  `;
+}
+
 function renderShareSection(flavorText) {
   return `
     <div class="share-section">
       <p class="share-flavor">${escapeHTML(flavorText)}</p>
-      <button class="btn btn-primary btn-share-hero" id="share-hero-btn">
+      <button class="btn btn-outline btn-share-hero" id="share-hero-btn">
         ${SHARE_ICON}
         Challenge a Friend
       </button>

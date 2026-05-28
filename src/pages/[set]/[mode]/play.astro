@@ -18,10 +18,11 @@ const { set, mode } = Astro.params;
   title="Identify This Bug — What's That Bug?"
   description="Can you identify the insect from its photo? Four choices, one correct answer. Test your bug identification skills with real research-grade photos."
   canonicalPath={`/${set}/${mode}/play`}
+  gameLayout={true}
 >
   <div id="game-container" data-set={set} data-mode={mode}>
-    <div class="container" style="text-align: center; padding-top: 80px;">
-      <p class="subtitle">Loading bugs...</p>
+    <div class="game-loading-screen">
+      <p>Game is starting... Please wait</p>
     </div>
   </div>
   <script>

@@ -38,7 +38,7 @@ export async function initPartyRoom(code) {
     createToken,
     rejoinToken: partySession.rejoinToken,
     onOpen: () => {
-      if (!fatalShown) content.innerHTML = '<div class="party-panel"><p>Connecting...</p></div>';
+      if (!fatalShown) content.innerHTML = '<div class="party-panel"><p>Joining Multiplayer Beta room...</p></div>';
     },
     onMessage: (msg) => {
       if (msg.type === 'identified') {
@@ -105,6 +105,7 @@ export async function initPartyRoom(code) {
       renderedAs = role;
     } else {
       // Just patch the bits that can change without destroying open dropdowns
+      updateRoomStatus(isHost);
       updatePlayerCountHeader();
       updateRoster(isHost);
       if (isHost) updateStartButton();
@@ -114,30 +115,38 @@ export async function initPartyRoom(code) {
 
   function fullRender(isHost) {
     content.innerHTML = `
-      <div class="party-lobby-grid">
-        <section class="party-panel party-share-panel">
-          <p class="party-eyebrow">Party code</p>
-          <h1 class="room-code">${escapeHtml(code)}</h1>
+      <div class="party-room-board ${isHost ? 'host-room' : 'guest-room'}">
+        <section class="party-panel party-room-header">
+          <div>
+            <p class="party-eyebrow party-beta-tag">Multiplayer Beta</p>
+            <p class="party-room-kicker">Room code</p>
+            <h1 class="room-code">${escapeHtml(code)}</h1>
+            <p class="party-room-status" id="party-room-status"></p>
+          </div>
           <div class="party-share-actions">
             <button class="btn btn-outline" id="copy-link">Copy Link</button>
             <canvas id="qr" width="128" height="128" aria-label="QR code for party link"></canvas>
           </div>
         </section>
 
-        <section class="party-panel lobby-roster">
-          <h2 id="player-count-header"></h2>
-          <ul class="party-player-list" id="player-list"></ul>
-        </section>
-      </div>
+        <div class="party-lobby-grid">
+          <section class="party-panel" id="controls-panel">
+            ${isHost ? renderHostControls() : renderGuestSelection()}
+          </section>
 
-      <section class="party-panel" id="controls-panel">
-        ${isHost ? renderHostControls() : renderGuestSelection()}
-      </section>
+          <section class="party-panel lobby-roster">
+            <p class="party-eyebrow">Players</p>
+            <h2 id="player-count-header"></h2>
+            <ul class="party-player-list" id="player-list"></ul>
+          </section>
+        </div>
+      </div>
       <div id="error-bar" class="error-bar" hidden></div>
     `;
 
     QRCode.toCanvas(document.getElementById('qr'), window.location.href, { width: 128 }).catch(() => {});
     document.getElementById('copy-link').addEventListener('click', copyRoomLink);
+    updateRoomStatus(isHost);
     updatePlayerCountHeader();
     updateRoster(isHost);
     if (isHost) wireHostControls();
@@ -147,6 +156,19 @@ export async function initPartyRoom(code) {
     const el = document.getElementById('player-count-header');
     if (!el) return;
     el.textContent = `Players (${connectedCount()} connected · ${currentState.players.length}/5 in room)`;
+  }
+
+  function updateRoomStatus(isHost) {
+    const el = document.getElementById('party-room-status');
+    if (!el) return;
+    const connected = connectedCount();
+    if (isHost) {
+      el.textContent = connected < 2
+        ? 'You are the host. Waiting for at least 2 connected players.'
+        : 'You are the host. Setup is ready, and you can start when the room is ready.';
+    } else {
+      el.textContent = 'You are a guest. The host controls setup and starts the game.';
+    }
   }
 
   function updateRoster(isHost) {
@@ -199,7 +221,9 @@ export async function initPartyRoom(code) {
     const connected = connectedCount();
     return `
       <div class="host-controls">
+        <p class="party-eyebrow">Host setup</p>
         <h2>Game Setup</h2>
+        <p class="party-role-note">Host controls: choose the set and mode, then start once enough players are connected.</p>
         <div class="party-form-row">
           <label class="party-label" for="set-picker">Set</label>
           <select id="set-picker">${setOptions}</select>
@@ -225,10 +249,13 @@ export async function initPartyRoom(code) {
     const modeLabel = sel?.mode ? modeDisplayName(sel.mode) : 'Not picked yet';
     return `
       <div class="host-controls">
-        <h2>Game Setup</h2>
-        <div class="party-form-row"><span class="party-label">Set</span><strong>${escapeHtml(setName)}</strong></div>
-        <div class="party-form-row"><span class="party-label">Mode</span><strong>${escapeHtml(modeLabel)}</strong></div>
-        <p class="party-waiting-copy">Waiting for the host to start the game.</p>
+        <p class="party-eyebrow">Guest view</p>
+        <h2>Host Setup</h2>
+        <div class="party-setup-summary">
+          <div class="party-form-row"><span class="party-label">Set</span><strong>${escapeHtml(setName)}</strong></div>
+          <div class="party-form-row"><span class="party-label">Mode</span><strong>${escapeHtml(modeLabel)}</strong></div>
+        </div>
+        <p class="party-waiting-copy">Joined and waiting. The host will start the game from this room board.</p>
       </div>
     `;
   }
@@ -325,10 +352,20 @@ function promptForName(code) {
 
 function copyRoomLink() {
   const text = window.location.href;
+  const btn = document.getElementById('copy-link');
+  const markCopied = () => {
+    if (!btn) return;
+    btn.textContent = 'Copied Link';
+    setTimeout(() => { btn.textContent = 'Copy Link'; }, 1600);
+  };
   if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    navigator.clipboard.writeText(text).then(markCopied).catch(() => {
+      fallbackCopy(text);
+      markCopied();
+    });
   } else {
     fallbackCopy(text);
+    markCopied();
   }
 }
 

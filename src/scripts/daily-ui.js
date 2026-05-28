@@ -227,13 +227,23 @@ function renderGame() {
 
   // Build input area: pill grid
   const inputAreaHTML = `
+        <div class="daily-answer-panel">
+          <label class="daily-answer-label" for="daily-answer-filter">Choose the exact answer</label>
+          <input
+            class="daily-answer-filter"
+            id="daily-answer-filter"
+            type="text"
+            placeholder="Filter answers..."
+            autocomplete="off"
+          />
         <div class="daily-pill-grid" id="pill-grid">
           ${BUGS101_OPTIONS.map(name =>
-            `<button class="daily-pill" data-value="${escapeHTML(name)}">${escapeHTML(name)}</button>`
+            `<button class="daily-pill" type="button" data-value="${escapeHTML(name)}" aria-pressed="false">${escapeHTML(name)}</button>`
           ).join('')}
         </div>
         <div class="daily-input-row">
-          <button class="daily-submit" id="submit-btn" disabled>Go</button>
+          <button class="daily-submit" id="submit-btn" disabled>Pick an answer</button>
+        </div>
         </div>
       `;
 
@@ -310,8 +320,17 @@ function renderWrongGuesses() {
 
 function setupPillGrid() {
   const grid = document.getElementById('pill-grid');
+  const filter = document.getElementById('daily-answer-filter');
   const submitBtn = document.getElementById('submit-btn');
   if (!grid) return;
+
+  filter?.addEventListener('input', () => {
+    const query = filter.value.toLowerCase().trim();
+    grid.querySelectorAll('.daily-pill').forEach(pill => {
+      const label = pill.getAttribute('data-value').toLowerCase();
+      pill.hidden = query && !label.includes(query);
+    });
+  });
 
   grid.addEventListener('click', (e) => {
     const pill = e.target.closest('.daily-pill');
@@ -319,12 +338,18 @@ function setupPillGrid() {
 
     // Deselect previously selected pill
     const prev = grid.querySelector('.daily-pill.selected');
-    if (prev) prev.classList.remove('selected');
+    if (prev) {
+      prev.classList.remove('selected');
+      prev.setAttribute('aria-pressed', 'false');
+    }
 
     // Select this pill
     pill.classList.add('selected');
+    pill.setAttribute('aria-pressed', 'true');
     selectedAnswer = pill.getAttribute('data-value');
     submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit guess';
+    submitBtn.classList.add('ready');
   });
 }
 
@@ -386,11 +411,17 @@ function submitGuess() {
 
       // Reset selection for next guess
       selectedAnswer = '';
-      document.getElementById('submit-btn').disabled = true;
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Pick an answer';
+      submitBtn.classList.remove('ready');
 
       // Deselect any selected pill
       const prev = document.querySelector('.daily-pill.selected');
-      if (prev) prev.classList.remove('selected');
+      if (prev) {
+        prev.classList.remove('selected');
+        prev.setAttribute('aria-pressed', 'false');
+      }
     }
   }
 }

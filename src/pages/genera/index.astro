@@ -21,6 +21,19 @@ const generaWithLinks = genera.map(g => {
   };
 });
 
+const PAGE_SIZE = 36;
+const generaClientData = generaWithLinks.map(g => ({
+  genus: g.genus,
+  genusCommon: g.genusCommon || '',
+  order: g.order,
+  orderCommon: g.orderCommon || g.order,
+  speciesCount: g.speciesCount,
+  representativePhoto: g.representativePhoto,
+  firstSpeciesSlug: g.firstSpeciesSlug,
+  searchText: `${g.genus} ${g.genusCommon || ''} ${g.orderCommon || g.order}`.toLowerCase(),
+}));
+const initialGenera = generaClientData.slice(0, PAGE_SIZE);
+
 const breadcrumbData = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -38,23 +51,27 @@ const breadcrumbData = {
   <div class="container genera-page">
     <div style="text-align: center; padding: 24px 0 8px;">
       <h1>All Insect Genera</h1>
-      <p class="subtitle">{genera.length.toLocaleString()} genera across {orders.length} orders</p>
+      <p class="subtitle">Search {genera.length.toLocaleString()} genera across {orders.length} orders.</p>
     </div>
 
     <div class="genera-controls">
+      <label class="genera-search-label" for="genera-search">Search the reference index</label>
       <input
         type="text"
         id="genera-search"
         class="genera-search"
-        placeholder="Search genera..."
+        placeholder="Try Aglais, lady beetle, or Coleoptera"
         autocomplete="off"
       />
+      <p class="genera-result-count" id="genera-result-count">
+        Showing 1-{Math.min(PAGE_SIZE, genera.length).toLocaleString()} of {genera.length.toLocaleString()} genera
+      </p>
       <div class="genera-filters" id="genera-filters">
-        <button class="genera-filter-btn active" data-order="all">All</button>
+        <button class="genera-filter-btn active" type="button" data-order="all">All</button>
         {orders.map(order => {
           const orderCommon = genera.find(g => g.order === order)?.orderCommon || order;
           return (
-            <button class="genera-filter-btn" data-order={order}>
+            <button class="genera-filter-btn" type="button" data-order={order}>
               {orderCommon}
             </button>
           );
@@ -63,12 +80,11 @@ const breadcrumbData = {
     </div>
 
     <div class="genera-grid" id="genera-grid">
-      {generaWithLinks.map(g => (
+      {initialGenera.map(g => (
         <a
           href={g.firstSpeciesSlug ? `/species/${g.firstSpeciesSlug}` : '#'}
           class="genus-card"
           data-order={g.order}
-          data-search={`${g.genus} ${g.genusCommon} ${g.orderCommon}`.toLowerCase()}
           id={g.genus.toLowerCase()}
         >
           <img
@@ -88,48 +104,143 @@ const breadcrumbData = {
       ))}
     </div>
 
+    <div class="genera-pagination" id="genera-pagination" aria-label="Genera pages"></div>
+
+    <noscript>
+      <p class="genera-empty">Showing the first {PAGE_SIZE} genera. Enable JavaScript to search, filter, and page through the full index.</p>
+    </noscript>
+
     <p class="genera-empty" id="genera-empty" style="display:none;">
       No genera match your search.
     </p>
   </div>
 
   <script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbData)}></script>
+  <script type="application/json" id="genera-data" is:inline set:html={JSON.stringify(generaClientData)}></script>
 
   <script>
-    // Client-side search and order filtering
+    const PAGE_SIZE = 36;
+    const genera = JSON.parse(document.getElementById('genera-data')?.textContent || '[]');
     const searchInput = document.getElementById('genera-search');
     const grid = document.getElementById('genera-grid');
     const emptyMsg = document.getElementById('genera-empty');
-    const cards = Array.from(grid.querySelectorAll('.genus-card'));
+    const resultCount = document.getElementById('genera-result-count');
+    const pagination = document.getElementById('genera-pagination');
     const filterBtns = document.querySelectorAll('.genera-filter-btn');
 
     let activeOrder = 'all';
+    let currentPage = 1;
 
-    function applyFilters() {
-      const query = searchInput.value.toLowerCase().trim();
-      let visible = 0;
+    function makeCard(g) {
+      const card = document.createElement('a');
+      card.href = g.firstSpeciesSlug ? `${window.__BASE || ''}/species/${g.firstSpeciesSlug}` : '#';
+      card.className = 'genus-card';
+      card.dataset.order = g.order;
+      card.id = g.genus.toLowerCase();
 
-      for (const card of cards) {
-        const matchesOrder = activeOrder === 'all' || card.dataset.order === activeOrder;
-        const matchesSearch = !query || card.dataset.search.includes(query);
-        const show = matchesOrder && matchesSearch;
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
+      const img = document.createElement('img');
+      img.src = g.representativePhoto;
+      img.alt = g.genusCommon || g.genus;
+      img.loading = 'lazy';
+      img.width = 100;
+      img.height = 100;
+      img.className = 'genus-card-img';
+
+      const info = document.createElement('div');
+      info.className = 'genus-card-info';
+
+      const name = document.createElement('span');
+      name.className = 'genus-card-name';
+      name.textContent = g.genus;
+      info.appendChild(name);
+
+      if (g.genusCommon) {
+        const common = document.createElement('span');
+        common.className = 'genus-card-common';
+        common.textContent = g.genusCommon;
+        info.appendChild(common);
       }
 
-      emptyMsg.style.display = visible === 0 ? '' : 'none';
+      const meta = document.createElement('span');
+      meta.className = 'genus-card-meta';
+      meta.textContent = `${g.speciesCount} species · ${g.orderCommon || g.order}`;
+      info.appendChild(meta);
+
+      card.append(img, info);
+      return card;
     }
 
-    searchInput.addEventListener('input', applyFilters);
+    function filteredGenera() {
+      const query = searchInput.value.toLowerCase().trim();
+      return genera.filter(g => {
+        const matchesOrder = activeOrder === 'all' || g.order === activeOrder;
+        const matchesSearch = !query || g.searchText.includes(query);
+        return matchesOrder && matchesSearch;
+      });
+    }
+
+    function renderPagination(pageCount) {
+      pagination.replaceChildren();
+      if (pageCount <= 1) return;
+
+      const prev = document.createElement('button');
+      prev.type = 'button';
+      prev.className = 'genera-page-btn';
+      prev.textContent = 'Previous';
+      prev.disabled = currentPage === 1;
+      prev.addEventListener('click', () => {
+        currentPage = Math.max(1, currentPage - 1);
+        render();
+      });
+
+      const label = document.createElement('span');
+      label.className = 'genera-page-label';
+      label.textContent = `Page ${currentPage} of ${pageCount}`;
+
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'genera-page-btn';
+      next.textContent = 'Next';
+      next.disabled = currentPage === pageCount;
+      next.addEventListener('click', () => {
+        currentPage = Math.min(pageCount, currentPage + 1);
+        render();
+      });
+
+      pagination.append(prev, label, next);
+    }
+
+    function render() {
+      const matches = filteredGenera();
+      const pageCount = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const visible = matches.slice(start, start + PAGE_SIZE);
+
+      grid.replaceChildren(...visible.map(makeCard));
+      emptyMsg.style.display = matches.length === 0 ? '' : 'none';
+      resultCount.textContent = matches.length === 0
+        ? 'No matching genera'
+        : `Showing ${start + 1}-${start + visible.length} of ${matches.length} genera`;
+      renderPagination(pageCount);
+    }
+
+    searchInput.addEventListener('input', () => {
+      currentPage = 1;
+      render();
+    });
 
     filterBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         filterBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeOrder = btn.dataset.order;
-        applyFilters();
+        currentPage = 1;
+        render();
       });
     });
+
+    render();
   </script>
 
   <style>
@@ -139,24 +250,43 @@ const breadcrumbData = {
     }
 
     .genera-controls {
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
       margin-bottom: 24px;
+      box-shadow: 0 3px 0 #d4a07a, 0 12px 28px rgba(184, 90, 59, 0.08);
+    }
+
+    .genera-search-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 800;
     }
 
     .genera-search {
       width: 100%;
-      padding: 10px 16px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-full);
-      background: var(--surface);
+      min-height: 52px;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
       color: var(--text);
-      font-size: var(--text-sm);
+      font-size: 1rem;
       outline: none;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       box-sizing: border-box;
     }
 
-    .genera-search:focus {
+    .genera-search:focus-visible {
       border-color: var(--accent);
+    }
+
+    .genera-result-count {
+      margin: 0 0 12px;
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
     }
 
     .genera-filters {
@@ -166,7 +296,8 @@ const breadcrumbData = {
     }
 
     .genera-filter-btn {
-      padding: 4px 12px;
+      min-height: 36px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius-full);
       background: var(--surface);
@@ -186,6 +317,7 @@ const breadcrumbData = {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
+      min-height: 360px;
     }
 
     .genus-card {
@@ -197,11 +329,14 @@ const breadcrumbData = {
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       text-decoration: none;
-      transition: border-color var(--transition-fast);
+      box-shadow: 0 2px 0 var(--border);
+      transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
     }
 
     .genus-card:hover {
       border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 0 #d4a07a;
     }
 
     .genus-card-img {
@@ -241,6 +376,54 @@ const breadcrumbData = {
       text-align: center;
       color: var(--text-secondary);
       padding: 32px;
+    }
+
+    .genera-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px 0 8px;
+    }
+
+    .genera-page-btn {
+      min-width: 96px;
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 0 var(--border);
+    }
+
+    .genera-page-btn:disabled {
+      background: var(--border);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .genera-page-label {
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+
+    @media (max-width: 520px) {
+      .genera-grid {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .genera-pagination {
+        gap: 8px;
+      }
+
+      .genera-page-btn {
+        min-width: 82px;
+      }
     }
   </style>
 </Base>
