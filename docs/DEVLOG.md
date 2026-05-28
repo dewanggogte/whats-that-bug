@@ -122,6 +122,6 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 
 **Why it happened:** Vercel and PartyKit deploy independently. Protocol changes across that boundary can create skew even when each side works on its own.
 
-**The fix:** Added one GitHub Actions production deploy workflow that tests, builds Vercel, uploads the prebuilt Vercel output without promoting it, deploys PartyKit, then promotes that Vercel deployment from the same commit. Also added a shared `PARTY_PROTOCOL_VERSION` to fail visibly with `PROTOCOL_MISMATCH` if the frontend/backend protocol ever drifts again.
+**The fix:** Added one GitHub Actions production deploy workflow that tests, builds Vercel, deploys PartyKit, then deploys the prebuilt Vercel output from the same commit. Also added a shared `PARTY_PROTOCOL_VERSION` to fail visibly with `PROTOCOL_MISMATCH` if the frontend/backend protocol ever drifts again.
 
 **Key insight:** Realtime backends and static frontends still share a protocol. If they deploy separately, version that protocol or couple the deploys, preferably both.
