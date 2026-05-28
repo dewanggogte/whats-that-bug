@@ -41,14 +41,8 @@ jobs:
       - name: Build Vercel output
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Upload Vercel deployment without promoting
-        id: vercel_deploy
-        run: |
-          deployment_url=$(npx vercel deploy --prebuilt --prod --skip-domain --token=${{ secrets.VERCEL_TOKEN }})
-          echo "deployment_url=$deployment_url" >> "$GITHUB_OUTPUT"
-
       - name: Deploy PartyKit
         run: npm run deploy:party
 
-      - name: Promote Vercel deployment
-        run: npx vercel promote ${{ steps.vercel_deploy.outputs.deployment_url }} --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy Vercel
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

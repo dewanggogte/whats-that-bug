@@ -17,7 +17,7 @@ Disable Vercel Git auto-deploys for this project. If Vercel deploys directly fro
 
 ## Deploy Order
 
-The workflow builds Vercel first, uploads the prebuilt Vercel output without promoting it, deploys PartyKit, then promotes the already-uploaded Vercel deployment. That keeps the visible skew window as short as possible and avoids making a new frontend live before the matching backend is ready.
+The workflow builds Vercel first, deploys PartyKit, then deploys the prebuilt Vercel output to production. That keeps the new frontend from going live before the matching backend is ready.
 
 ## Protocol Guard
 
