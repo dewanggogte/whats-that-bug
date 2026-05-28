@@ -113,3 +113,15 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 **The fix:** Split identity into a public per-room `playerId`, a private stable `userId`, and a private rotating `rejoinToken`. Public state only includes the player ID. Rejoins must present the current token, and successful rejoins rotate it.
 
 **Key insight:** If an identifier is broadcast to untrusted clients, treat it as display data, not authentication. Resume flows need a separate secret, even for casual game lobbies.
+
+---
+
+## 2026-05-28: Coupling PartyKit and Vercel deploys
+
+**The problem:** Production Vercel served the frontend that expected PartyKit to send an `identified` message with a public `playerId`, but PartyKit had not been redeployed after the identity split. The room creator was present and marked as host in server state, but the browser never learned its `playerId`, so the host saw the guest-only setup panel.
+
+**Why it happened:** Vercel and PartyKit deploy independently. Protocol changes across that boundary can create skew even when each side works on its own.
+
+**The fix:** Added one GitHub Actions production deploy workflow that tests, builds Vercel, uploads the prebuilt Vercel output without promoting it, deploys PartyKit, then promotes that Vercel deployment from the same commit. Also added a shared `PARTY_PROTOCOL_VERSION` to fail visibly with `PROTOCOL_MISMATCH` if the frontend/backend protocol ever drifts again.
+
+**Key insight:** Realtime backends and static frontends still share a protocol. If they deploy separately, version that protocol or couple the deploys, preferably both.

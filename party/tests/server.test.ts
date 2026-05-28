@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Room from '../server';
 import { createToken } from '../create-token';
+import { PARTY_PROTOCOL_VERSION } from '../../src/scripts/party/protocol.js';
 
 const SECRET = 'test-secret';
 
@@ -26,6 +27,15 @@ describe('Room identify', () => {
       displayName: 'Host',
       createToken: hostToken,
     }), host as any);
+
+    expect(host.messages).toContainEqual(expect.objectContaining({
+      type: 'identified',
+      protocolVersion: PARTY_PROTOCOL_VERSION,
+    }));
+    expect(fakeRoom.broadcasts).toContainEqual(expect.objectContaining({
+      type: 'state',
+      state: expect.objectContaining({ protocolVersion: PARTY_PROTOCOL_VERSION }),
+    }));
 
     const guest = fakeRoom.connect('guest-conn');
     const collisionToken = await createToken('ABCD', SECRET);

@@ -27,6 +27,7 @@ import { generateBugs101Distractors, generateGenusDistractors, generateDistracto
 import { reserveRoomCode } from './codes';
 import { checkRateLimit } from './rate-limit';
 import { createToken, verifyCreateToken } from './create-token';
+import { PARTY_PROTOCOL_VERSION } from '../src/scripts/party/protocol.js';
 
 const IDLE_TTL_MS = 30 * 60 * 1000;
 const HARD_TTL_MS = 4 * 60 * 60 * 1000;
@@ -46,6 +47,7 @@ type PublicPlayer = Omit<RoomState['players'][number], 'connectionId' | 'userId'
 type PublicState = Omit<RoomState, 'players' | 'questions'> & {
   players: PublicPlayer[];
   questions: [];
+  protocolVersion: number;
 };
 
 const SETS: Record<string, SetMeta> = Object.fromEntries(
@@ -245,7 +247,7 @@ export default class Room implements Party.Server {
     }
 
     this.connToPlayer.set(sender.id, playerId);
-    sender.send(JSON.stringify({ type: 'identified', playerId, rejoinToken }));
+    sender.send(JSON.stringify({ type: 'identified', playerId, rejoinToken, protocolVersion: PARTY_PROTOCOL_VERSION }));
     this.broadcastState();
     if (this.state.status === 'playing') {
       this.sendGameStarted(sender, playerId);
@@ -405,6 +407,7 @@ export default class Room implements Party.Server {
     const player = playerId ? this.state.players.find(p => p.id === playerId) : null;
     return {
       type: 'game-started',
+      protocolVersion: PARTY_PROTOCOL_VERSION,
       questions: this.state.questions,
       setMeta: { setKey, mode, name: setMeta.name, scoring: setMeta.scoring },
       resume: player ? {
@@ -438,6 +441,7 @@ export default class Room implements Party.Server {
       startedAt: this.state.startedAt,
       endedAt: this.state.endedAt,
       winsAwarded: this.state.winsAwarded,
+      protocolVersion: PARTY_PROTOCOL_VERSION,
     };
   }
 
@@ -540,10 +544,8 @@ function buildQuestionSequence(roomCode: string, setMeta: SetMeta, mode: Mode): 
     let distractors: Observation[];
     if (setMeta.scoring === 'binary') {
       distractors = generateBugs101Distractors(correct, taxonomy, observations, rng);
-    } else if (setMeta.scoring === 'genus') {
-      distractors = generateGenusDistractors(correct, taxonomy, observations, rng);
     } else {
-      distractors = generateDistractors(correct, taxonomy, observations, rng);
+      distractors = generateGenusDistractors(correct, taxonomy, observations, rng);
     }
     const distractorIndexes = distractors
       .map(d => observationIndexByObject.get(d))

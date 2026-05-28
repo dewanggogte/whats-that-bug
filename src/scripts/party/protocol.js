@@ -1,0 +1,1 @@
+export const PARTY_PROTOCOL_VERSION = 2;

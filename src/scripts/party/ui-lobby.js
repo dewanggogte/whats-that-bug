@@ -3,6 +3,7 @@ import { getUserId } from '../user-id.js';
 import { createPartyClient } from './client.js';
 import { loadPartySession, savePartySession, pruneOldPartySessions } from './session-storage.js';
 import { isValidCodeShape } from './codes-client.js';
+import { PARTY_PROTOCOL_VERSION } from './protocol.js';
 import { initGameUI, applyState, applyLeaderboard, applyQuestionResult, applyGameOver } from './ui-game.js';
 
 export async function initPartyRoom(code) {
@@ -41,11 +42,13 @@ export async function initPartyRoom(code) {
     },
     onMessage: (msg) => {
       if (msg.type === 'identified') {
+        if (!hasCurrentProtocol(msg)) return renderProtocolMismatch(client);
         playerId = msg.playerId;
         savePartySession(code, { displayName, playerId, rejoinToken: msg.rejoinToken });
         sessionStorage.removeItem(`wtb_party_create_${code}`);
         if (currentState) renderRoom();
       } else if (msg.type === 'state') {
+        if (!hasCurrentProtocol(msg.state)) return renderProtocolMismatch(client);
         currentState = msg.state;
         if (gameStartedMsg && currentState.status === 'lobby') {
           gameStartedMsg = null;
@@ -56,6 +59,7 @@ export async function initPartyRoom(code) {
           renderRoom();
         }
       } else if (msg.type === 'game-started') {
+        if (!hasCurrentProtocol(msg)) return renderProtocolMismatch(client);
         gameStartedMsg = msg;
         renderGame(msg);
       } else if (msg.type === 'leaderboard-update') {
@@ -242,6 +246,14 @@ export async function initPartyRoom(code) {
     `;
   }
 
+  function renderProtocolMismatch(client) {
+    renderFatal(
+      'PROTOCOL_MISMATCH',
+      'Multiplayer is updating. Refresh in a minute, then create a new party.'
+    );
+    client.close();
+  }
+
   function wireHostControls() {
     const setPicker = document.getElementById('set-picker');
     const modePicker = document.getElementById('mode-picker');
@@ -279,6 +291,10 @@ export async function initPartyRoom(code) {
     bar.hidden = false;
     setTimeout(() => { bar.hidden = true; }, 4000);
   }
+}
+
+function hasCurrentProtocol(msg) {
+  return msg?.protocolVersion === PARTY_PROTOCOL_VERSION;
 }
 
 function promptForName(code) {
