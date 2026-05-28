@@ -214,10 +214,10 @@ function pickNewCandidate(mode, usedIds) {
       if (VALID_BUGS101_NAMES.has(name)) return obs;
     }
   } else {
-    // allbugs: must have species and common_name
+    // allbugs: must have genus and common_name
     for (const obs of available) {
       if (!obs.taxon) continue;
-      if (obs.taxon.species && obs.taxon.common_name) return obs;
+      if (obs.taxon.genus && obs.taxon.common_name) return obs;
     }
   }
 
@@ -265,7 +265,7 @@ async function generateEntryImages(obs, date, mode) {
     entry.answer_order = obs.taxon.order;
     entry.answer_common = getBugs101Name(obs.taxon);
   } else {
-    entry.answer_species = obs.taxon.species;
+    entry.answer_genus = obs.taxon.genus;
     entry.answer_common = obs.taxon.common_name;
   }
 
@@ -388,7 +388,7 @@ function render() {
   const fullyApproved = chs.filter(c => c.bugs101?.approved && c.allbugs?.approved).length;
   const problems = chs.filter(c => {
     const b101Invalid = !VALID_B101.has(c.bugs101?.answer_common || '');
-    const allMissing = !c.allbugs?.answer_species;
+    const allMissing = !(c.allbugs?.answer_genus || c.allbugs?.answer_species);
     return b101Invalid || allMissing;
   }).length;
   document.getElementById('status').innerHTML =
@@ -397,7 +397,7 @@ function render() {
 
   document.getElementById('challenges').innerHTML = chs.map((ch, idx) => {
     const b101Valid = VALID_B101.has(ch.bugs101?.answer_common || '');
-    const allValid = !!ch.allbugs?.answer_species && !!ch.allbugs?.answer_common;
+    const allValid = !!(ch.allbugs?.answer_genus || ch.allbugs?.answer_species) && !!ch.allbugs?.answer_common;
     const bothApproved = !!ch.bugs101?.approved && !!ch.allbugs?.approved;
     const badgeClass = bothApproved ? 'approved' : 'pending';
     const badgeText = bothApproved ? 'Approved' : 'Pending';
@@ -440,7 +440,7 @@ function renderMode(ch, idx, mode, title, fracLabels, isValid) {
     answerLine = 'Answer: <strong>' + esc(data.answer_common || '?') + '</strong> (' + esc(data.answer_order || '?') + ')';
     if (!isValid) answerLine += ' <span class="warn">NOT IN OPTIONS</span>';
   } else {
-    answerLine = 'Answer: <strong>' + esc(data.answer_common || '?') + '</strong> (<em>' + esc(data.answer_species || 'MISSING') + '</em>)';
+    answerLine = 'Answer: <strong>' + esc(data.answer_common || '?') + '</strong> (<em>' + esc(data.answer_genus || data.answer_species || 'MISSING') + '</em>)';
     if (!isValid) answerLine += ' <span class="warn">INCOMPLETE</span>';
   }
 

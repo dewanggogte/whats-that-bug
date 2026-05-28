@@ -9,29 +9,29 @@ const figeater = {
 };
 
 describe('calculateScore', () => {
-  it('returns 100 for exact species match', () => {
+  it('returns 100 for same species because genus matches', () => {
     const picked = { ...figeater };
     expect(calculateScore(picked, figeater)).toBe(100);
   });
 
-  it('returns 75 for same genus, different species', () => {
+  it('returns 100 for same genus, different species', () => {
     const picked = { ...figeater, species: 'Cotinis nitida' };
-    expect(calculateScore(picked, figeater)).toBe(75);
+    expect(calculateScore(picked, figeater)).toBe(100);
   });
 
-  it('returns 50 for same family, different genus', () => {
+  it('returns 0 for same family, different genus', () => {
     const picked = { ...figeater, species: 'Popillia japonica', genus: 'Popillia' };
-    expect(calculateScore(picked, figeater)).toBe(50);
+    expect(calculateScore(picked, figeater)).toBe(0);
   });
 
-  it('returns 25 for same order, different family', () => {
+  it('returns 0 for same order, different family', () => {
     const picked = {
       species: 'Cerambyx cerdo',
       genus: 'Cerambyx',
       family: 'Cerambycidae',
       order: 'Coleoptera',
     };
-    expect(calculateScore(picked, figeater)).toBe(25);
+    expect(calculateScore(picked, figeater)).toBe(0);
   });
 
   it('returns 0 for different order', () => {

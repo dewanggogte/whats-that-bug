@@ -9,6 +9,7 @@ import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, log
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { loadPercentiles, renderPercentileCard } from './percentiles.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick, isMuted } from './sounds.js';
+import { recordGenusSeen, getGenusCount } from './achievements.js';
 
 // Dynamic import for achievements — gracefully degrades if achievements.js doesn't exist yet (Spec 4)
 let achievementsModule = null;
@@ -54,12 +55,26 @@ function tweenCounter(el, target, duration = 500, suffix = '') {
 // getBugs101Name is imported from game-engine.js
 
 // Append the lay group noun (Dragonfly, Moth, Beetle...) to a species common
-// name so genus/taxonomic-scored options are self-describing. Skip when the
+// name so genus-scored options are self-describing. Skip when the
 // common name already contains that exact word (e.g. "Lady Beetle", "Wheel Bug").
 function withGroupNoun(taxon) {
   const noun = getBugs101Name(taxon).split(' ').pop();
   const re = new RegExp(`\\b${noun}\\b`, 'i');
   return re.test(taxon.common_name) ? taxon.common_name : `${taxon.common_name} ${noun}`;
+}
+
+function answerForAnalytics(taxon, scoring) {
+  return scoring === 'binary' ? getBugs101Name(taxon) : taxon.genus;
+}
+
+function answerDetailsForAnalytics(pickedTaxon, correctTaxon, scoring) {
+  return {
+    scoring,
+    user_answer_genus: pickedTaxon?.genus || '',
+    correct_answer_genus: correctTaxon?.genus || '',
+    user_answer_species: pickedTaxon?.species || '',
+    correct_answer_species: correctTaxon?.species || '',
+  };
 }
 
 const base = window.__BASE || '';
@@ -553,21 +568,16 @@ function handleAnswer(picked, choices, choiceEls) {
   }
 
   // Log round
+  const analyticsDetails = answerDetailsForAnalytics(picked.taxon, correct.taxon, scoring);
   logRoundComplete(
     session.sessionId, displayRound, correct.id,
-    picked.taxon.species, correct.taxon.species,
-    score, timeTaken, currentSetKey, session.mode
+    answerForAnalytics(picked.taxon, scoring), answerForAnalytics(correct.taxon, scoring),
+    score, timeTaken, currentSetKey, session.mode, analyticsDetails
   );
 
-  // Track unique species for milestone tracking
+  // Track unique genera for milestone tracking
   if (score === 100) {
-    try {
-      const seen = JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
-      if (!seen.includes(correct.taxon.species)) {
-        seen.push(correct.taxon.species);
-        localStorage.setItem('wtb_species_seen', JSON.stringify(seen));
-      }
-    } catch { /* localStorage full or unavailable */ }
+    recordGenusSeen(correct.taxon.genus);
   }
 
   // Sound feedback based on score
@@ -736,10 +746,12 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
     btn.addEventListener('click', () => {
       container.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
+      const scoring = session.setDef.scoring;
       logRoundReaction(
         session.sessionId, displayRound, correct.id,
-        btn.dataset.difficulty, picked.taxon.species, correct.taxon.species,
-        score, currentSetKey
+        btn.dataset.difficulty,
+        answerForAnalytics(picked.taxon, scoring), answerForAnalytics(correct.taxon, scoring),
+        score, currentSetKey, answerDetailsForAnalytics(picked.taxon, correct.taxon, scoring)
       );
     });
   });
@@ -897,11 +909,8 @@ function renderClassicSummary() {
     localStorage.setItem(storageKey, session.totalScore.toString());
   }
 
-  const speciesCount = (() => {
-    try { return JSON.parse(localStorage.getItem('wtb_species_seen') || '[]').length; }
-    catch { return 0; }
-  })();
-  const speciesLine = speciesCount > 10 ? `<p class="subtitle" style="font-size:0.8rem;">${speciesCount} species identified so far</p>` : '';
+  const genusCount = getGenusCount();
+  const genusLine = genusCount > 10 ? `<p class="subtitle" style="font-size:0.8rem;">${genusCount} genera identified so far</p>` : '';
 
   const potd = getPlayOfTheDay(session.history);
   const recHTML = renderRecommendation(session.totalScore, currentSetKey, session.mode);
@@ -951,7 +960,7 @@ function renderClassicSummary() {
         </div>
 
         ${potdCard}
-        ${speciesLine}
+        ${genusLine}
 
         ${renderShareSection(getClassicFlavor(exactCount))}
 

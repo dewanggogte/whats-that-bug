@@ -146,8 +146,13 @@ export function applyQuestionResult({ questionIndex, score, correctChoiceIndex }
     room_code: _ctx.code,
     round: _currentQ + 1,
     observation_id: correctObs?.id ?? null,
-    user_answer: pickedObs?.taxon?.species ?? null,
-    correct_answer: correctObs?.taxon?.species ?? null,
+    user_answer: getAnalyticsAnswer(pickedObs),
+    correct_answer: getAnalyticsAnswer(correctObs),
+    user_answer_genus: pickedObs?.taxon?.genus ?? null,
+    correct_answer_genus: correctObs?.taxon?.genus ?? null,
+    user_answer_species: pickedObs?.taxon?.species ?? null,
+    correct_answer_species: correctObs?.taxon?.species ?? null,
+    scoring: _ctx.setMeta.scoring,
     score,
     time_taken_ms: Date.now() - _startedAt,
     set: _ctx.setMeta.setKey,
@@ -320,6 +325,12 @@ function questionLabel() {
   if (_ctx.setMeta.mode === 'classic') return `Question ${_currentQ + 1} of ${_ctx.questions.length}`;
   if (_ctx.setMeta.mode === 'time_trial') return `Question ${_currentQ + 1}`;
   return `Streak ${_currentQ + 1}`;
+}
+
+function getAnalyticsAnswer(obs) {
+  if (!obs) return null;
+  if (_ctx.setMeta.scoring === 'binary') return getBugs101Name(obs.taxon);
+  return obs.taxon.genus || null;
 }
 
 function getChoiceLabel(obs) {

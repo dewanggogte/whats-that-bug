@@ -75,11 +75,11 @@ describe('buildPoolEntries', () => {
       inat_url: 'inatA', center_x: 0.2, center_y: 0.5, answer_order: 'Ixodida', answer_common: 'Tick' },
     allbugs: { observation_id: 200, crops: [], reveal: 'daily/2026-04-05/all_full.jpg', attribution: 'attrB',
       wikipedia_summary: '', inat_url: 'inatB', center_x: 0.6, center_y: 0.4,
-      answer_species: 'Carabus x', answer_common: 'Ground Beetle' },
+      answer_genus: 'Carabus', answer_common: 'Ground Beetle' },
   }, {
     date: '2026-04-06', number: 2,
     allbugs: { observation_id: 300, crops: [], reveal: 'r', attribution: 'attrC', wikipedia_summary: '',
-      inat_url: 'inatC', center_x: 0.5, center_y: 0.5, answer_species: 'Bittacus y', answer_common: 'Hangingfly' },
+      inat_url: 'inatC', center_x: 0.5, center_y: 0.5, answer_genus: 'Bittacus', answer_common: 'Hangingfly' },
   }] };
 
   it('keeps bugs101 entries verbatim (name/order/center)', () => {

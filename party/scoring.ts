@@ -79,11 +79,7 @@ export function getBugs101Name(taxon: Observation['taxon']): string {
 }
 
 export function calculateScore(picked: Observation['taxon'], correct: Observation['taxon']): number {
-  if (picked.species === correct.species) return 100;
-  if (picked.genus === correct.genus) return 75;
-  if (picked.family === correct.family) return 50;
-  if (picked.order === correct.order) return 25;
-  return 0;
+  return picked.genus === correct.genus ? 100 : 0;
 }
 
 export function calculateTimedScore(timeMs: number): number {
@@ -94,14 +90,11 @@ export function calculateTimedScore(timeMs: number): number {
   return 10;
 }
 
-export type Scoring = 'binary' | 'genus' | 'species';
+export type Scoring = 'binary' | 'genus';
 
 export function scoreAnswer(picked: Observation, correct: Observation, scoring: Scoring): number {
   if (scoring === 'binary') {
     return getBugs101Name(picked.taxon) === getBugs101Name(correct.taxon) ? 100 : 0;
-  }
-  if (scoring === 'genus') {
-    return picked.taxon.genus === correct.taxon.genus ? 100 : 0;
   }
   return calculateScore(picked.taxon, correct.taxon);
 }

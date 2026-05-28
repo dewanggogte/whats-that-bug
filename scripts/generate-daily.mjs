@@ -409,9 +409,9 @@ async function selectCandidate(observations, usedIds, { mode = 'bugs101', orderR
     return null;
   }
 
-  // For allbugs: try random candidates until one passes resolution + taxonomy check
+  // For allbugs: try random candidates until one passes resolution + genus check
   const allbugsValid = available.filter(o =>
-    o.taxon?.species && o.taxon?.common_name
+    o.taxon?.genus && o.taxon?.common_name
   );
   console.log(`    AllBugs pool: ${allbugsValid.length} with complete taxonomy (of ${available.length} available)`);
   for (const candidate of allbugsValid) {
@@ -525,13 +525,13 @@ async function main() {
     }
 
     // --- Process allbugs ---
-    console.log(`  AllBugs: ${allbugsObs.taxon.common_name} (${allbugsObs.taxon.species})`);
+    console.log(`  AllBugs: ${allbugsObs.taxon.common_name} (${allbugsObs.taxon.genus})`);
     let allbugsEntry;
     try {
       allbugsEntry = await processObservation(allbugsObs, dayDir, date, 'all', {
         cropDimFractions: [0.08, 0.15, 0.25, 0.38, 0.55, 0.75],
       });
-      allbugsEntry.answer_species = allbugsObs.taxon.species;
+      allbugsEntry.answer_genus = allbugsObs.taxon.genus;
       allbugsEntry.answer_common = allbugsObs.taxon.common_name;
     } catch (err) {
       console.error(`  ERROR processing allbugs: ${err.message}`);

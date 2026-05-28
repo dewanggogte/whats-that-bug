@@ -149,9 +149,9 @@ function main() {
 
   sets.all_bugs = {
     name: 'All Bugs',
-    description: "Name the exact species. Partial credit for close guesses.",
+    description: "Identify each bug by genus.",
     difficulty: 'expert',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: mainPool,
   };
 
@@ -186,9 +186,9 @@ function main() {
   }
   sets.backyard_basics = {
     name: 'Backyard Basics',
-    description: "The 100 most common species. A good step up from Bugs 101.",
+    description: "Common backyard bugs. A good step up from Bugs 101.",
     difficulty: 'intermediate',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: [...backyardPerSpecies.values()].flat(),
   };
 
@@ -196,7 +196,7 @@ function main() {
     name: 'Beetles',
     description: "All Coleoptera — tell a ladybug from a longhorn.",
     difficulty: 'themed',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: indicesWhere(o => o.taxon.order === 'Coleoptera'),
   };
 
@@ -204,7 +204,7 @@ function main() {
     name: 'Butterflies & Moths',
     description: "All Lepidoptera — moths, skippers, and swallowtails.",
     difficulty: 'themed',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: indicesWhere(o => o.taxon.order === 'Lepidoptera'),
   };
 
@@ -212,7 +212,7 @@ function main() {
     name: 'Spiders & Friends',
     description: "All Arachnida — spiders, scorpions, and their relatives.",
     difficulty: 'themed',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: indicesWhere(o => o.taxon.class === 'Arachnida'),
   };
 
@@ -241,7 +241,7 @@ function main() {
     name: 'Eye Candy',
     description: "The most beautiful bug photos on iNaturalist.",
     difficulty: 'themed',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: eyeCandyIds,
   };
 
@@ -263,7 +263,7 @@ function main() {
     name: 'Tiny Terrors',
     description: "Bugs you find at home — roaches, ticks, bed bugs, and more.",
     difficulty: 'themed',
-    scoring: 'taxonomic',
+    scoring: 'genus',
     observation_ids: indicesWhere(o => {
       const t = o.taxon;
       return TERROR_ORDERS.has(t.order) ||
@@ -276,12 +276,12 @@ function main() {
   // Game mode variants
   sets.time_trial = {
     name: 'Time Trial', description: '60 seconds. How many can you identify?',
-    mode: 'time_trial', scoring: 'taxonomic', difficulty: 'expert',
+    mode: 'time_trial', scoring: 'genus', difficulty: 'expert',
     observation_ids: sets.all_bugs.observation_ids,
   };
   sets.streak = {
     name: 'Streaks', description: 'How many in a row? One wrong and it is over.',
-    mode: 'streak', scoring: 'taxonomic', difficulty: 'expert',
+    mode: 'streak', scoring: 'genus', difficulty: 'expert',
     observation_ids: sets.all_bugs.observation_ids,
   };
   sets.bugs_101_time_trial = {

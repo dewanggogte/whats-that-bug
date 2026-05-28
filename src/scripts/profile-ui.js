@@ -1,10 +1,10 @@
 /**
- * Profile page UI — avatar picker, identity, stats, badges, species log.
+ * Profile page UI — avatar picker, identity, stats, badges, genus log.
  */
 
 import { renderCountryOptions, getFlagForCode } from './countries.js';
 import { getUserId } from './user-id.js';
-import { getEarnedAchievements, getSpeciesCount, getPlayerStats, getAllBestScores, getSpeciesList, ACHIEVEMENT_DEFS } from './achievements.js';
+import { getEarnedAchievements, getGenusCount, getPlayerStats, getAllBestScores, getGenusList, ACHIEVEMENT_DEFS } from './achievements.js';
 
 const PROFILE_KEY = 'wtb_profile';
 
@@ -53,8 +53,8 @@ export function initProfilePage() {
   const stats = getPlayerStats();
   const earned = getEarnedAchievements();
   const earnedIds = new Set(earned.map(a => a.id));
-  const speciesCount = getSpeciesCount();
-  const speciesList = getSpeciesList();
+  const genusCount = getGenusCount();
+  const genusList = getGenusList();
   const bests = getAllBestScores();
 
   // Compute aggregate stats
@@ -104,8 +104,8 @@ export function initProfilePage() {
           <span class="profile-stat-label">Sessions</span>
         </div>
         <div class="profile-stat-card">
-          <span class="profile-stat-value">${speciesCount}</span>
-          <span class="profile-stat-label">Species</span>
+          <span class="profile-stat-value">${genusCount}</span>
+          <span class="profile-stat-label">Genera</span>
         </div>
         <div class="profile-stat-card">
           <span class="profile-stat-value">${bestScore}</span>
@@ -133,13 +133,13 @@ export function initProfilePage() {
     </section>
 
     <section class="profile-section profile-species">
-      <h2>Species Discovered <span class="profile-species-count">(${speciesCount})</span></h2>
-      ${speciesList.length > 0
+      <h2>Genera Discovered <span class="profile-species-count">(${genusCount})</span></h2>
+      ${genusList.length > 0
         ? `<div class="profile-species-list" id="profile-species-list">
-            ${speciesList.sort().slice(0, 50).map(s => `<span class="profile-species-tag">${escapeHTML(s)}</span>`).join('')}
+            ${genusList.sort().slice(0, 50).map(s => `<span class="profile-species-tag">${escapeHTML(s)}</span>`).join('')}
           </div>
-          ${speciesList.length > 50 ? `<button class="profile-show-all-btn" id="profile-show-all">Show all ${speciesList.length} species</button>` : ''}`
-        : '<p class="profile-empty">Play some rounds to start discovering species!</p>'}
+          ${genusList.length > 50 ? `<button class="profile-show-all-btn" id="profile-show-all">Show all ${genusList.length} genera</button>` : ''}`
+        : '<p class="profile-empty">Play some rounds to start discovering genera!</p>'}
     </section>
 
     <div class="profile-user-id">
@@ -200,11 +200,11 @@ export function initProfilePage() {
     }
   });
 
-  // Wire up show all species
+  // Wire up show all genera
   document.getElementById('profile-show-all')?.addEventListener('click', () => {
     const list = document.getElementById('profile-species-list');
     if (list) {
-      list.innerHTML = speciesList.sort().map(s => `<span class="profile-species-tag">${escapeHTML(s)}</span>`).join('');
+      list.innerHTML = genusList.sort().map(s => `<span class="profile-species-tag">${escapeHTML(s)}</span>`).join('');
     }
     document.getElementById('profile-show-all')?.remove();
   });

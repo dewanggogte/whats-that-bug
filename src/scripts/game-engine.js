@@ -83,17 +83,13 @@ export function getBugs101Name(taxon) {
 }
 
 /**
- * Calculate score based on taxonomic distance between picked and correct taxon.
+ * Calculate score for genus-level identification.
  * @param {{ species: string, genus: string, family: string, order: string }} picked
  * @param {{ species: string, genus: string, family: string, order: string }} correct
- * @returns {number} 0 | 25 | 50 | 75 | 100
+ * @returns {number} 0 | 100
  */
 export function calculateScore(picked, correct) {
-  if (picked.species === correct.species) return 100;
-  if (picked.genus === correct.genus) return 75;
-  if (picked.family === correct.family) return 50;
-  if (picked.order === correct.order) return 25;
-  return 0;
+  return picked.genus === correct.genus ? 100 : 0;
 }
 
 /**
@@ -424,15 +420,13 @@ export class SessionState {
     let distractors;
     if (scoring === 'binary') {
       distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
-    } else if (scoring === 'genus') {
+    } else {
       if (this._difficulty && this.currentRound <= 3) {
         // Easy rounds: cross-order distractors for visual distinction
         distractors = generateBugs101Distractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
       } else {
         distractors = generateGenusDistractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
       }
-    } else {
-      distractors = generateDistractors(correct, this.taxonomy, this.observations, this._rng || defaultRng);
     }
 
     const choices = shuffleWith([correct, ...distractors], this._rng || defaultRng);
@@ -488,8 +482,6 @@ export class SessionState {
     let score;
     if (scoring === 'binary') {
       score = getBugs101Name(pickedTaxon) === getBugs101Name(correct.taxon) ? 100 : 0;
-    } else if (scoring === 'genus') {
-      score = pickedTaxon.genus === correct.taxon.genus ? 100 : 0;
     } else {
       score = calculateScore(pickedTaxon, correct.taxon);
     }

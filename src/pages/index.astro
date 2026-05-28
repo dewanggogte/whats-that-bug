@@ -25,10 +25,10 @@ const THEMED_SETS = [
 
 const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   const set = setsData[key];
-  const uniqueSpecies = new Set(
-    set.observation_ids.map((i: number) => observations[i]?.taxon?.species)
+  const uniqueGenera = new Set(
+    set.observation_ids.map((i: number) => observations[i]?.taxon?.genus)
   ).size;
-  return { key, name: set.name, icon, countLabel: `${uniqueSpecies} species` };
+  return { key, name: set.name, icon, countLabel: `${uniqueGenera} genera` };
 });
 
 const primaryGroup = PRIMARY_SETS.map(set => ({
@@ -255,10 +255,10 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
 <script>
   // --- Player Stats Card ---
   try {
-    const { getEarnedAchievements, getSpeciesCount, ACHIEVEMENT_DEFS } = await import('../scripts/achievements.js');
+    const { getEarnedAchievements, getGenusCount, getGenusList, ACHIEVEMENT_DEFS } = await import('../scripts/achievements.js');
     const { migrateBestStorageKey } = await import('../scripts/game-engine.js');
     const stats = JSON.parse(localStorage.getItem('wtb_player_stats') || '{}');
-    const speciesCount = getSpeciesCount();
+    const genusCount = getGenusCount();
     const sessionCount = stats.session_count || 0;
     const achievements = getEarnedAchievements();
 
@@ -273,8 +273,8 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
             <span class="stat-label">sessions</span>
           </button>
           <button class="stat-item stat-item-btn" data-modal="species">
-            <span class="stat-value">${speciesCount}</span>
-            <span class="stat-label">species ID'd</span>
+            <span class="stat-value">${genusCount}</span>
+            <span class="stat-label">genera ID'd</span>
           </button>
           <button class="stat-item stat-item-btn" data-modal="badges">
             <span class="stat-value">${achievements.length}</span>
@@ -359,8 +359,8 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
                 <span class="sessions-stat-lbl">Last Played</span>
               </div>
               <div class="sessions-stat">
-                <span class="sessions-stat-val">${speciesCount}</span>
-                <span class="sessions-stat-lbl">Unique Species</span>
+                <span class="sessions-stat-val">${genusCount}</span>
+                <span class="sessions-stat-lbl">Unique Genera</span>
               </div>
             </div>
             ${scores.length > 0 ? `
@@ -378,11 +378,11 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
         `;
       }
 
-      // --- Species modal ---
-      async function buildSpeciesModal() {
-        const seenSpecies = JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
-        if (seenSpecies.length === 0) {
-          return '<p style="color:var(--text-secondary);text-align:center;padding:24px;">No species identified yet. Play a game to start your collection!</p>';
+      // --- Genus modal ---
+      async function buildGenusModal() {
+        const seenGenera = getGenusList();
+        if (seenGenera.length === 0) {
+          return '<p style="color:var(--text-secondary);text-align:center;padding:24px;">No genera identified yet. Play a game to start your collection!</p>';
         }
 
         // Load observations data
@@ -390,23 +390,23 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
         const resp = await fetch(`${basePath}/data/observations.json`);
         const observations = await resp.json();
 
-        // Build a lookup: species name → best observation (prefer one with wikipedia_summary)
-        const speciesMap = new Map();
+        // Build a lookup: genus name → best observation (prefer one with wikipedia_summary)
+        const genusMap = new Map();
         for (const obs of observations) {
-          const name = obs.taxon?.species;
-          if (!name || !seenSpecies.includes(name)) continue;
-          const existing = speciesMap.get(name);
+          const name = obs.taxon?.genus;
+          if (!name || !seenGenera.includes(name)) continue;
+          const existing = genusMap.get(name);
           if (!existing || (!existing.wikipedia_summary && obs.wikipedia_summary)) {
-            speciesMap.set(name, obs);
+            genusMap.set(name, obs);
           }
         }
 
-        const cards = seenSpecies
-          .filter(name => speciesMap.has(name))
+        const cards = seenGenera
+          .filter(name => genusMap.has(name))
           .sort()
           .map(name => {
-            const obs = speciesMap.get(name);
-            const common = obs.taxon?.common_name || '';
+            const obs = genusMap.get(name);
+            const common = obs.taxon?.genus_common || obs.taxon?.common_name || '';
             const summary = obs.wikipedia_summary
               ? obs.wikipedia_summary.slice(0, 100) + (obs.wikipedia_summary.length > 100 ? '...' : '')
               : obs.taxon?.order_common || '';
@@ -498,8 +498,8 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
           if (modal === 'sessions') {
             openModal('Your Sessions', buildSessionsModal());
           } else if (modal === 'species') {
-            openModal('Species Collection', '<p style="text-align:center;padding:24px;color:var(--text-secondary);">Loading species...</p>');
-            const html = await buildSpeciesModal();
+            openModal('Genus Collection', '<p style="text-align:center;padding:24px;color:var(--text-secondary);">Loading genera...</p>');
+            const html = await buildGenusModal();
             modalBody.innerHTML = html;
           } else if (modal === 'badges') {
             openModal('Badge Collection', buildBadgesModal());
@@ -509,9 +509,9 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
       });
     }
 
-    // Species milestone — show once per milestone
+    // Genus milestone — show once per milestone
     const milestones = [50, 100, 150, 200, 250, 500, 1000];
-    const milestone = milestones.filter(m => speciesCount >= m).pop();
+    const milestone = milestones.filter(m => genusCount >= m).pop();
     const lastCelebrated = parseInt(localStorage.getItem('wtb_last_milestone') || '0', 10);
 
     if (milestone && milestone > lastCelebrated) {
@@ -524,7 +524,7 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
       localStorage.removeItem('wtb_show_milestone');
       const banner = document.createElement('div');
       banner.className = 'milestone-banner';
-      banner.innerHTML = `🎉 You've identified <strong>${pendingMilestone}</strong> unique species!`;
+      banner.innerHTML = `🎉 You've identified <strong>${pendingMilestone}</strong> unique genera!`;
       const container = document.querySelector('.container');
       container.insertBefore(banner, container.firstChild);
       setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 5000);

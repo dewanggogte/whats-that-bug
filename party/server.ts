@@ -23,7 +23,7 @@ import {
 import { mulberry32, hashString, seededShuffle } from './rng';
 import { observations, taxonomy, type Observation } from './data-loader';
 import { scoreAnswer, calculateTimedScore, type Scoring } from './scoring';
-import { generateBugs101Distractors, generateGenusDistractors, generateDistractors } from '../src/scripts/game-engine.js';
+import { generateBugs101Distractors, generateGenusDistractors } from '../src/scripts/game-engine.js';
 import { reserveRoomCode } from './codes';
 import { checkRateLimit } from './rate-limit';
 import { createToken, verifyCreateToken } from './create-token';

@@ -2916,7 +2916,7 @@
   },
   "all_bugs": {
     "name": "All Bugs",
-    "description": "Name the exact species. Partial credit for close guesses.",
+    "description": "Identify each bug by genus.",
     "difficulty": "expert",
     "scoring": "genus",
     "observation_ids": [
@@ -6549,7 +6549,7 @@
   },
   "backyard_basics": {
     "name": "Backyard Basics",
-    "description": "The 100 most common species. A good step up from Bugs 101.",
+    "description": "Common backyard bugs. A good step up from Bugs 101.",
     "difficulty": "intermediate",
     "scoring": "genus",
     "observation_ids": [

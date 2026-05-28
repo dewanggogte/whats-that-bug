@@ -3,17 +3,17 @@ import { calculateScore, calculateTimedScore, scoreAnswer, getBugs101Name } from
 
 describe('calculateScore', () => {
   const correct = { species: 'A', genus: 'G', family: 'F', order: 'O' };
-  it('100 for species match', () => {
+  it('100 for species match because genus matches', () => {
     expect(calculateScore({ species: 'A', genus: 'G', family: 'F', order: 'O' }, correct)).toBe(100);
   });
-  it('75 for genus match', () => {
-    expect(calculateScore({ species: 'B', genus: 'G', family: 'F', order: 'O' }, correct)).toBe(75);
+  it('100 for genus match', () => {
+    expect(calculateScore({ species: 'B', genus: 'G', family: 'F', order: 'O' }, correct)).toBe(100);
   });
-  it('50 for family match', () => {
-    expect(calculateScore({ species: 'B', genus: 'H', family: 'F', order: 'O' }, correct)).toBe(50);
+  it('0 for family match with different genus', () => {
+    expect(calculateScore({ species: 'B', genus: 'H', family: 'F', order: 'O' }, correct)).toBe(0);
   });
-  it('25 for order match', () => {
-    expect(calculateScore({ species: 'B', genus: 'H', family: 'X', order: 'O' }, correct)).toBe(25);
+  it('0 for order match with different genus', () => {
+    expect(calculateScore({ species: 'B', genus: 'H', family: 'X', order: 'O' }, correct)).toBe(0);
   });
   it('0 for nothing matches', () => {
     expect(calculateScore({ species: 'B', genus: 'H', family: 'X', order: 'Y' }, correct)).toBe(0);
@@ -42,9 +42,6 @@ describe('scoreAnswer dispatches by scoring strategy', () => {
   });
   it('genus returns 100 for same genus', () => {
     expect(scoreAnswer(sameGenus, correct, 'genus')).toBe(100);
-  });
-  it('species uses taxonomic distance', () => {
-    expect(scoreAnswer(sameGenus, correct, 'species')).toBe(75);
   });
 });
 

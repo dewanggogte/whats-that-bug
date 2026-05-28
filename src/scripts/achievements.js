@@ -8,14 +8,15 @@
  *   checkDailyAchievements(playStreak) → Achievement[]
  *   renderAchievementToast(achievement) → string
  *   getEarnedAchievements() → Achievement[]
- *   getSpeciesCount() → number
+ *   getGenusCount() → number
  *   getPlayerStats() → { session_count, last_played }
  *   getAllBestScores() → { setKey: number }
- *   getSpeciesList() → string[]
+ *   getGenusList() → string[]
  */
 
 const STORAGE_KEY = 'wtb_achievements';
-const SPECIES_KEY = 'wtb_species_seen';
+const GENERA_KEY = 'wtb_genera_seen';
+const LEGACY_SPECIES_KEY = 'wtb_species_seen';
 const STATS_KEY = 'wtb_player_stats';
 
 /**
@@ -31,9 +32,9 @@ export const ACHIEVEMENT_DEFS = [
   { id: 'perfect_round',   name: 'Perfect Round',   description: '1000/1000 in classic mode',      rarity: 'very_rare', icon: '💎', check: 'session' },
 
   // Cumulative (checked at session end)
-  { id: 'century_club',    name: 'Century Club',    description: 'Identify 100 unique species',    rarity: 'rare',      icon: '💯', check: 'cumulative' },
+  { id: 'century_club',    name: 'Century Club',    description: 'Identify 100 unique genera',     rarity: 'rare',      icon: '💯', check: 'cumulative' },
   { id: 'order_expert',    name: 'Order Expert',    description: 'Score 90%+ on a themed set',     rarity: 'uncommon',  icon: '🎯', check: 'session' },
-  { id: 'entomologist',    name: 'Entomologist',    description: 'Identify 500 unique species',    rarity: 'legendary', icon: '🏆', check: 'cumulative' },
+  { id: 'entomologist',    name: 'Entomologist',    description: 'Identify 500 unique genera',     rarity: 'legendary', icon: '🏆', check: 'cumulative' },
 
   // Daily-based
   { id: 'daily_devotee',   name: 'Daily Devotee',   description: '7-day daily play streak',        rarity: 'rare',      icon: '📅', check: 'daily' },
@@ -75,6 +76,34 @@ function updatePlayerStats(updates) {
     localStorage.setItem(STATS_KEY, JSON.stringify(stats));
   } catch { /* storage full */ }
   return stats;
+}
+
+function getLegacyGenera() {
+  try {
+    const legacySpecies = JSON.parse(localStorage.getItem(LEGACY_SPECIES_KEY) || '[]');
+    return [...new Set(
+      legacySpecies
+        .map(name => String(name).trim().split(/\s+/)[0])
+        .filter(Boolean)
+    )];
+  } catch {
+    return [];
+  }
+}
+
+function getStoredGenera() {
+  try {
+    const genera = JSON.parse(localStorage.getItem(GENERA_KEY) || '[]');
+    if (genera.length > 0) return genera;
+
+    const migrated = getLegacyGenera();
+    if (migrated.length > 0) {
+      localStorage.setItem(GENERA_KEY, JSON.stringify(migrated));
+    }
+    return migrated;
+  } catch {
+    return [];
+  }
 }
 
 // --- Exported API (Contract B) ---
@@ -150,10 +179,10 @@ export function checkSessionAchievements(session, setKey) {
     award('order_expert');
   }
 
-  // Cumulative species checks
-  const speciesCount = getSpeciesCount();
-  if (speciesCount >= 100) award('century_club');
-  if (speciesCount >= 500) award('entomologist');
+  // Cumulative genus checks
+  const genusCount = getGenusCount();
+  if (genusCount >= 100) award('century_club');
+  if (genusCount >= 500) award('entomologist');
 
   return newlyEarned;
 }
@@ -207,15 +236,25 @@ export function getEarnedAchievements() {
 }
 
 /**
- * Get count of unique species the player has identified.
+ * Record a genus the player has identified.
+ * @param {string} genus
+ */
+export function recordGenusSeen(genus) {
+  if (!genus) return;
+  const genera = getStoredGenera();
+  if (genera.includes(genus)) return;
+  genera.push(genus);
+  try {
+    localStorage.setItem(GENERA_KEY, JSON.stringify(genera));
+  } catch { /* storage full */ }
+}
+
+/**
+ * Get count of unique genera the player has identified.
  * @returns {number}
  */
-export function getSpeciesCount() {
-  try {
-    return JSON.parse(localStorage.getItem(SPECIES_KEY) || '[]').length;
-  } catch {
-    return 0;
-  }
+export function getGenusCount() {
+  return getStoredGenera().length;
 }
 
 /**
@@ -235,13 +274,9 @@ export function getAllBestScores() {
 }
 
 /**
- * Get the species seen list (species names).
+ * Get the genera seen list.
  * @returns {string[]}
  */
-export function getSpeciesList() {
-  try {
-    return JSON.parse(localStorage.getItem('wtb_species_seen') || '[]');
-  } catch {
-    return [];
-  }
+export function getGenusList() {
+  return getStoredGenera();
 }

@@ -6,7 +6,8 @@
  *   node scripts/calculate-difficulty.mjs path/to/round_complete.csv
  *   node scripts/calculate-difficulty.mjs path/to/events.json
  *
- * Expects columns: observation_id, user_answer, correct_answer, score, time_taken_ms, set, mode
+ * Expects columns: observation_id, user_answer, correct_answer, score, time_taken_ms, set, mode.
+ * For genus-scored sets, user_answer/correct_answer are genus labels.
  * Writes output to public/data/difficulty.json
  */
 
@@ -47,9 +48,7 @@ for (const e of events) {
   const score = Number(e.score);
   const time = Number(e.time_taken_ms);
   const set = e.set || '';
-  const mode = e.mode || '';
   const isBugs101 = set.startsWith('bugs_101');
-  const isBinaryMode = mode === 'binary' || isBugs101;
 
   if (!obsStats.has(id)) {
     obsStats.set(id, {
@@ -64,8 +63,8 @@ for (const e of events) {
   s.total++;
   s.times.push(time);
 
-  // Determine if this was a miss
-  const isMiss = isBinaryMode ? score === 0 : score < 100;
+  // All active scoring modes are binary at their target rank: 100 = correct, 0 = miss.
+  const isMiss = score === 0;
   if (isMiss) {
     s.wrong++;
     if (e.user_answer) s.wrongAnswers.add(e.user_answer);

@@ -175,7 +175,7 @@ if (typeof document !== 'undefined') {
 // Each function builds the event payload and enqueues it.
 // event_id and timestamp are added automatically by enqueue().
 
-export function logRoundComplete(sessionId, round, observationId, userAnswer, correctAnswer, score, timeTakenMs, setName, mode) {
+export function logRoundComplete(sessionId, round, observationId, userAnswer, correctAnswer, score, timeTakenMs, setName, mode, extraData) {
   enqueue({
     type: 'round_complete',
     session_id: sessionId,
@@ -187,6 +187,7 @@ export function logRoundComplete(sessionId, round, observationId, userAnswer, co
     time_taken_ms: timeTakenMs,
     set: setName,
     mode: mode || 'classic',
+    ...(extraData || {}),
   });
 }
 
@@ -250,7 +251,7 @@ export function logSessionEnd(sessionId, totalScore, roundsPlayed, setName, comp
   flush();
 }
 
-export function logRoundReaction(sessionId, round, observationId, difficulty, userAnswer, correctAnswer, score, setName) {
+export function logRoundReaction(sessionId, round, observationId, difficulty, userAnswer, correctAnswer, score, setName, extraData) {
   enqueue({
     type: 'round_reaction',
     session_id: sessionId,
@@ -261,6 +262,7 @@ export function logRoundReaction(sessionId, round, observationId, difficulty, us
     correct_answer_taxon: correctAnswer,
     score_earned: score,
     set: setName,
+    ...(extraData || {}),
   });
 }
 

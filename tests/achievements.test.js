@@ -71,9 +71,9 @@ describe('achievements', () => {
     expect(result.some(a => a.id === 'order_expert')).toBe(false);
   });
 
-  it('awards century_club at 100 species', async () => {
-    const species = Array.from({ length: 100 }, (_, i) => `Species_${i}`);
-    store.wtb_species_seen = JSON.stringify(species);
+  it('awards century_club at 100 genera', async () => {
+    const genera = Array.from({ length: 100 }, (_, i) => `Genus_${i}`);
+    store.wtb_genera_seen = JSON.stringify(genera);
 
     const { checkSessionAchievements } = await import('../src/scripts/achievements.js');
     const session = { mode: 'classic', totalScore: 500, currentStreak: 0 };
@@ -81,9 +81,9 @@ describe('achievements', () => {
     expect(result.some(a => a.id === 'century_club')).toBe(true);
   });
 
-  it('awards entomologist at 500 species', async () => {
-    const species = Array.from({ length: 500 }, (_, i) => `Species_${i}`);
-    store.wtb_species_seen = JSON.stringify(species);
+  it('awards entomologist at 500 genera', async () => {
+    const genera = Array.from({ length: 500 }, (_, i) => `Genus_${i}`);
+    store.wtb_genera_seen = JSON.stringify(genera);
 
     const { checkSessionAchievements } = await import('../src/scripts/achievements.js');
     const session = { mode: 'classic', totalScore: 500, currentStreak: 0 };
@@ -101,15 +101,22 @@ describe('achievements', () => {
     expect(earned[0].name).toBeDefined();
   });
 
-  it('getSpeciesCount returns 0 for new players', async () => {
-    const { getSpeciesCount } = await import('../src/scripts/achievements.js');
-    expect(getSpeciesCount()).toBe(0);
+  it('getGenusCount returns 0 for new players', async () => {
+    const { getGenusCount } = await import('../src/scripts/achievements.js');
+    expect(getGenusCount()).toBe(0);
   });
 
-  it('getSpeciesCount returns correct count', async () => {
-    store.wtb_species_seen = JSON.stringify(['Apis mellifera', 'Danaus plexippus']);
-    const { getSpeciesCount } = await import('../src/scripts/achievements.js');
-    expect(getSpeciesCount()).toBe(2);
+  it('getGenusCount returns correct count', async () => {
+    store.wtb_genera_seen = JSON.stringify(['Apis', 'Danaus']);
+    const { getGenusCount } = await import('../src/scripts/achievements.js');
+    expect(getGenusCount()).toBe(2);
+  });
+
+  it('migrates legacy species progress to genera', async () => {
+    store.wtb_species_seen = JSON.stringify(['Apis mellifera', 'Danaus plexippus', 'Apis cerana']);
+    const { getGenusCount, getGenusList } = await import('../src/scripts/achievements.js');
+    expect(getGenusCount()).toBe(2);
+    expect(getGenusList().sort()).toEqual(['Apis', 'Danaus']);
   });
 
   it('checkDailyAchievements awards daily_devotee at 7 days', async () => {
