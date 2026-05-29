@@ -629,25 +629,12 @@ function handleStreakPostAnswer(score, picked, correct) {
 // ===== CLASSIC POST-ANSWER =====
 
 function renderLearningCardBody(card) {
-  const marksHTML = card.marks.length
-    ? `<ul class="learning-marks">${card.marks.map(mark => `<li>${escapeHTML(mark)}</li>`).join('')}</ul>`
-    : '';
+  const tell = String(card.tell || '').trim();
+  const tellText = tell && /[.!?]$/.test(tell) ? tell : `${tell}.`;
 
   return `
-    <p class="learning-verdict">${escapeHTML(card.verdict)}</p>
-    <div class="learning-comparison">
-      <div class="learning-compare-item guess">
-        <span>Your guess</span>
-        <strong>${escapeHTML(card.guessedName)}</strong>
-        ${card.guessedSci ? `<em>${escapeHTML(card.guessedSci)}</em>` : ''}
-      </div>
-      <div class="learning-compare-item answer">
-        <span>Answer</span>
-        <strong>${escapeHTML(card.answerName)}</strong>
-        ${card.answerSci ? `<em>${escapeHTML(card.answerSci)}</em>` : ''}
-      </div>
-    </div>
-    ${marksHTML}
+    <div>This is a <strong>${escapeHTML(card.answerName)}</strong>${card.answerSci ? ` <span class="learning-answer-sci">${escapeHTML(card.answerSci)}</span>` : ''}.</div>
+    ${tell ? `<p class="learning-tell"><span class="learning-tell-lead">Quickest tell:</span> ${escapeHTML(tellText)}</p>` : ''}
     ${card.funFact ? `<p class="learning-funfact">${escapeHTML(card.funFact)}</p>` : ''}
   `;
 }

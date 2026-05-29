@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildLearningCard, pairKey, pickContrastDimensions } from '../src/scripts/learning-card.js';
+import { buildLearningCard, firstSentence, pairKey, stripHtml } from '../src/scripts/learning-card.js';
 
-const correct = {
-  taxon: {
-    common_name: 'Seven-spotted Lady Beetle',
-    species: 'Coccinella septempunctata',
-    genus: 'Coccinella',
-    family: 'Coccinellidae',
-    order: 'Coleoptera',
-  },
-  wikipedia_summary: 'Lady beetles are rounded predatory beetles.',
-  inat_url: 'https://example.com/correct',
-};
-
-const picked = {
+const spider = {
   taxon: {
     common_name: 'Bold Jumper',
     species: 'Phidippus audax',
@@ -21,41 +9,118 @@ const picked = {
     family: 'Salticidae',
     order: 'Araneae',
   },
+  wikipedia_summary: 'The bold jumper is a common jumping spider. It has iridescent chelicerae.',
+  inat_url: 'https://example.com/spider',
 };
 
-describe('learning-card', () => {
-  it('uses Bugs 101 pair tells when available', () => {
+const beetlePick = {
+  taxon: {
+    common_name: 'Seven-spotted Lady Beetle',
+    species: 'Coccinella septempunctata',
+    genus: 'Coccinella',
+    family: 'Coccinellidae',
+    order: 'Coleoptera',
+  },
+};
+
+describe('pairKey', () => {
+  it('is order-independent and pipe-joined', () => {
+    expect(pairKey('Spider', 'Beetle')).toBe('Beetle|Spider');
+    expect(pairKey('Beetle', 'Spider')).toBe('Beetle|Spider');
+  });
+});
+
+describe('stripHtml / firstSentence', () => {
+  it('strips tags and collapses whitespace', () => {
+    expect(stripHtml('<p>Hello <strong>there</strong></p>')).toBe('Hello there');
+  });
+
+  it('returns only the first sentence', () => {
+    expect(firstSentence('<p>Big eyes. Jumps far. Eats flies.</p>')).toBe('Big eyes.');
+  });
+
+  it('returns the whole string when there is no terminal punctuation', () => {
+    expect(firstSentence('a lone fragment')).toBe('a lone fragment');
+  });
+});
+
+describe('buildLearningCard - Bugs 101 tier', () => {
+  it('uses the pairwise tell looked up by category pair', () => {
     const card = buildLearningCard({
-      picked,
-      correct,
+      picked: beetlePick,
+      correct: spider,
       scoring: 'binary',
       bugs101Tells: {
-        [pairKey('Beetle', 'Jumping Spider')]: 'beetles have hard wing covers; jumping spiders have eight legs and big front eyes',
+        [pairKey('Beetle', 'Jumping Spider')]: 'spiders have 8 legs and two huge front-facing eyes',
       },
     });
 
-    expect(card.verdict).toContain('Jumping Spider');
-    expect(card.verdict).toContain('Beetle');
-    expect(card.marks[0]).toContain('hard wing covers');
+    expect(card.title).toBe('Close one!');
+    expect(card.answerName).toBe('Bold Jumper');
+    expect(card.answerSci).toBe('Phidippus audax');
+    expect(card.tell).toBe('spiders have 8 legs and two huge front-facing eyes');
+    expect(card.learnMoreUrl).toBe('https://example.com/spider');
   });
 
-  it('picks the highest-priority differing trait dimensions', () => {
-    const traits = {
-      Coccinella: { structure: 'round beetle body', wings: 'hard wing covers', size: '5-8 mm', color: 'red with black spots' },
-      Phidippus: { structure: 'stocky spider body', wings: 'none', size: '4-15 mm', color: 'black with white spots' },
-    };
+  it('falls back to the correct category key_mark when no pairwise tell exists', () => {
+    const card = buildLearningCard({
+      picked: beetlePick,
+      correct: spider,
+      scoring: 'binary',
+      traits: {
+        'Jumping Spider': { key_mark: 'two huge front-facing eyes' },
+      },
+    });
 
-    expect(pickContrastDimensions(traits.Phidippus, traits.Coccinella)).toEqual(['structure', 'wings']);
-
-    const card = buildLearningCard({ picked, correct, scoring: 'genus', traits });
-    expect(card.marks[0]).toContain('Body');
-    expect(card.marks[1]).toContain('Wings');
+    expect(card.tell).toBe('two huge front-facing eyes');
   });
 
-  it('falls back to taxonomy comparison when trait data is missing', () => {
-    const card = buildLearningCard({ picked, correct, scoring: 'genus' });
+  it('returns an empty tell when no pairwise or trait data exists', () => {
+    const card = buildLearningCard({ picked: beetlePick, correct: spider, scoring: 'binary' });
 
-    expect(card.marks).toContain('Genus: Coccinella, not Phidippus');
-    expect(card.marks).toContain('Family: Coccinellidae, not Salticidae');
+    expect(card.tell).toBe('');
+  });
+});
+
+describe('buildLearningCard - genus tier', () => {
+  it('uses the correct genus key_mark regardless of the pick', () => {
+    const card = buildLearningCard({
+      picked: beetlePick,
+      correct: spider,
+      scoring: 'genus',
+      traits: {
+        Phidippus: { key_mark: 'oversized front eyes' },
+        Coccinella: { key_mark: 'round red beetle body with black spots' },
+      },
+    });
+
+    expect(card.tell).toBe('oversized front eyes');
+  });
+
+  it('returns an empty tell when the correct genus has no trait data', () => {
+    const card = buildLearningCard({ picked: beetlePick, correct: spider, scoring: 'genus', traits: {} });
+
+    expect(card.tell).toBe('');
+  });
+});
+
+describe('buildLearningCard - fun fact', () => {
+  it('prefers species-content summary, stripped to one sentence', () => {
+    const card = buildLearningCard({
+      picked: beetlePick,
+      correct: spider,
+      scoring: 'genus',
+      speciesContent: {
+        'Phidippus audax': { summary: '<p>It can <strong>see</strong> in color. More text here.</p>' },
+      },
+    });
+
+    expect(card.funFact).toBe('It can see in color.');
+  });
+
+  it('falls back to wikipedia_summary first sentence', () => {
+    const card = buildLearningCard({ picked: beetlePick, correct: spider, scoring: 'genus' });
+
+    expect(card.funFact).toBe('The bold jumper is a common jumping spider.');
   });
 });

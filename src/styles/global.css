@@ -920,70 +920,28 @@ h1, h2 {
   color: var(--text);
 }
 
-.learning-verdict {
-  margin-bottom: 10px;
-  color: var(--text);
-  font-weight: 700;
-}
-
-.learning-comparison {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 10px 0;
-}
-
-.learning-compare-item {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.learning-compare-item.answer {
-  border-color: var(--success-border);
-  background: var(--success-bg);
-}
-
-.learning-compare-item.guess {
-  border-color: var(--error-border);
-  background: var(--error-bg);
-}
-
-.learning-compare-item span,
-.learning-compare-item em {
-  display: block;
+.learning-answer-sci {
   color: var(--text-secondary);
-  font-size: var(--text-xs);
-}
-
-.learning-compare-item strong {
-  display: block;
-  color: var(--text);
+  font-style: italic;
   font-size: var(--text-sm);
 }
 
-.learning-marks {
-  display: grid;
-  gap: 7px;
-  margin: 12px 0 0;
-  padding-left: 18px;
+.learning-tell {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  margin-top: var(--space-3);
 }
 
-.learning-marks li {
-  color: var(--text);
+.learning-tell .learning-tell-lead {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .learning-funfact {
-  margin-top: 12px;
   color: var(--text-secondary);
-  font-size: var(--text-xs);
-}
-
-@media (max-width: 430px) {
-  .learning-comparison {
-    grid-template-columns: 1fr;
-  }
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  margin-top: var(--space-4);
 }
 
 .feedback-card.exact {
