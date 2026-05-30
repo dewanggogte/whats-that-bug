@@ -5,6 +5,7 @@ import { loadPartySession, savePartySession, pruneOldPartySessions } from './ses
 import { isValidCodeShape } from './codes-client.js';
 import { PARTY_PROTOCOL_VERSION } from './protocol.js';
 import { initGameUI, applyState, applyLeaderboard, applyQuestionResult, applyGameOver } from './ui-game.js';
+import { logMultiplayerEvent } from '../feedback.js';
 
 export async function initPartyRoom(code) {
   const base = window.__BASE || '';
@@ -44,6 +45,12 @@ export async function initPartyRoom(code) {
       if (msg.type === 'identified') {
         if (!hasCurrentProtocol(msg)) return renderProtocolMismatch(client);
         playerId = msg.playerId;
+        logMultiplayerEvent('mp_player_joined', {
+          room_code: code,
+          player_id: playerId,
+          is_rejoin: !!partySession.rejoinToken,
+          is_creator: !!createToken,
+        });
         savePartySession(code, { displayName, playerId, rejoinToken: msg.rejoinToken });
         sessionStorage.removeItem(`wtb_party_create_${code}`);
         if (currentState) renderRoom();
@@ -291,6 +298,13 @@ export async function initPartyRoom(code) {
     modePicker.addEventListener('change', sendSelection);
     if (!currentState.selection) sendSelection();
     document.getElementById('start-game').addEventListener('click', () => {
+      logMultiplayerEvent('mp_start_click', {
+        room_code: code,
+        set: setPicker.value,
+        mode: modePicker.value,
+        player_count: currentState?.players.length ?? null,
+        connected_count: connectedCount(),
+      });
       client.send({ type: 'start-game' });
     });
   }

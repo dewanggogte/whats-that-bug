@@ -46,8 +46,14 @@ import Base from '../../layouts/Base.astro';
     import { requestCreateRoom } from '../../scripts/party/client.js';
     import { isValidCodeShape } from '../../scripts/party/codes-client.js';
     import { initPartyRoom } from '../../scripts/party/ui-lobby.js';
+    import { logMultiplayerEvent } from '../../scripts/feedback.js';
 
     const base = window.__BASE || '';
+
+    logMultiplayerEvent('mp_landing', {
+      referrer: document.referrer || '',
+      entered_with_code: !!new URLSearchParams(window.location.search).get('code'),
+    });
     const landingView = document.getElementById('party-landing-view');
     const roomView = document.getElementById('party-room-view');
     const createBtn = document.getElementById('create-room');
@@ -60,13 +66,16 @@ import Base from '../../layouts/Base.astro';
     }
 
     createBtn.addEventListener('click', async () => {
+      logMultiplayerEvent('mp_create_click');
       createBtn.disabled = true;
       createBtn.textContent = 'Creating...';
       try {
         const { code, createToken } = await requestCreateRoom();
+        logMultiplayerEvent('mp_room_created', { room_code: code });
         sessionStorage.setItem(`wtb_party_create_${code}`, createToken);
         window.location.href = roomUrl(code);
       } catch (err) {
+        logMultiplayerEvent('mp_create_failed');
         alert('Could not create a room. Make sure the PartyKit dev server is running, then try again.');
         createBtn.disabled = false;
         createBtn.textContent = 'Create Room';
@@ -84,6 +93,7 @@ import Base from '../../layouts/Base.astro';
         codeInput.focus();
         return;
       }
+      logMultiplayerEvent('mp_join_click', { room_code: code });
       window.location.href = roomUrl(code);
     }
 
