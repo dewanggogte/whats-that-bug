@@ -1,0 +1,100 @@
+---
+// src/pages/changelog.astro
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const entries = (await getCollection('changelog'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const rendered = await Promise.all(
+  entries.map(async (entry) => ({
+    data: entry.data,
+    Content: (await entry.render()).Content,
+  }))
+);
+
+const fmtDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+---
+<Base
+  title="What's New — What's That Bug?"
+  description="A timeline of new features and improvements added to What's That Bug — the free insect identification game."
+  canonicalPath="/changelog"
+>
+  <div class="container changelog-page">
+    <div style="text-align: center; padding: 24px 0 8px;">
+      <h1>What's New</h1>
+      <p class="subtitle">Features and improvements, newest first</p>
+    </div>
+
+    <ol class="changelog-timeline">
+      {rendered.map(({ data, Content }) => (
+        <li class="changelog-item">
+          <div class="changelog-item-head">
+            <time class="changelog-date">{fmtDate(data.date)}</time>
+            {data.tag && <span class="changelog-tag">{data.tag}</span>}
+          </div>
+          <h2 class="changelog-title">{data.title}</h2>
+          <div class="changelog-body"><Content /></div>
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <style>
+    .changelog-timeline {
+      list-style: none;
+      margin: 16px 0 0;
+      padding: 0 0 0 20px;
+      border-left: 2px solid var(--border);
+      max-width: 640px;
+      margin-inline: auto;
+    }
+    .changelog-item {
+      position: relative;
+      padding-bottom: 28px;
+    }
+    .changelog-item::before {
+      content: '';
+      position: absolute;
+      left: -27px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+    }
+    .changelog-item-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .changelog-date {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .changelog-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 2px 8px;
+    }
+    .changelog-title {
+      font-size: 1.05rem;
+      margin: 0 0 4px;
+    }
+    .changelog-body {
+      color: var(--text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
+    .changelog-body :global(p) { margin: 0; }
+  </style>
+</Base>
