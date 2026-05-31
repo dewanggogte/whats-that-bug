@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
+import { getCollection } from 'astro:content';
 
 const PRIMARY_SETS = [
   { key: 'bugs_101', icon: '🔰', subtitle: 'Identify by type', detail: 'Beginner' },
@@ -35,6 +36,13 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
   ...set,
   name: setsData[set.key].name,
 }));
+
+const latestChangelog = (await getCollection('changelog'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const fmtChangelogDate = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 ---
 <Base
   title="What's That Bug? — Free Insect Identification Game & Quiz"
@@ -114,6 +122,21 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
     <div class="homepage-section">
       <h2 class="homepage-section-title">What You'll Learn</h2>
       <p class="homepage-learn-text">What's That Bug? features over 1,000 insect species photographed in the wild by citizen scientists. From common backyard beetles to rare tropical butterflies, every photo is research-grade verified. Whether you're a curious beginner or a seasoned entomologist, there's always a new bug to discover.</p>
+    </div>
+
+    <!-- What's New -->
+    <div class="homepage-section">
+      <h2 class="homepage-section-title">What's New</h2>
+      <ol class="whats-new-list">
+        {latestChangelog.map(entry => (
+          <li class="whats-new-item">
+            <span class="whats-new-date">{fmtChangelogDate(entry.data.date)}</span>
+            {entry.data.tag && <span class="whats-new-tag">{entry.data.tag}</span>}
+            <span class="whats-new-title">{entry.data.title}</span>
+          </li>
+        ))}
+      </ol>
+      <a href="/changelog" class="whats-new-more">See full timeline →</a>
     </div>
   </div>
 
@@ -829,6 +852,58 @@ const primaryGroup = PRIMARY_SETS.map(set => ({
     color: var(--text-secondary);
     line-height: 1.6;
     font-size: var(--text-sm);
+  }
+
+  /* What's New */
+  .whats-new-list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .whats-new-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .whats-new-item::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .whats-new-date {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    min-width: 52px;
+  }
+  .whats-new-tag {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 1px 7px;
+  }
+  .whats-new-title {
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .whats-new-more {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .whats-new-more:hover {
+    text-decoration: underline;
   }
 </style>
 </Base>
