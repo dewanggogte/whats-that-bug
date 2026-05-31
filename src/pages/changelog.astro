@@ -31,7 +31,7 @@ const fmtDate = (d: Date) =>
       {rendered.map(({ data, Content }) => (
         <li class="changelog-item">
           <div class="changelog-item-head">
-            <time class="changelog-date">{fmtDate(data.date)}</time>
+            <time class="changelog-date" datetime={data.date.toISOString()}>{fmtDate(data.date)}</time>
             {data.tag && <span class="changelog-tag">{data.tag}</span>}
           </div>
           <h2 class="changelog-title">{data.title}</h2>
