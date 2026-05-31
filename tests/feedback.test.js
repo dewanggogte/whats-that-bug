@@ -18,6 +18,7 @@ vi.stubGlobal('document', {
 
 vi.stubGlobal('window', {
   location: { pathname: '/test' },
+  addEventListener: vi.fn(),
 });
 
 const sessionStorageMock = {
