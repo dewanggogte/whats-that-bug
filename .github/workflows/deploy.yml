@@ -40,6 +40,8 @@ jobs:
 
       - name: Build Vercel output
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          PUBLIC_PARTY_HOST: ${{ vars.PUBLIC_PARTY_HOST }}
 
       - name: Deploy PartyKit
         run: npm run deploy:party

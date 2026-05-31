@@ -140,35 +140,43 @@ if (typeof PerformanceObserver !== 'undefined') {
   } catch { /* unsupported entry type */ }
 }
 
-// --- Page unload: sendBeacon for anything remaining in the queue ---
+// --- Page hidden/unload: sendBeacon for anything remaining in the queue ---
 // This is the ONLY place sendBeacon is used. It handles:
 // - Events queued but not yet flushed (waiting for timer/batch threshold)
 // - Events that need to be sent when the user navigates away or closes the tab
+//
+// We listen to BOTH visibilitychange(hidden) and pagehide: visibilitychange
+// catches tab-switch/backgrounding, while pagehide reliably catches same-tab
+// navigations (location.href) that visibilitychange often misses. Whichever
+// fires first empties the queue via splice, so the other is a no-op — no dupes.
+function flushViaBeacon() {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+
+  const batch = queue.splice(0);
+  if (batch.length > 0 && WEBHOOK_URL) {
+    // Save to sessionStorage first as insurance
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(batch));
+    } catch { /* storage full or unavailable */ }
+
+    // Send via beacon — browser guarantees delivery even after page gone
+    navigator.sendBeacon(WEBHOOK_URL, JSON.stringify(batch));
+
+    // Clear storage since beacon was sent
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch { /* ignore */ }
+  }
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
-      }
-
-      const batch = queue.splice(0);
-      if (batch.length > 0 && WEBHOOK_URL) {
-        // Save to sessionStorage first as insurance
-        try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(batch));
-        } catch { /* storage full or unavailable */ }
-
-        // Send via beacon — browser guarantees delivery even after page gone
-        navigator.sendBeacon(WEBHOOK_URL, JSON.stringify(batch));
-
-        // Clear storage since beacon was sent
-        try {
-          sessionStorage.removeItem(STORAGE_KEY);
-        } catch { /* ignore */ }
-      }
-    }
+    if (document.visibilityState === 'hidden') flushViaBeacon();
   });
+  window.addEventListener('pagehide', flushViaBeacon);
 }
 
 // --- Public logging functions ---

@@ -4,6 +4,48 @@ Interesting problems, non-obvious decisions, and lessons learned during developm
 
 ---
 
+## 2026-06-01: "PartyKit server keeps stopping" — a Vercel *Sensitive* flag silently emptying a build-time `PUBLIC_` var
+
+### The problem
+
+Multiplayer room creation broke intermittently — users got "PartyKit server is not running." Redeploying "fixed" it for a while, then it broke again. The whole mental model was wrong: PartyKit runs on Cloudflare Durable Objects (serverless, on-demand), so there is no long-lived process to crash. "The server stopped" was a misread.
+
+### Why it happened
+
+The deployed client bundle had `getPartyHost()` minified down to an **unconditional** `throw new Error("PUBLIC_PARTY_HOST is not configured")` — so `requestCreateRoom()` threw on its first line, *before* any `fetch`. That's why no `__create` request ever showed in the Network tab (which sent us chasing a backend rate-limiter for two rounds). The host string was empty at build time.
+
+Root cause: `PUBLIC_PARTY_HOST` was marked **Sensitive** in Vercel. Sensitive env vars are *write-only* — their values cannot be read back via `vercel pull`. Our GitHub Actions workflow builds the frontend on a runner (`vercel pull` + `vercel build`), so the Sensitive value was never retrieved, and Astro inlined `import.meta.env.PUBLIC_PARTY_HOST` as `""`. Dashboard "Redeploy" builds on Vercel's *own* infra (where Sensitive values are available at build time), which produced a working bundle — exactly why redeploying appeared to fix it, then a CI push re-broke it.
+
+### The fix
+
+Recreated the var as non-Sensitive (you can't toggle Sensitive off — delete + recreate), and made the workflow self-sufficient by passing `PUBLIC_PARTY_HOST` to the build step from a GitHub Actions Variable, so it no longer depends on `vercel pull` at all. Confirmed by re-fetching the live bundle: `const Rt="wtb-party.dewanggogte.partykit.dev"` is now inlined and the `throw` is gone.
+
+### Key insight
+
+Two. (1) **"Sensitive" on a build-time `PUBLIC_` var is a pure footgun** — it gives zero secrecy (Astro ships the value into client JS for every browser to read) while breaking any external CI that relies on `vercel pull`. Sensitive is for runtime server secrets only. (2) **A swallowed error doesn't just lose information — it lies.** The create handler's `catch` showed a generic "dev server not running" alert and discarded the real error, which actively pointed us at the wrong component. Log the real error and surface the actual cause; one `console.error(err)` would have made this a 30-second diagnosis instead of a multi-round hunt.
+
+---
+
+## 2026-06-01: Funnel analytics lost on navigation — `visibilitychange` alone isn't enough
+
+### The problem
+
+Multiplayer funnel events (`mp_landing`, `mp_create_click`, `mp_room_created`) fired on only *some* sessions, device-dependent.
+
+### Why it happened
+
+Events are queued and flushed on one of: a 5s timer, a 10-event batch, or `visibilitychange:hidden` (which beacons the queue). The funnel events that fire right before `window.location.href` navigation were enqueued but never explicitly flushed — and `visibilitychange:hidden` does **not** reliably fire on same-tab navigations (`location.href`) across browsers. So on a fast session (click Create within 5s, navigate into the room), the timer hadn't fired and the beacon trigger never ran → those events were silently dropped. Slow sessions survived via the 5s timer, which is why it looked intermittent.
+
+### The fix
+
+Added a `pagehide` listener alongside `visibilitychange`, both calling the same beacon-flush function. `pagehide` reliably fires on navigation. No duplicate-send risk: both handlers `queue.splice(0)`, so whichever fires first empties the queue and the other is a no-op.
+
+### Key insight
+
+For unload-time work (analytics beacons, last-moment state saves), `visibilitychange:hidden` catches tab-switch/backgrounding but **misses same-tab navigations**. The Page Lifecycle-correct pattern is to listen to *both* `visibilitychange` and `pagehide` — neither alone covers every way a page can go away.
+
+---
+
 ## 2026-05-19: Daily challenge — designing the failure class out instead of fixing the job
 
 ### The problem

@@ -75,8 +75,9 @@ import Base from '../../layouts/Base.astro';
         sessionStorage.setItem(`wtb_party_create_${code}`, createToken);
         window.location.href = roomUrl(code);
       } catch (err) {
-        logMultiplayerEvent('mp_create_failed');
-        alert('Could not create a room. Make sure the PartyKit dev server is running, then try again.');
+        console.error('Room creation failed:', err);
+        logMultiplayerEvent('mp_create_failed', { error: String(err?.message || err) });
+        alert('Could not create a room. Please try again in a moment.');
         createBtn.disabled = false;
         createBtn.textContent = 'Create Room';
       }
