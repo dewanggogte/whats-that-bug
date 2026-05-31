@@ -13,4 +13,13 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+const changelog = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    date: z.date(),
+    tag: z.enum(['Multiplayer', 'Daily', 'Learning', 'Modes', 'Profile', 'UI']).optional(),
+  }),
+});
+
+export const collections = { blog, changelog };
