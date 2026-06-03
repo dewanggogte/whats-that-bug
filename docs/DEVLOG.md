@@ -4,6 +4,26 @@ Interesting problems, non-obvious decisions, and lessons learned during developm
 
 ---
 
+## 2026-06-03: Funnel events *still* lost on navigation — `pagehide` + `sendBeacon` isn't reliable for programmatic nav
+
+### The problem
+
+A follow-up to the 2026-06-01 funnel entry below. After adding a `pagehide` listener that beacons the queue, `mp_create_click` / `mp_room_created` / `mp_join_click` were *still* missing on some sessions. Two real sessions on the **identical** create flow disagreed: one (`313c252b`) lost both create-handler events; another (`a9404e91`) kept both. Same code path, different outcome — a race, not a logic bug.
+
+### Why it happened
+
+The 2026-06-01 fix assumed `pagehide` → `sendBeacon` reliably flushes the queue on same-tab navigation. It doesn't — `sendBeacon` fired during the unload of a JS-initiated `window.location.href` is dropped by the browser intermittently. `mp_landing` always survived only because the 5s batch timer flushed it (via `keepalive` fetch) *before* the click, never because the beacon worked. The tell: every **single-player** logger (`logRoundComplete`, `logSessionEnd`, …) calls `flush()` inline and never loses events, while `logMultiplayerEvent` only *enqueues* — so the multiplayer events logged microseconds before a navigation were the only ones exposed.
+
+### The fix
+
+Call the existing `flush()` synchronously right before each programmatic navigation that follows an mp event (create, join, kicked). `flush()` uses a `keepalive` fetch, kicked off **while the page is still fully alive** — the demonstrably reliable path here. It `queue.splice(0)`s, so the `pagehide` handler stays as a no-op safety net (no dupes), and batching is otherwise preserved.
+
+### Key insight
+
+`sendBeacon` is sold as *the* unload-time transport, but for a navigation **you initiate in JS**, the reliable move is to send the request yourself *before* triggering the navigation — don't defer to the unload event you just caused. `keepalive: true` fetch started pre-navigation survives the page teardown; a beacon queued mid-unload may not. And when one family of events drops while a sibling family on the same queue never does, look at *who flushes inline* — the asymmetry points straight at the cause.
+
+---
+
 ## 2026-06-01: "PartyKit server keeps stopping" — a Vercel *Sensitive* flag silently emptying a build-time `PUBLIC_` var
 
 ### The problem

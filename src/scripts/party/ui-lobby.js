@@ -5,7 +5,7 @@ import { loadPartySession, savePartySession, pruneOldPartySessions } from './ses
 import { isValidCodeShape } from './codes-client.js';
 import { PARTY_PROTOCOL_VERSION } from './protocol.js';
 import { initGameUI, applyState, applyLeaderboard, applyQuestionResult, applyGameOver } from './ui-game.js';
-import { logMultiplayerEvent } from '../feedback.js';
+import { logMultiplayerEvent, flush } from '../feedback.js';
 
 export async function initPartyRoom(code) {
   const base = window.__BASE || '';
@@ -77,6 +77,7 @@ export async function initPartyRoom(code) {
         applyGameOver(msg, { client, isHost: currentState?.hostId === playerId });
       } else if (msg.type === 'kicked') {
         alert('You were removed from the party.');
+        flush(); // send queued events before navigating; pagehide beacon is unreliable for programmatic nav
         window.location.href = `${base}/party`;
       } else if (msg.type === 'error') {
         if (FATAL_ERROR_CODES.has(msg.code)) {

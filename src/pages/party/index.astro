@@ -46,7 +46,7 @@ import Base from '../../layouts/Base.astro';
     import { requestCreateRoom } from '../../scripts/party/client.js';
     import { isValidCodeShape } from '../../scripts/party/codes-client.js';
     import { initPartyRoom } from '../../scripts/party/ui-lobby.js';
-    import { logMultiplayerEvent } from '../../scripts/feedback.js';
+    import { logMultiplayerEvent, flush } from '../../scripts/feedback.js';
 
     const base = window.__BASE || '';
 
@@ -73,6 +73,7 @@ import Base from '../../layouts/Base.astro';
         const { code, createToken } = await requestCreateRoom();
         logMultiplayerEvent('mp_room_created', { room_code: code });
         sessionStorage.setItem(`wtb_party_create_${code}`, createToken);
+        flush(); // send queued events before navigating; pagehide beacon is unreliable for programmatic nav
         window.location.href = roomUrl(code);
       } catch (err) {
         console.error('Room creation failed:', err);
@@ -95,6 +96,7 @@ import Base from '../../layouts/Base.astro';
         return;
       }
       logMultiplayerEvent('mp_join_click', { room_code: code });
+      flush(); // send queued events before navigating; pagehide beacon is unreliable for programmatic nav
       window.location.href = roomUrl(code);
     }
 
