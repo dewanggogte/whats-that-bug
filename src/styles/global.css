@@ -4804,3 +4804,73 @@ button.themed-btn {
 [data-theme="dark"] .profile-badge {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
+
+/* --- Party walkthrough --- */
+.party-walkthrough {
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #e7ded5);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.party-wt-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+.party-wt-chev {
+  color: var(--accent);
+  transition: transform 0.2s ease;
+}
+.party-walkthrough.collapsed .party-wt-chev {
+  transform: rotate(-90deg);
+}
+.party-wt-steps {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.party-walkthrough.collapsed .party-wt-steps {
+  display: none;
+}
+.party-wt-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.party-wt-num {
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.party-wt-steps strong {
+  font-size: 0.92rem;
+}
+.party-wt-steps p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted, #7a6f66);
+  line-height: 1.35;
+}
+@media (max-width: 560px) {
+  .party-wt-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+}

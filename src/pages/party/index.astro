@@ -13,6 +13,19 @@ import Base from '../../layouts/Base.astro';
         <p>Create a private room, share a 4-character code, and race through the same bug questions with a live leaderboard.</p>
       </section>
 
+      <section class="party-walkthrough" id="party-walkthrough">
+        <button class="party-wt-toggle" id="party-wt-toggle" type="button" aria-expanded="true" aria-controls="party-wt-steps">
+          <span>How multiplayer works</span>
+          <span class="party-wt-chev" aria-hidden="true">▾</span>
+        </button>
+        <ol class="party-wt-steps" id="party-wt-steps">
+          <li><span class="party-wt-num">1</span><div><strong>Create</strong><p>Tap Create Room for a 4-character code.</p></div></li>
+          <li><span class="party-wt-num">2</span><div><strong>Share</strong><p>Send the code or link to your friends.</p></div></li>
+          <li><span class="party-wt-num">3</span><div><strong>Join</strong><p>They enter the code and pick a name.</p></div></li>
+          <li><span class="party-wt-num">4</span><div><strong>Play</strong><p>Everyone races the same bugs on a live leaderboard.</p></div></li>
+        </ol>
+      </section>
+
       <div class="party-landing-grid">
         <section class="party-panel">
           <h2>Create a Party</h2>
@@ -54,6 +67,26 @@ import Base from '../../layouts/Base.astro';
       referrer: document.referrer || '',
       entered_with_code: !!new URLSearchParams(window.location.search).get('code'),
     });
+
+    // --- Walkthrough: expanded on first visit, collapsed on return ---
+    const WT_KEY = 'wtb_party_walkthrough_seen';
+    const wt = document.getElementById('party-walkthrough');
+    const wtToggle = document.getElementById('party-wt-toggle');
+    if (wt && wtToggle) {
+      let seen = false;
+      try { seen = localStorage.getItem(WT_KEY) === '1'; } catch {}
+      if (seen) {
+        wt.classList.add('collapsed');
+        wtToggle.setAttribute('aria-expanded', 'false');
+      } else {
+        try { localStorage.setItem(WT_KEY, '1'); } catch {}
+      }
+      wtToggle.addEventListener('click', () => {
+        const collapsed = wt.classList.toggle('collapsed');
+        wtToggle.setAttribute('aria-expanded', String(!collapsed));
+      });
+    }
+
     const landingView = document.getElementById('party-landing-view');
     const roomView = document.getElementById('party-room-view');
     const createBtn = document.getElementById('create-room');
