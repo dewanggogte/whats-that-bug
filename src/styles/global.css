@@ -1815,6 +1815,11 @@ a {
   line-height: 1;
 }
 
+.mp-nudge-emoji {
+  font-size: 40px;
+  line-height: 1;
+}
+
 .support-coffee-icon {
   animation: coffee-steam 2.5s ease-in-out infinite;
 }
