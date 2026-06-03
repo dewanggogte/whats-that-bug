@@ -187,3 +187,27 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 **The fix:** Added one GitHub Actions production deploy workflow that tests, builds Vercel, deploys PartyKit, then deploys the prebuilt Vercel output from the same commit. Also added a shared `PARTY_PROTOCOL_VERSION` to fail visibly with `PROTOCOL_MISMATCH` if the frontend/backend protocol ever drifts again.
 
 **Key insight:** Realtime backends and static frontends still share a protocol. If they deploy separately, version that protocol or couple the deploys, preferably both.
+
+---
+
+## 2026-06-03: "Is this code even reachable?" needs framework-aware grep
+
+**The problem:** Asked how many times the Calendly interview popup had been shown, I grepped for its entry point (`maybeShowInterviewPrompt`) across `.js`/`.html`/`.mjs` and found it exported but never called — and confidently reported the popup was dead code, shown to nobody. It was wrong. The popup *was* wired up and showing.
+
+**Why it happened:** This is an Astro site, and the homepage calls the function from a `<script>` block inside `src/pages/index.astro`. My grep excluded `.astro` files, so the one call site was invisible. The filter matched how I assumed modules get wired (JS importing JS) rather than how this framework actually wires them (component files own the entry-point scripts).
+
+**The fix:** Re-ran the search including `.astro` and found `index.astro` running `if (!maybeShowInterviewPrompt()) maybeShowSupportPrompt();`. The real gap wasn't "never shown" — it was "never tracked server-side," since impressions only touched localStorage.
+
+**Key insight:** A reachability claim is only as good as the file types you searched. Before concluding code is dead, grep must cover the framework's entry-point files — `.astro`, `.vue`, `.svelte`, `.mdx`, route manifests — not just the language the function is written in. "Not called in any `.js`" is not "not called."
+
+---
+
+## 2026-06-03: Disjoint files are not enough to run subagents in parallel
+
+**The problem:** Executing an implementation plan with parallel subagents, I wanted to run the last few tasks concurrently. The obvious safety check — "do these tasks edit different files?" — passed: each task touched a separate source file. But dispatching them as-is would have corrupted the workspace.
+
+**Why it happened:** File-content disjointness ignores the *shared mutable state* every agent in one working tree contends for. Two concurrent `npm run build` runs both write the same `dist/` directory (interleaved/clobbered output). Two concurrent `git add` + `git commit` runs race on `.git/index` — `index.lock` contention, or one commit sweeping up the other's staged files. Disjoint *sources*, shared *build output and staging area*.
+
+**The fix:** Evaluate three things before parallelizing, not one: (1) disjoint file sets, (2) no ordering dependency between tasks, and (3) isolated build/git state. For (3), either give each agent its own git worktree (separate `dist/` and index), or — simpler for a couple of tasks — have the parallel agents *edit only* (no build, no git) and let the controller serialize the single build, full test run, and per-task commits afterward. I used the edit-only + serial-integrate pattern here, then baked the rule into the subagent-driven-development skill.
+
+**Key insight:** "Can these run in parallel?" is a question about shared *writable* state, not shared files. The git index and the build directory are global singletons in a working tree; any parallelism with more than one writer to them needs isolation (worktrees) or a single-threaded integrator.
