@@ -51,6 +51,7 @@ export async function initPartyRoom(code) {
           is_rejoin: !!partySession.rejoinToken,
           is_creator: !!createToken,
         });
+        try { localStorage.setItem('wtb_mp_played', '1'); } catch {}
         savePartySession(code, { displayName, playerId, rejoinToken: msg.rejoinToken });
         sessionStorage.removeItem(`wtb_party_create_${code}`);
         if (currentState) renderRoom();
