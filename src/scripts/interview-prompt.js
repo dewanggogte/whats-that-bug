@@ -3,6 +3,8 @@
  * Shows a Calendly invite to repeat players across multiple play days.
  */
 
+import { logPopupEvent } from './feedback.js';
+
 const STATS_KEY = 'wtb_player_stats';
 const SNOOZE_KEY = 'wtb_interview_snoozed';
 const DONE_KEY = 'wtb_interview_done';
@@ -57,6 +59,7 @@ function shouldShow() {
 
 function recordImpression() {
   try { localStorage.setItem(IMPRESSIONS_KEY, String(getImpressions() + 1)); } catch {}
+  logPopupEvent('interview', 'impression');
 }
 
 function snooze() {
@@ -120,29 +123,31 @@ function createModal() {
   requestAnimationFrame(() => overlay.classList.add('visible'));
 
   let closed = false;
-  const close = (done) => {
+  // action: 'cta' (link clicked) | 'dismiss' (No thanks) | 'snooze' (×/Esc/backdrop)
+  const close = (action) => {
     if (closed) return;
     closed = true;
     document.removeEventListener('keydown', onKey);
-    done ? markDone() : snooze();
+    action === 'snooze' ? snooze() : markDone();
+    logPopupEvent('interview', action);
     overlay.classList.remove('visible');
     setTimeout(() => overlay.remove(), 340);
   };
 
   const onKey = (e) => {
-    if (e.key === 'Escape') close(false);
+    if (e.key === 'Escape') close('snooze');
   };
 
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close(false);
+    if (e.target === overlay) close('snooze');
   });
   document.addEventListener('keydown', onKey);
-  overlay.querySelector('.interview-close')?.addEventListener('click', () => close(false));
+  overlay.querySelector('.interview-close')?.addEventListener('click', () => close('snooze'));
   overlay.querySelectorAll('.interview-primary, .interview-secondary').forEach(link => {
-    link.addEventListener('click', () => close(true));
+    link.addEventListener('click', () => close('cta'));
   });
   overlay.querySelectorAll('.interview-dismiss').forEach(button => {
-    button.addEventListener('click', () => close(true));
+    button.addEventListener('click', () => close('dismiss'));
   });
 }
 
