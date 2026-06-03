@@ -151,6 +151,43 @@ describe('feedback pipeline', () => {
     expect(fetchOptions.headers['Content-Type']).toBe('text/plain');
   });
 
+  // ── Popup events ───────────────────────────────────────────────────────────────
+
+  it('logPopupEvent enqueues a popup_event with popup and action', () => {
+    feedback.logPopupEvent('mp_nudge', 'cta');
+
+    // cta flushes immediately
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    const event = body.find(e => e.type === 'popup_event');
+    expect(event).toBeDefined();
+    expect(event.popup).toBe('mp_nudge');
+    expect(event.action).toBe('cta');
+  });
+
+  it('logPopupEvent flushes on dismiss but not on impression', () => {
+    vi.useFakeTimers();
+
+    feedback.logPopupEvent('support', 'impression');
+    expect(fetchSpy).not.toHaveBeenCalled(); // impression is deferred
+
+    feedback.logPopupEvent('support', 'dismiss');
+    expect(fetchSpy).toHaveBeenCalledTimes(1); // dismiss flushes both
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    expect(body).toHaveLength(2);
+    expect(body[0].action).toBe('impression');
+    expect(body[1].action).toBe('dismiss');
+  });
+
+  it('logPopupEvent merges extra fields', () => {
+    feedback.logPopupEvent('interview', 'cta', { surface: 'homepage' });
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
+    const event = body.find(e => e.type === 'popup_event');
+    expect(event.surface).toBe('homepage');
+  });
+
   // ── No webhook → no fetch ────────────────────────────────────────────────────
 
   it('does not call fetch when WEBHOOK_URL is empty', async () => {

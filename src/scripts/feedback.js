@@ -359,3 +359,19 @@ export function logMultiplayerEvent(eventName, payload = {}) {
   });
   if (eventName === 'mp_session_end') flush();
 }
+
+/**
+ * Log a promotional popup lifecycle event.
+ * popup: 'interview' | 'support' | 'mp_nudge'
+ * action: 'impression' | 'cta' | 'dismiss' | 'snooze'
+ * Flush on terminal actions (cta/dismiss) so outcomes survive navigation.
+ */
+export function logPopupEvent(popup, action, extra = {}) {
+  enqueue({
+    type: 'popup_event',
+    popup,
+    action,
+    ...extra,
+  });
+  if (action === 'cta' || action === 'dismiss') flush();
+}
