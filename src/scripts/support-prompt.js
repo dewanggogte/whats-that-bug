@@ -7,6 +7,8 @@
  * Uses the same overlay pattern as onboarding.js.
  */
 
+import { logPopupEvent } from './feedback.js';
+
 const SNOOZE_KEY = 'wtb_support_snoozed';
 const DONOR_KEY = 'wtb_support_donor';
 const SNOOZE_DAYS = 7;
@@ -74,28 +76,34 @@ function createModal(content) {
   overlay.innerHTML = `<div class="onboarding-card support-card">${content}</div>`;
 
   document.body.appendChild(overlay);
+  logPopupEvent('support', 'impression');
   requestAnimationFrame(() => overlay.classList.add('visible'));
 
-  const dismiss = () => {
+  let closed = false;
+  const dismiss = (action) => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('keydown', onKey);
     snooze();
+    logPopupEvent('support', action);
     overlay.classList.remove('visible');
     setTimeout(() => overlay.remove(), 340);
   };
 
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) dismiss();
+    if (e.target === overlay) dismiss('snooze');
   });
 
   const onKey = (e) => {
-    if (e.key === 'Escape') {
-      document.removeEventListener('keydown', onKey);
-      dismiss();
-    }
+    if (e.key === 'Escape') dismiss('snooze');
   };
   document.addEventListener('keydown', onKey);
 
-  overlay.querySelector('.support-cta')?.addEventListener('click', () => markDonor());
-  overlay.querySelector('.support-dismiss')?.addEventListener('click', dismiss);
+  overlay.querySelector('.support-cta')?.addEventListener('click', () => {
+    markDonor();
+    logPopupEvent('support', 'cta');
+  });
+  overlay.querySelector('.support-dismiss')?.addEventListener('click', () => dismiss('dismiss'));
 }
 
 function showFirstTimePrompt() {
