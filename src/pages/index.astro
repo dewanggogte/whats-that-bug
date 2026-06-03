@@ -269,10 +269,14 @@ const fmtChangelogDate = (d: Date) =>
 
 <script>
   import { runOnboarding } from '../scripts/onboarding.js';
+  import { maybeShowMpNudge } from '../scripts/mp-nudge.js';
   import { maybeShowInterviewPrompt } from '../scripts/interview-prompt.js';
   import { maybeShowSupportPrompt } from '../scripts/support-prompt.js';
   runOnboarding();
-  if (!maybeShowInterviewPrompt()) maybeShowSupportPrompt();
+  // One popup per visit, fixed priority: nudge → interview → support.
+  for (const show of [maybeShowMpNudge, maybeShowInterviewPrompt, maybeShowSupportPrompt]) {
+    if (show()) break;
+  }
 </script>
 
 <script>

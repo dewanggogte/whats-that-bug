@@ -140,11 +140,12 @@ function showReturningDonorPrompt() {
  * Call from index.astro after onboarding is done.
  */
 export function maybeShowSupportPrompt() {
-  if (!shouldShow()) return;
-  if (getSessionCount() < 10) return;
+  if (!shouldShow()) return false;
+  if (getSessionCount() < 10) return false;
 
   // Small delay so it doesn't collide with onboarding
   setTimeout(() => {
     isDonor() ? showReturningDonorPrompt() : showFirstTimePrompt();
   }, 800);
+  return true;
 }
