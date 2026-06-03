@@ -7,6 +7,7 @@ import { SessionState, calculateTimedScore, getBugs101Name, migrateBestStorageKe
 import { buildLearningCard } from './learning-card.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto, logRoundDisplayed } from './feedback.js';
+import { maybeShowMpNudgePostGame } from './mp-nudge.js';
 import { checkMilestone, getHighestMilestone, milestoneFireEmoji } from './milestones.js';
 import { loadPercentiles, renderPercentileCard } from './percentiles.js';
 import { playCorrect, playWrong, playSessionEnd, playTick, playTimesUp, playUIClick } from './sounds.js';
@@ -959,6 +960,8 @@ function renderClassicSummary() {
       setTimeout(() => showAchievementToast(ach), i * 1500);
     });
   }
+
+  maybeShowMpNudgePostGame();
 }
 
 function renderTimeTrialSummary() {
@@ -1071,6 +1074,8 @@ function renderTimeTrialSummary() {
       setTimeout(() => showAchievementToast(ach), i * 1500);
     });
   }
+
+  maybeShowMpNudgePostGame();
 }
 
 function renderStreakGameOver(picked, correct) {
@@ -1177,6 +1182,8 @@ function renderStreakGameOver(picked, correct) {
       setTimeout(() => showAchievementToast(ach), i * 1500);
     });
   }
+
+  maybeShowMpNudgePostGame();
 }
 
 function renderStreakSummary() {
