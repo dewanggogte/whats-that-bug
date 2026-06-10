@@ -202,6 +202,28 @@ The old `flex-direction: column` mobile override for play-cards did nothing afte
 
 ---
 
+## 2026-06-03: Wrong-answer learning cards — three-tier tell resolution collapsed to two
+
+### The problem
+
+After a wrong answer, players see a "Close one!" card with a discriminating tell: the quickest visual cue that separates the correct bug from the one they picked. The data gap: curated pairwise tells only exist for Bugs 101 category pairs (Beetle vs Bee, etc.), not for genus-level sets. A generic fallback was needed for the missing cases.
+
+### The approach and why it changed
+
+The first working version used two tiers: (1) curated `bugs101Tells[pairKey(picked, correct)]`; (2) `key_mark` from the trait store. A middle tier was added: `pickContrastDimension()` walks a priority list (`structure → wings → size → color`), finds the first dimension where the picked and correct taxon's traits differ, and renders a sentence: "Dragonfly has four wings held flat, while Damselfly holds wings together." This felt like the ideal fill-in — specific, comparative, generated from existing data.
+
+Then it was cut (`37ca6c0`). The trait store's values are written for individual taxa, not for cross-taxon comparison. Two entries might both say "4 wings" using different phrasing, or one entry might describe a feature the other omits entirely. The auto-generated sentences were inconsistent enough that they either stated the obvious or produced comparisons that didn't actually discriminate. The `key_mark` field, written as a standalone diagnostic cue ("Antennae elbowed"), is shorter and more reliable.
+
+### The fix
+
+Collapsed to the original two tiers. `buildLearningCard` now: (1) curated pair tell → (2) `key_mark` fallback. `pickContrastDimension` and `contrastSentence` were removed entirely. The trait data structure is kept intact — it was authored as individual-taxon descriptors, and using it cross-taxon was the mistake.
+
+### Key insight
+
+Auto-generated comparative sentences require data that was authored *for comparison* — two entries that describe the same dimensions in the same vocabulary. Trait data authored per-taxon (each entry self-contained) will produce incoherent diffs when you subtract one from the other. Before building a cross-entity contrast layer, check whether the data was co-authored with that use in mind.
+
+---
+
 ## 2026-06-03: Disjoint files are not enough to run subagents in parallel
 
 **The problem:** Executing an implementation plan with parallel subagents, I wanted to run the last few tasks concurrently. The obvious safety check — "do these tasks edit different files?" — passed: each task touched a separate source file. But dispatching them as-is would have corrupted the workspace.
