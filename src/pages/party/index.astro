@@ -31,7 +31,6 @@ import Base from '../../layouts/Base.astro';
           <h2>Create a Party</h2>
           <p>Start a new room for 2-20 players. You choose the set and mode from the lobby.</p>
           <button class="btn btn-primary party-wide-btn" id="create-room">Create Room</button>
-          <button class="btn btn-outline party-wide-btn" id="create-group-session" style="margin-top:8px;">Create Group Session</button>
         </section>
 
         <section class="party-panel">
@@ -60,7 +59,6 @@ import Base from '../../layouts/Base.astro';
     import { requestCreateRoom } from '../../scripts/party/client.js';
     import { isValidCodeShape } from '../../scripts/party/codes-client.js';
     import { initPartyRoom } from '../../scripts/party/ui-lobby.js';
-    import { initGroupCreate } from '../../scripts/party/ui-group.js';
     import { logMultiplayerEvent, flush } from '../../scripts/feedback.js';
     import { getUserId } from '../../scripts/user-id.js';
 
@@ -140,8 +138,6 @@ import Base from '../../layouts/Base.astro';
     codeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') joinRoom();
     });
-
-    initGroupCreate();
 
     function showRoom(code) {
       const ctFromUrl = new URLSearchParams(window.location.search).get('ct');
