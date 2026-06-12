@@ -70,6 +70,7 @@ export async function initGameUI(container, { code, playerId, state, gameStarted
     sessionId: newSessionId(),
     lastPickedChoiceIndex: null,
     loggedDisplays: new Set(),
+    players: state.players,
     leaderboard: state.players.map(p => ({
       id: p.id,
       displayName: p.displayName,
@@ -115,6 +116,7 @@ export async function initGameUI(container, { code, playerId, state, gameStarted
 export function applyState(state) {
   if (!_ctx || !state) return;
   _ctx.isHost = state.hostId === _ctx.playerId;
+  _ctx.players = state.players;
   _ctx.leaderboard = state.players.map(p => ({
     id: p.id,
     displayName: p.displayName,
@@ -370,9 +372,47 @@ function renderHostActions() {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = '<button class="btn btn-outline" id="end-game-btn">End Game</button>';
-  document.getElementById('end-game-btn').addEventListener('click', () => {
+
+  const wasOpen = el.querySelector('.host-players-panel')?.open ?? false;
+  el.innerHTML = '';
+
+  const endBtn = document.createElement('button');
+  endBtn.className = 'btn btn-outline';
+  endBtn.id = 'end-game-btn';
+  endBtn.textContent = 'End Game';
+  endBtn.addEventListener('click', () => {
     if (confirm('End the game for everyone?')) _ctx.client.send({ type: 'end-game' });
+  });
+  el.appendChild(endBtn);
+
+  const players = _ctx.players || [];
+  const playerRows = players
+    .filter(p => p.id !== _ctx.playerId)
+    .map(p => `
+      <div class="host-player-row">
+        <span class="player-name">${escapeHtml(p.displayName)}</span>
+        ${p.connected ? '' : '<span class="player-disconnected">(disconnected)</span>'}
+        <button class="kick-btn" data-playerid="${escapeHtml(p.id)}"
+                aria-label="Remove ${escapeHtml(p.displayName)}">Remove</button>
+      </div>
+    `).join('');
+
+  const panel = document.createElement('details');
+  panel.className = 'host-players-panel';
+  panel.open = wasOpen;
+  panel.innerHTML = `
+    <summary>Players (${players.length})</summary>
+    <div class="host-players-list">${playerRows}</div>
+  `;
+  el.appendChild(panel);
+
+  panel.querySelectorAll('.kick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.closest('.host-player-row').querySelector('.player-name').textContent;
+      if (confirm(`Remove ${name} from the game?`)) {
+        _ctx.client.send({ type: 'kick-player', playerId: btn.dataset.playerid });
+      }
+    });
   });
 }
 

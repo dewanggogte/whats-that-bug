@@ -101,8 +101,12 @@ export default class Room implements Party.Server {
       return withCors(Response.json({ error: 'AT_CAPACITY' }, { status: 503 }));
     }
 
-    const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
-    const limit = checkRateLimit(ip);
+    let body: any = null;
+    try { const text = await req.text(); if (text) body = JSON.parse(text); } catch {}
+    const userId = typeof body?.userId === 'string' && body.userId ? body.userId : null;
+    const clientIp = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for') ?? 'unknown';
+    const rateLimitKey = userId ?? clientIp;
+    const limit = checkRateLimit(rateLimitKey);
     if (!limit.allowed) {
       return withCors(Response.json({ error: 'RATE_LIMITED', retryAfterMs: limit.retryAfterMs }, { status: 429 }));
     }

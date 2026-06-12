@@ -16,6 +16,7 @@ import { generateDailyShareText, getDailyFlavor } from './daily-share.js';
 import { copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { playCorrect, playWrong, playUIClick } from './sounds.js';
 import { logDailyStart, logDailyGuess, logDailyComplete } from './feedback.js';
+import { maybeShowMpNudgePostGame } from './mp-nudge.js';
 
 const base = window.__BASE || '';
 
@@ -539,6 +540,7 @@ function renderReveal() {
   `;
 
   attachShareHandlers(shareText);
+  maybeShowMpNudgePostGame();
 }
 
 /** Wire up share buttons using the same pattern as game-ui.js */

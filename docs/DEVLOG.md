@@ -4,6 +4,56 @@ Interesting problems, non-obvious decisions, and lessons learned during developm
 
 ---
 
+## 2026-06-13: Group session share links silently break without the createToken — spec missed it
+
+### The problem
+
+Spec 06 Part C2 says group session creation "reuses the existing `requestCreateRoom()` function — no new API surface needed." That's true for the server. But the spec's share sheet just copies the room URL (`/party?code=ABCD`). Anyone who clicks that link and is the first to join gets rejected with `ROOM_NOT_FOUND`.
+
+### Why it happened
+
+The room creation endpoint returns a `{ code, createToken }` pair. The token is a server-issued HMAC that proves you're the legitimate creator of that room. The `handleIdentify` handler on the server checks it on the **first** connection to an empty room — if the token is absent or invalid, the connection is rejected. For single-room creation, this is invisible: the organizer stores the token in `sessionStorage` before navigating, and is always the first to connect. For group sessions, the organizer creates N rooms and then hands links to N other people. Those people are the first to navigate to each room — and they have no token.
+
+The spec's "no new API surface" claim is correct (no new endpoints), but it glosses over the client-side requirement: the token must travel with the share link.
+
+### The fix
+
+Embed the `createToken` as a `ct` query param in group session URLs:
+```
+/party?code=ABCD&ct=<token>
+```
+`showRoom()` in `index.astro` already runs before `initPartyRoom()`. One line reads the `ct` param and writes it to `sessionStorage` under the same key the lobby code already looks for (`wtb_party_create_${code}`). The token is then consumed normally on first join. No server changes, no new storage keys.
+
+The token is a one-time proof-of-creation — it only passes verification when the room has zero players. Embedding it in a URL is safe in this context: it can't be replayed once a player has joined, and it carries no user data.
+
+### Key insight
+
+"Reuse existing function X — no new API surface" can mask a hidden coupling: that function may depend on side-effects (here, a `sessionStorage` write) that happen automatically in the single-flow path but silently don't in the new flow. When adapting a single-item flow to a bulk flow, trace every side-effect of the original path and check whether it still fires for each item.
+
+---
+
+## 2026-06-12: Log analysis reveals per-IP rate limit is the wrong primitive for corporate group play
+
+### The problem
+
+Three users hit HTTP 429 simultaneously at 22:06:35 during an evening multiplayer session (~14 players, 15 rooms). All three had a `statics.teams.cdn.office.net` referrer — the Teams desktop client injects this when a user opens a link from a chat message. The rate limit was never lifted in the observed log window, meaning those three players were locked out for the rest of the session.
+
+### Why it happened
+
+`party/rate-limit.ts` keys the limit on the request IP and allows 5 room creates per IP per hour. Corporate offices route all employee traffic through a shared NAT, so every player in the office appears as a single IP. A group of friends playing from work can exhaust the limit in minutes — not through abuse, but through normal group play.
+
+The Teams referrer was the tell. Without it, this would look like three unrelated users coincidentally hitting the limit at the same second.
+
+### The fix
+
+Switch the rate limit key from IP to `userId` (the server-issued session token already present on every party request), with IP as fallback for unauthenticated requests. Raise the per-key limit from 5 to 15. Spec 06 Part A covers the exact changes to `party/rate-limit.ts` and the call site in `party/server.ts`.
+
+### Key insight
+
+Per-IP rate limiting is the right primitive for preventing anonymous abuse, but the wrong one for any feature where a legitimate use case involves multiple people on the same network acting simultaneously. Group play, team tools, classroom use — all of these punish per-IP limits. When you already have a user identity in the request (even a pseudonymous session token), use it as the rate limit key. IP should be the fallback of last resort, not the default.
+
+---
+
 ## 2026-06-03: Funnel events *still* lost on navigation — `pagehide` + `sendBeacon` isn't reliable for programmatic nav
 
 ### The problem

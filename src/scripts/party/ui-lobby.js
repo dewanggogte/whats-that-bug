@@ -164,7 +164,7 @@ export async function initPartyRoom(code) {
   function updatePlayerCountHeader() {
     const el = document.getElementById('player-count-header');
     if (!el) return;
-    el.textContent = `Players (${connectedCount()} connected · ${currentState.players.length}/5 in room)`;
+    el.textContent = `Players (${connectedCount()} connected · ${currentState.players.length}/20 in room)`;
   }
 
   function updateRoomStatus(isHost) {

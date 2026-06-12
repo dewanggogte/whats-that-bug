@@ -855,6 +855,37 @@ function renderRecommendation(totalScore, setKey, mode) {
   `;
 }
 
+function maybeNudgeGenusMode() {
+  if (session.setDef.scoring !== 'binary') return;
+
+  const correctCount = session.history.filter(r => r.score > 0).length;
+  if (correctCount < 8) return;
+
+  if (!setSupportsGenusMode(currentSetKey)) return;
+
+  const lastShown = parseInt(localStorage.getItem('genus_nudge_last_shown') ?? '0');
+  if (Date.now() - lastShown < 3 * 24 * 60 * 60 * 1000) return;
+
+  localStorage.setItem('genus_nudge_last_shown', String(Date.now()));
+  showGenusModeNudge(currentSetKey);
+}
+
+function setSupportsGenusMode(setKey) {
+  // bugs_101 is binary-only; no genus variant exists for it
+  const binaryOnly = ['bugs_101'];
+  return !binaryOnly.includes(setKey);
+}
+
+function showGenusModeNudge(setKey) {
+  const nudge = document.createElement('div');
+  nudge.className = 'genus-nudge-card';
+  nudge.innerHTML = `
+    <p>Nice score! Ready for a harder challenge?</p>
+    <a href="?set=${setKey}&mode=genus" class="btn-secondary">Try Genus Mode →</a>
+  `;
+  container.querySelector('.result-summary')?.appendChild(nudge);
+}
+
 // ===== SUMMARY SCREENS =====
 
 function renderClassicSummary() {
@@ -962,6 +993,7 @@ function renderClassicSummary() {
   }
 
   maybeShowMpNudgePostGame();
+  maybeNudgeGenusMode();
 }
 
 function renderTimeTrialSummary() {
@@ -1076,6 +1108,7 @@ function renderTimeTrialSummary() {
   }
 
   maybeShowMpNudgePostGame();
+  maybeNudgeGenusMode();
 }
 
 function renderStreakGameOver(picked, correct) {
@@ -1184,6 +1217,7 @@ function renderStreakGameOver(picked, correct) {
   }
 
   maybeShowMpNudgePostGame();
+  maybeNudgeGenusMode();
 }
 
 function renderStreakSummary() {

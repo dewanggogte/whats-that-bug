@@ -29,8 +29,9 @@ import Base from '../../layouts/Base.astro';
       <div class="party-landing-grid">
         <section class="party-panel">
           <h2>Create a Party</h2>
-          <p>Start a new room for 2-5 players. You choose the set and mode from the lobby.</p>
+          <p>Start a new room for 2-20 players. You choose the set and mode from the lobby.</p>
           <button class="btn btn-primary party-wide-btn" id="create-room">Create Room</button>
+          <button class="btn btn-outline party-wide-btn" id="create-group-session" style="margin-top:8px;">Create Group Session</button>
         </section>
 
         <section class="party-panel">
@@ -59,7 +60,9 @@ import Base from '../../layouts/Base.astro';
     import { requestCreateRoom } from '../../scripts/party/client.js';
     import { isValidCodeShape } from '../../scripts/party/codes-client.js';
     import { initPartyRoom } from '../../scripts/party/ui-lobby.js';
+    import { initGroupCreate } from '../../scripts/party/ui-group.js';
     import { logMultiplayerEvent, flush } from '../../scripts/feedback.js';
+    import { getUserId } from '../../scripts/user-id.js';
 
     const base = window.__BASE || '';
 
@@ -103,7 +106,7 @@ import Base from '../../layouts/Base.astro';
       createBtn.disabled = true;
       createBtn.textContent = 'Creating...';
       try {
-        const { code, createToken } = await requestCreateRoom();
+        const { code, createToken } = await requestCreateRoom({ userId: getUserId() });
         logMultiplayerEvent('mp_room_created', { room_code: code });
         sessionStorage.setItem(`wtb_party_create_${code}`, createToken);
         flush(); // send queued events before navigating; pagehide beacon is unreliable for programmatic nav
@@ -138,7 +141,11 @@ import Base from '../../layouts/Base.astro';
       if (event.key === 'Enter') joinRoom();
     });
 
+    initGroupCreate();
+
     function showRoom(code) {
+      const ctFromUrl = new URLSearchParams(window.location.search).get('ct');
+      if (ctFromUrl) sessionStorage.setItem(`wtb_party_create_${code}`, ctFromUrl);
       landingView.hidden = true;
       roomView.hidden = false;
       roomView.dataset.code = code;

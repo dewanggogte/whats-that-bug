@@ -34,7 +34,7 @@ export type RoomState = {
   winsAwarded: boolean;
 };
 
-export const MAX_PLAYERS = 5;
+export const MAX_PLAYERS = 20;
 
 export function emptyRoom(code: string): RoomState {
   return {

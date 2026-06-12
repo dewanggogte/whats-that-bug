@@ -14,10 +14,14 @@ function httpProtocolFor(host) {
   return location.protocol === 'https:' ? 'https' : 'http';
 }
 
-export async function requestCreateRoom() {
+export async function requestCreateRoom(options = {}) {
   const host = getPartyHost();
   const protocol = httpProtocolFor(host);
-  const res = await fetch(`${protocol}://${host}/parties/main/__create`, { method: 'POST' });
+  const res = await fetch(`${protocol}://${host}/parties/main/__create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  });
   if (!res.ok) throw new Error(`Room creation failed (${res.status})`);
   return res.json();
 }
