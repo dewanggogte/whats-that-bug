@@ -67,21 +67,21 @@ describe('reserveRoomCode', () => {
 describe('rate limit', () => {
   beforeEach(() => resetRateLimit());
 
-  it('allows up to 5 in an hour', () => {
-    for (let i = 0; i < 5; i++) {
+  it('allows up to 15 in an hour', () => {
+    for (let i = 0; i < 15; i++) {
       expect(checkRateLimit('1.2.3.4').allowed).toBe(true);
     }
   });
 
-  it('rejects the 6th', () => {
-    for (let i = 0; i < 5; i++) checkRateLimit('1.2.3.4');
+  it('rejects the 16th', () => {
+    for (let i = 0; i < 15; i++) checkRateLimit('1.2.3.4');
     const r = checkRateLimit('1.2.3.4');
     expect(r.allowed).toBe(false);
     expect(r.retryAfterMs).toBeGreaterThan(0);
   });
 
-  it('isolates by IP', () => {
-    for (let i = 0; i < 5; i++) checkRateLimit('1.2.3.4');
+  it('isolates by key', () => {
+    for (let i = 0; i < 15; i++) checkRateLimit('1.2.3.4');
     expect(checkRateLimit('5.6.7.8').allowed).toBe(true);
   });
 
