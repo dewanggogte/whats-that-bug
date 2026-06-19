@@ -23,10 +23,12 @@ function quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells
   if (scoring === 'binary') {
     const pickedLabel = safeBugs101Name(pickedTaxon);
     const correctLabel = safeBugs101Name(correctTaxon);
-    return bugs101Tells[pairKey(pickedLabel, correctLabel)] || traits[correctLabel]?.key_mark || '';
+    const pairTell = bugs101Tells[pairKey(pickedLabel, correctLabel)];
+    if (pairTell) return { tell: pairTell, isPairTell: true };
+    return { tell: traits[correctLabel]?.key_mark || '', isPairTell: false };
   }
 
-  return traits[correctTaxon?.genus]?.key_mark || '';
+  return { tell: traits[correctTaxon?.genus]?.key_mark || '', isPairTell: false };
 }
 
 export function buildLearningCard({ picked, correct, scoring, traits = {}, bugs101Tells = {}, speciesContent = {} } = {}) {
@@ -34,12 +36,15 @@ export function buildLearningCard({ picked, correct, scoring, traits = {}, bugs1
   const correctTaxon = correct?.taxon || {};
   const speciesEntry = speciesContent[correctTaxon.species] || {};
   const funFact = firstSentence(speciesEntry.summary || correct?.wikipedia_summary || '');
+  const { tell, isPairTell } = quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells });
 
   return {
     title: 'Close one!',
     answerName: correctTaxon.common_name || correctTaxon.genus || correctTaxon.species || 'Unknown',
     answerSci: correctTaxon.species || correctTaxon.genus || correctTaxon.order || '',
-    tell: quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells }),
+    tell,
+    isPairTell,
+    pickedName: pickedTaxon.common_name || pickedTaxon.genus || pickedTaxon.species || '',
     funFact,
     learnMoreUrl: correct?.inat_url || '',
   };

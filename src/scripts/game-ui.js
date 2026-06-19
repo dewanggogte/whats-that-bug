@@ -392,7 +392,7 @@ function renderRound() {
         ${choices.map((choice, i) => {
           const scoring = session.setDef.scoring;
           const displayName = scoring === 'binary' ? getBugs101Name(choice.taxon) : withGroupNoun(choice.taxon);
-          const displayLatin = scoring === 'binary' ? choice.taxon.order : choice.taxon.genus;
+          const displayLatin = choice.taxon.species;
           return `
           <div class="choice" data-index="${i}" role="button" tabindex="0">
             <div class="choice-name">${escapeHTML(displayName)}</div>
@@ -635,7 +635,8 @@ function renderLearningCardBody(card) {
 
   return `
     <div>This is a <strong>${escapeHTML(card.answerName)}</strong>${card.answerSci ? ` <span class="learning-answer-sci">${escapeHTML(card.answerSci)}</span>` : ''}.</div>
-    ${tell ? `<p class="learning-tell"><span class="learning-tell-lead">Quickest tell:</span> ${escapeHTML(tellText)}</p>` : ''}
+    ${tell ? `<p class="learning-tell"><span class="learning-tell-lead">Why it is ${escapeHTML(card.answerName)}:</span> ${escapeHTML(tellText)}</p>` : ''}
+    ${tell && card.isPairTell && card.pickedName ? `<p class="learning-tell"><span class="learning-tell-lead">Why it isn't ${escapeHTML(card.pickedName)}:</span> ${escapeHTML(tellText)}</p>` : ''}
     ${card.funFact ? `<p class="learning-funfact">${escapeHTML(card.funFact)}</p>` : ''}
   `;
 }
@@ -658,9 +659,20 @@ function handleClassicPostAnswer(score, picked, correct, timeTaken) {
         blurb = lastSpace > 20 ? blurb.slice(0, lastSpace) + '...' : blurb + '...';
       }
     }
+    const correctCard = buildLearningCard({
+      picked: correct,
+      correct,
+      scoring: session.setDef.scoring,
+      traits: taxonTraits,
+      bugs101Tells,
+      speciesContent,
+    });
+    const correctTell = String(correctCard.tell || '').trim();
+    const correctTellText = correctTell && /[.!?]$/.test(correctTell) ? correctTell : `${correctTell}.`;
     bodyHTML = `
       <strong>${escapeHTML(correct.taxon.common_name)}</strong> (<em>${escapeHTML(correct.taxon.species)}</em>)
       ${blurb ? `<br>${escapeHTML(blurb)}` : ''}
+      ${correctTell ? `<p class="learning-tell"><span class="learning-tell-lead">Why it is ${escapeHTML(correct.taxon.common_name)}:</span> ${escapeHTML(correctTellText)}</p>` : ''}
     `;
   } else {
     const card = buildLearningCard({
