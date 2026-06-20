@@ -56,13 +56,26 @@ function tweenCounter(el, target, duration = 500, suffix = '') {
 
 // getBugs101Name is imported from game-engine.js
 
+// Terms whose presence in a common name implies a given category noun,
+// even when the noun itself isn't a substring (e.g. "katydid" → cricket).
+const CATEGORY_SYNONYMS = {
+  'cricket':     ['katydid', 'weta'],
+  'grasshopper': ['locust'],
+};
+
 // Append the lay group noun (Dragonfly, Moth, Beetle...) to a species common
-// name so genus-scored options are self-describing. Skip when the
-// common name already contains that exact word (e.g. "Lady Beetle", "Wheel Bug").
+// name so genus-scored options are self-describing. Skip when the common name
+// already contains the noun as a substring (handles "Corncricket", "Blowfly",
+// etc.) or a known synonym (handles "Katydid" → Cricket).
 function withGroupNoun(taxon) {
-  const noun = getBugs101Name(taxon).split(' ').pop();
-  const re = new RegExp(`\\b${noun}\\b`, 'i');
-  return re.test(taxon.common_name) ? taxon.common_name : `${taxon.common_name} ${noun}`;
+  const categoryLabel = getBugs101Name(taxon);
+  const lastWord = categoryLabel.split(' ').pop();
+  const name = taxon.common_name.toLowerCase();
+  const lowerNoun = lastWord.toLowerCase();
+  if (name.includes(lowerNoun)) return taxon.common_name;
+  const synonyms = CATEGORY_SYNONYMS[lowerNoun] || [];
+  if (synonyms.some(s => name.includes(s))) return taxon.common_name;
+  return `${taxon.common_name} ${lastWord}`;
 }
 
 function answerForAnalytics(taxon, scoring) {
@@ -85,7 +98,7 @@ const base = window.__BASE || '';
 let session = null;
 let currentRound = null;
 let roundStartTime = null;
-let currentSetKey = 'all_bugs';
+let currentSetKey = 'insects_hard';
 let sessionEndSent = false;
 let shared = false;
 let taxonTraits = {};
@@ -188,7 +201,7 @@ let container = null;
 /**
  * Initialize the game. Called from play.astro.
  */
-export async function initGame(setKey = 'all_bugs', mode = 'classic') {
+export async function initGame(setKey = 'insects_hard', mode = 'classic') {
   container = document.getElementById('game-container');
   container.setAttribute('aria-live', 'polite');
   const preloadStartedAt = performance.now();
@@ -801,11 +814,11 @@ function showMilestoneBanner(milestone) {
  * Returns { text: string, link: string, linkText: string } or null.
  */
 function getPostSessionRecommendation(totalScore, setKey, mode) {
-  if (mode === 'classic' && setKey === 'bugs_101' && totalScore >= 800) {
+  if (mode === 'classic' && (setKey === 'bugs_101' || setKey === 'insects_easy') && totalScore >= 800) {
     return {
-      text: "You're crushing Bugs 101!",
-      link: `${base}/all_bugs/classic/play`,
-      linkText: 'Try All Bugs →',
+      text: "You're crushing Easy mode!",
+      link: `${base}/insects_hard/classic/play`,
+      linkText: 'Try Hard mode →',
     };
   }
 
@@ -829,7 +842,7 @@ function getPostSessionRecommendation(totalScore, setKey, mode) {
     }
   }
 
-  if (setKey === 'all_bugs' && totalScore < 400) {
+  if ((setKey === 'all_bugs' || setKey === 'insects_hard') && totalScore < 400) {
     return {
       text: 'Try a themed set to focus on one group.',
       link: `${base}/`,
@@ -885,8 +898,8 @@ function maybeNudgeGenusMode() {
 }
 
 function setSupportsGenusMode(setKey) {
-  // bugs_101 is binary-only; no genus variant exists for it
-  const binaryOnly = ['bugs_101'];
+  // bugs_101 and insects_easy are binary-only; no genus variant exists for them
+  const binaryOnly = ['bugs_101', 'insects_easy'];
   return !binaryOnly.includes(setKey);
 }
 

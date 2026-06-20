@@ -12,7 +12,8 @@ const TERMITE_FAMILIES = ['Termitidae', 'Rhinotermitidae', 'Kalotermitidae', 'Ho
 const DAMSELFLY_FAMILIES = ['Coenagrionidae', 'Calopterygidae', 'Lestidae', 'Platycnemididae', 'Platystictidae'];
 const CICADA_FAMILIES = ['Cicadidae'];
 const STINK_BUG_FAMILIES = ['Pentatomidae', 'Scutelleridae', 'Acanthosomatidae', 'Cydnidae', 'Tessaratomidae'];
-const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Membracidae', 'Ischnorhinidae'];
+const PLANTHOPPER_FAMILIES = ['Fulgoridae', 'Flatidae', 'Ischnorhinidae'];
+const TREEHOPPER_FAMILIES = ['Membracidae'];
 const APHID_FAMILIES = ['Aphididae', 'Eriococcidae'];
 const WATER_BUG_FAMILIES = ['Nepidae', 'Notonectidae', 'Belostomatidae'];
 const MOSQUITO_FAMILIES = ['Culicidae'];
@@ -45,6 +46,7 @@ export function getBugs101Name(taxon) {
   if (taxon.order === 'Hemiptera') {
     if (CICADA_FAMILIES.includes(taxon.family)) return 'Cicada';
     if (STINK_BUG_FAMILIES.includes(taxon.family)) return 'Stink Bug';
+    if (TREEHOPPER_FAMILIES.includes(taxon.family)) return 'Treehopper';
     if (PLANTHOPPER_FAMILIES.includes(taxon.family)) return 'Planthopper';
     if (APHID_FAMILIES.includes(taxon.family)) return 'Aphid';
     if (WATER_BUG_FAMILIES.includes(taxon.family)) return 'Water Bug';

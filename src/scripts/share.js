@@ -45,7 +45,9 @@ export function getTimeTrialFlavor(correctCount, totalQuestions) {
 
 export function generateTimeTrialShareText(totalScore, history, correctCount, totalQuestions, setKey) {
   const emojiGrid = history.map(h => scoreToEmoji(h.score)).join('');
-  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Time Trial' : 'Time Trial';
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Time Trial'
+    : setKey === 'insects_easy' ? 'Insects Easy — Time Trial'
+    : 'Time Trial';
   const flavor = getTimeTrialFlavor(correctCount, totalQuestions);
 
   return [
@@ -70,7 +72,9 @@ export function getStreakFlavor(streakCount) {
 
 export function generateStreakShareText(streakCount, history, setKey) {
   const emojiGrid = history.filter(h => h.score === 100).map(() => '🟩').join('');
-  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Streaks' : 'Streaks';
+  const label = setKey?.startsWith('bugs_101') ? 'Bugs 101 — Streaks'
+    : setKey === 'insects_easy' ? 'Insects Easy — Streaks'
+    : 'Streaks';
   const flavor = getStreakFlavor(streakCount);
 
   return [

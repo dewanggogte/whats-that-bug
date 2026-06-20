@@ -11,6 +11,7 @@ These specs consolidate PRD v2 Phase 2 (Core Engagement) and Phase 3 (Infrastruc
 | 3 | [Game UI Enhancements](03-game-ui-enhancements.md) | #7 Animation triggers, #8 Progress indicators, #9 Post-session hooks | `game-ui.js` |
 | 4 | [Achievement & Homepage System](04-achievements-homepage.md) | #14 Achievements, #9 Homepage comeback hooks | new `achievements.js`, `index.astro` |
 | 5 | [Backend Tooling](05-backend-tooling.md) | #11 Review server, #13 Unified analytics | `scripts/`, `analytics/` |
+| 6 | [Multiplayer Enhancements](06-multiplayer-enhancements.md) | Rate limit fix, daily nudge wiring, 20-player cap + group sessions, genus nudge, mid-game kick UI | `party/rate-limit.ts`, `daily-ui.js`, `party/room-state.ts`, `game-ui.js`, `ui-game.js` |
 
 ## Dependency Graph
 

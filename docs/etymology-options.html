@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etymology Breakdown — 3 Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1917;
+    --surface: #242220;
+    --surface2: #2e2b28;
+    --text: #e0ddd8;
+    --text-secondary: #b8ada4;
+    --text-muted: #7a706a;
+    --accent: #d4794e;
+    --accent-dim: rgba(212,121,78,0.15);
+    --success: #5bc49a;
+    --success-bg: #0f2418;
+    --success-border: #1a5c33;
+    --error: #f1a095;
+    --error-bg: #3b211d;
+    --error-border: #8d4c43;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-ui: 'Inter', -apple-system, sans-serif;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-full: 99px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #111;
+    color: var(--text);
+    font-family: var(--font-ui);
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    color: var(--accent);
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .option-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .option-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .option-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── shared feedback card shell ── */
+  .feedback-card {
+    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid;
+    margin-bottom: 12px;
+  }
+  .feedback-card.exact {
+    background: var(--success-bg);
+    border-color: var(--success-border);
+  }
+  .feedback-card.miss {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+  }
+  .feedback-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .feedback-card.exact .feedback-title { color: var(--success); }
+  .feedback-card.miss .feedback-title { color: var(--error); }
+  .feedback-body {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .feedback-body em { font-style: italic; color: var(--text-secondary); }
+  .feedback-body p { margin-top: 6px; color: var(--text-secondary); }
+  .feedback-footer {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success);
+  }
+  .badge.miss { background: var(--error-bg); border-color: var(--error-border); color: var(--error); }
+  .learn-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; }
+  .reactions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+  }
+  .reaction-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--surface2);
+    background: var(--surface2);
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .btn-next {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  /* ══════════════════════════════════════════
+     OPTION A — Inline etymology pills
+     Two small pills beneath the species name.
+     No extra section — stays compact.
+  ══════════════════════════════════════════ */
+  .ety-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .ety-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    background: var(--accent-dim);
+    border: 1px solid rgba(212,121,78,0.3);
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+  .ety-pill .part {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .ety-pill .meaning {
+    color: var(--text-secondary);
+  }
+
+  /* ══════════════════════════════════════════
+     OPTION B — Expandable "Name story"
+     Hidden by default, one click to reveal.
+     Shown open here for the mockup.
+  ══════════════════════════════════════════ */
+  .ety-toggle {
+    margin-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 10px;
+  }
+  .ety-toggle-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .ety-toggle-trigger .arrow {
+    font-size: 0.65rem;
+    color: var(--accent);
+    transition: transform 0.2s;
+  }
+  .ety-toggle-trigger .arrow.open { transform: rotate(90deg); }
+  .ety-toggle-body {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ety-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 8px;
+    align-items: start;
+  }
+  .ety-row .part-label {
+    font-style: italic;
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding-top: 1px;
+  }
+  .ety-row .part-info { font-size: 0.8rem; line-height: 1.45; }
+  .ety-row .part-root {
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    margin-top: 1px;
+    display: block;
+  }
+
+  /* ══════════════════════════════════════════
+     OPTION C — Always-visible name block
+     A distinct inset panel, always shown.
+     More "educational card" feeling.
+  ══════════════════════════════════════════ */
+  .ety-block {
+    margin-top: 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 12px;
+  }
+  .ety-block-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .ety-block-rows { display: flex; flex-direction: column; gap: 7px; }
+  .ety-block-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 10px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+  .ety-block-row .ety-name {
+    font-style: italic;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .ety-block-row .ety-origin {
+    color: var(--text-secondary);
+  }
+  .ety-block-row .ety-origin strong {
+    color: var(--text);
+    font-style: normal;
+  }
+</style>
+</head>
+<body>
+
+<h1>Etymology breakdown — 3 options</h1>
+<p class="subtitle">All show the same data. Using <em>Latrodectus mactans</em> (Black Widow) as example.<br>Both correct and incorrect feedback states shown.</p>
+
+<div class="options-grid">
+
+  <!-- ════════════ OPTION A ════════════ -->
+  <div>
+    <div class="option-label">Option A</div>
+    <div class="option-title">Inline pills</div>
+    <div class="option-desc">Etymology appears as compact accent-coloured pills right under the species name. Zero extra vertical space when there's no etymology data. Glanceable but light on detail.</div>
+
+    <!-- CORRECT state -->
+    <div class="feedback-card exact">
+      <div class="feedback-title">Nailed it!</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <div class="ety-pills">
+          <span class="ety-pill"><span class="part">Latrodectus</span><span class="meaning">robber biter (Gk)</span></span>
+          <span class="ety-pill"><span class="part">mactans</span><span class="meaning">killing (Lat)</span></span>
+        </div>
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+      </div>
+      <div class="feedback-footer">
+        <span class="badge">+100 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <!-- INCORRECT state -->
+    <div class="feedback-card miss">
+      <div class="feedback-title">It was the Black Widow</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <div class="ety-pills">
+          <span class="ety-pill"><span class="part">Latrodectus</span><span class="meaning">robber biter (Gk)</span></span>
+          <span class="ety-pill"><span class="part">mactans</span><span class="meaning">killing (Lat)</span></span>
+        </div>
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+      </div>
+      <div class="feedback-footer">
+        <span class="badge miss">+0 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <button class="btn-next">Next Round →</button>
+  </div>
+
+  <!-- ════════════ OPTION B ════════════ -->
+  <div>
+    <div class="option-label">Option B</div>
+    <div class="option-title">Expandable "What's in the name?"</div>
+    <div class="option-desc">Etymology is hidden by default behind a one-tap toggle. Keeps the card compact for players who don't care; rewards curiosity. Shown open here.</div>
+
+    <!-- CORRECT state -->
+    <div class="feedback-card exact">
+      <div class="feedback-title">Nailed it!</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+      </div>
+      <div class="ety-toggle">
+        <div class="ety-toggle-trigger">
+          <span class="arrow open">▶</span> What's in the name?
+        </div>
+        <div class="ety-toggle-body">
+          <div class="ety-row">
+            <div class="part-label">Latrodectus</div>
+            <div class="part-info">
+              "robber biter"
+              <span class="part-root">From Greek lathro- (robber) + dēktēs (biter)</span>
+            </div>
+          </div>
+          <div class="ety-row">
+            <div class="part-label">mactans</div>
+            <div class="part-info">
+              "killing" or "sacrificing"
+              <span class="part-root">From Latin mactare (to kill, to sacrifice)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feedback-footer" style="margin-top:12px;">
+        <span class="badge">+100 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <!-- INCORRECT state -->
+    <div class="feedback-card miss">
+      <div class="feedback-title">It was the Black Widow</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+      </div>
+      <div class="ety-toggle">
+        <div class="ety-toggle-trigger">
+          <span class="arrow open">▶</span> What's in the name?
+        </div>
+        <div class="ety-toggle-body">
+          <div class="ety-row">
+            <div class="part-label">Latrodectus</div>
+            <div class="part-info">
+              "robber biter"
+              <span class="part-root">From Greek lathro- (robber) + dēktēs (biter)</span>
+            </div>
+          </div>
+          <div class="ety-row">
+            <div class="part-label">mactans</div>
+            <div class="part-info">
+              "killing" or "sacrificing"
+              <span class="part-root">From Latin mactare (to kill, to sacrifice)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feedback-footer" style="margin-top:12px;">
+        <span class="badge miss">+0 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <button class="btn-next">Next Round →</button>
+  </div>
+
+  <!-- ════════════ OPTION C ════════════ -->
+  <div>
+    <div class="option-label">Option C</div>
+    <div class="option-title">Always-visible name block</div>
+    <div class="option-desc">An inset panel permanently visible below the body text. Most educational — players see it every round without any interaction. Slightly longer card.</div>
+
+    <!-- CORRECT state -->
+    <div class="feedback-card exact">
+      <div class="feedback-title">Nailed it!</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+        <div class="ety-block">
+          <div class="ety-block-header">Name breakdown</div>
+          <div class="ety-block-rows">
+            <div class="ety-block-row">
+              <span class="ety-name">Latrodectus</span>
+              <span class="ety-origin"><strong>"robber biter"</strong> — Greek lathro- (robber) + dēktēs (biter)</span>
+            </div>
+            <div class="ety-block-row">
+              <span class="ety-name">mactans</span>
+              <span class="ety-origin"><strong>"killing"</strong> — Latin mactare (to kill, to sacrifice)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feedback-footer">
+        <span class="badge">+100 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <!-- INCORRECT state -->
+    <div class="feedback-card miss">
+      <div class="feedback-title">It was the Black Widow</div>
+      <div class="feedback-body">
+        <strong>Black Widow</strong> (<em>Latrodectus mactans</em>)
+        <p>Famous for the red hourglass marking on females. Males are rarely seen and much smaller.</p>
+        <div class="ety-block">
+          <div class="ety-block-header">Name breakdown</div>
+          <div class="ety-block-rows">
+            <div class="ety-block-row">
+              <span class="ety-name">Latrodectus</span>
+              <span class="ety-origin"><strong>"robber biter"</strong> — Greek lathro- (robber) + dēktēs (biter)</span>
+            </div>
+            <div class="ety-block-row">
+              <span class="ety-name">mactans</span>
+              <span class="ety-origin"><strong>"killing"</strong> — Latin mactare (to kill, to sacrifice)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feedback-footer">
+        <span class="badge miss">+0 pts</span>
+        <a class="learn-link" href="#">Learn more →</a>
+      </div>
+      <div class="reactions">
+        <button class="reaction-btn">Too Easy</button>
+        <button class="reaction-btn">Just Right</button>
+        <button class="reaction-btn">Too Hard</button>
+      </div>
+    </div>
+
+    <button class="btn-next">Next Round →</button>
+  </div>
+
+</div>
+</body>
+</html>

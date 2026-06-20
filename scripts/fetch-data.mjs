@@ -518,9 +518,25 @@ function buildSets(observations, taxa) {
     observation_ids: bugs101Ids,
   };
 
+  sets.insects_easy = {
+    name: 'Insects',
+    description: "Identify insects by type — beetle, spider, butterfly, and more.",
+    difficulty: 'beginner',
+    scoring: 'binary',
+    observation_ids: bugs101Ids,
+  };
+
   sets.all_bugs = {
     name: 'All Bugs',
     description: "Identify each bug by genus.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: mainPool,
+  };
+
+  sets.insects_hard = {
+    name: 'Insects',
+    description: "Identify insects down to the genus level.",
     difficulty: 'expert',
     scoring: 'genus',
     observation_ids: mainPool,
@@ -753,6 +769,26 @@ async function main() {
     name: 'Streaks', description: 'How many bug types in a row? One wrong and it is over.',
     mode: 'streak', scoring: 'binary', difficulty: 'beginner',
     observation_ids: sets.bugs_101.observation_ids,
+  };
+  sets.insects_easy_time_trial = {
+    name: 'Time Trial', description: '60 seconds. How many insect types can you identify?',
+    mode: 'time_trial', scoring: 'binary', difficulty: 'beginner',
+    observation_ids: sets.insects_easy.observation_ids,
+  };
+  sets.insects_easy_streak = {
+    name: 'Streaks', description: 'How many insect types in a row? One wrong and it is over.',
+    mode: 'streak', scoring: 'binary', difficulty: 'beginner',
+    observation_ids: sets.insects_easy.observation_ids,
+  };
+  sets.insects_hard_time_trial = {
+    name: 'Time Trial', description: '60 seconds. How many insects can you identify by genus?',
+    mode: 'time_trial', scoring: 'genus', difficulty: 'expert',
+    observation_ids: sets.insects_hard.observation_ids,
+  };
+  sets.insects_hard_streak = {
+    name: 'Streaks', description: 'How many insects in a row? One wrong and it is over.',
+    mode: 'streak', scoring: 'genus', difficulty: 'expert',
+    observation_ids: sets.insects_hard.observation_ids,
   };
 
   writeFileSync(join(DATA_DIR, 'sets.json'), JSON.stringify(sets, null, 2));

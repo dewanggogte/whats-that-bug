@@ -105,6 +105,10 @@ export function percentileDataKey(setKey, mode) {
     'bugs_101:streak': 'bugs_101_streak',
     'all_bugs:time_trial': 'time_trial',
     'all_bugs:streak': 'streak',
+    'insects_easy:time_trial': 'bugs_101_time_trial',
+    'insects_easy:streak': 'bugs_101_streak',
+    'insects_hard:time_trial': 'time_trial',
+    'insects_hard:streak': 'streak',
   }[key] || null;
 }
 

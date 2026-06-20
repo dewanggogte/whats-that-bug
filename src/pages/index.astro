@@ -4,10 +4,7 @@ import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 import { getCollection } from 'astro:content';
 
-const PRIMARY_SETS = [
-  { key: 'bugs_101', icon: '🔰', subtitle: 'Identify by type', detail: 'Beginner' },
-  { key: 'all_bugs', icon: '🌍', subtitle: 'Identify the genus', detail: 'Expert' },
-];
+
 
 const MODES = [
   { key: 'classic', icon: '🔟', label: 'Classic', detail: '10 rounds', description: 'A steady quiz with no timer.' },
@@ -32,10 +29,6 @@ const themedGroup = THEMED_SETS.map(({ key, icon }) => {
   return { key, name: set.name, icon, countLabel: `${uniqueGenera} genera` };
 });
 
-const primaryGroup = PRIMARY_SETS.map(set => ({
-  ...set,
-  name: setsData[set.key].name,
-}));
 
 const latestChangelog = (await getCollection('changelog'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -67,27 +60,33 @@ const fmtChangelogDate = (d: Date) =>
     <div class="homepage-section">
       <h2 class="homepage-section-title">Play</h2>
       <p class="homepage-section-subtitle">Choose a set, then pick a mode to start right away.</p>
-      <div class="play-cards">
-        {primaryGroup.map(set => (
-          <div class="set-choice-wrap">
-            <button
-              type="button"
-              class="play-card set-choice-card"
-              data-set-card
-              data-set-key={set.key}
-              data-set-name={set.name}
-              data-set-icon={set.icon}
-              data-set-subtitle={set.subtitle}
-              data-set-detail={set.detail}
-              aria-haspopup="dialog"
-            >
-              <span class="play-card-icon">{set.icon}</span>
-              <span class="play-card-title">{set.name}</span>
-              <span class="play-card-subtitle">{set.subtitle}</span>
-              <span class="play-card-detail">{set.detail}</span>
-            </button>
-          </div>
-        ))}
+      <div class="insects-card">
+        <span class="insects-card-icon">🦟</span>
+        <span class="insects-card-title">Insects</span>
+        <div class="insects-diff-row">
+          <button type="button" class="insects-diff-btn"
+            data-set-card
+            data-set-key="insects_easy"
+            data-set-name="Insects"
+            data-set-icon="🦟"
+            data-set-subtitle="Identify by type"
+            data-set-detail="Easy"
+            aria-haspopup="dialog">
+            Easy
+            <small>by type</small>
+          </button>
+          <button type="button" class="insects-diff-btn"
+            data-set-card
+            data-set-key="insects_hard"
+            data-set-name="Insects"
+            data-set-icon="🦟"
+            data-set-subtitle="Identify the genus"
+            data-set-detail="Hard"
+            aria-haspopup="dialog">
+            Hard
+            <small>by genus</small>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -356,6 +355,12 @@ const fmtChangelogDate = (d: Date) =>
 
         // Gather best scores
         const scoreKeys = [
+          { setKey: 'insects_easy', mode: 'classic', label: 'Insects Easy Classic' },
+          { setKey: 'insects_easy', mode: 'time_trial', label: 'Insects Easy Time Trial' },
+          { setKey: 'insects_easy', mode: 'streak', label: 'Insects Easy Streak' },
+          { setKey: 'insects_hard', mode: 'classic', label: 'Insects Hard Classic' },
+          { setKey: 'insects_hard', mode: 'time_trial', label: 'Insects Hard Time Trial' },
+          { setKey: 'insects_hard', mode: 'streak', label: 'Insects Hard Streak' },
           { setKey: 'bugs_101', mode: 'classic', label: 'Bugs 101 Classic' },
           { setKey: 'bugs_101', mode: 'time_trial', label: 'Bugs 101 Time Trial' },
           { setKey: 'bugs_101', mode: 'streak', label: 'Bugs 101 Streak' },
@@ -849,6 +854,59 @@ const fmtChangelogDate = (d: Date) =>
   }
   .badge-share-btn svg {
     flex-shrink: 0;
+  }
+
+  /* Insects card */
+  .insects-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .insects-card-icon { font-size: 2.4rem; line-height: 1; }
+  .insects-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .insects-diff-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 2px;
+  }
+  .insects-diff-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  }
+  .insects-diff-btn:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .insects-diff-btn small {
+    font-size: 0.7rem;
+    font-weight: 400;
+    opacity: 0.75;
   }
 
   /* What You'll Learn */

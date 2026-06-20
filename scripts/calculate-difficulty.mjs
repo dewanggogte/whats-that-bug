@@ -48,7 +48,7 @@ for (const e of events) {
   const score = Number(e.score);
   const time = Number(e.time_taken_ms);
   const set = e.set || '';
-  const isBugs101 = set.startsWith('bugs_101');
+  const isBugs101 = set.startsWith('bugs_101') || set.startsWith('insects_easy');
 
   if (!obsStats.has(id)) {
     obsStats.set(id, {

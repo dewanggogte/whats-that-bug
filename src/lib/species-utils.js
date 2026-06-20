@@ -25,6 +25,8 @@ export const SET_TO_URL = {
   backyard_basics: '/backyard-bugs',
   bugs_101: '/beginners',
   all_bugs: '/expert',
+  insects_easy: '/beginners',
+  insects_hard: '/expert',
   tiny_terrors: '/tiny-terrors',
   eye_candy: '/eye-candy',
 };
