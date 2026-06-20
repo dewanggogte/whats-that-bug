@@ -29,6 +29,16 @@ export const SET_TO_URL = {
   insects_hard: '/expert',
   tiny_terrors: '/tiny-terrors',
   eye_candy: '/eye-candy',
+  birds_all: '/birds',
+  raptors: '/raptors',
+  songbirds: '/songbirds',
+  waterfowl: '/waterfowl',
+  mammals_all: '/mammals',
+  carnivores: '/carnivores',
+  primates: '/primates',
+  reptiles_all: '/reptiles',
+  amphibians_all: '/amphibians',
+  fish_all: '/fish',
 };
 
 /**

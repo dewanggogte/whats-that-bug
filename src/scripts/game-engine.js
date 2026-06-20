@@ -3,6 +3,9 @@
  * Handles scoring, distractor generation, and session state.
  */
 
+// Classes that are bugs — used by game-ui.js to skip the group-noun suffix for wildlife
+export const BUG_CLASSES = new Set(['Insecta', 'Arachnida', 'Chilopoda', 'Diplopoda']);
+
 // --- Bugs 101 category mapping ---
 const BEE_FAMILIES = ['Apidae', 'Megachilidae', 'Halictidae', 'Andrenidae', 'Colletidae'];
 const ANT_FAMILIES = ['Formicidae', 'Mutillidae'];

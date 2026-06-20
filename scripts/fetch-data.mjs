@@ -13,6 +13,31 @@ const API_BASE = 'https://api.inaturalist.org/v1';
 const INSECTA_TAXON_ID = 47158;
 const ARACHNIDA_TAXON_ID = 47119;
 
+// Wildlife taxon IDs (class-level)
+const AVES_TAXON_ID = 3;
+const MAMMALIA_TAXON_ID = 40151;
+const REPTILIA_TAXON_ID = 26036;
+const AMPHIBIA_TAXON_ID = 20978;
+const ACTINOPTERYGII_TAXON_ID = 47178;
+
+// Wildlife groups — fetched regionally, proportional to bug region weights
+const WILDLIFE_GROUPS = [
+  { name: 'Birds',      taxon_id: AVES_TAXON_ID,          target: 1000 },
+  { name: 'Mammals',    taxon_id: MAMMALIA_TAXON_ID,       target: 1000 },
+  { name: 'Reptiles',   taxon_id: REPTILIA_TAXON_ID,       target: 500  },
+  { name: 'Amphibians', taxon_id: AMPHIBIA_TAXON_ID,       target: 500  },
+  { name: 'Fish',       taxon_id: ACTINOPTERYGII_TAXON_ID, target: 500  },
+];
+
+// Top-voted wildlife photos for visual quality
+const FEATURED_WILDLIFE_TAXA = [
+  { name: 'Top Birds',       taxon_id: AVES_TAXON_ID,          count: 80 },
+  { name: 'Top Mammals',     taxon_id: MAMMALIA_TAXON_ID,      count: 60 },
+  { name: 'Top Reptiles',    taxon_id: REPTILIA_TAXON_ID,      count: 40 },
+  { name: 'Top Amphibians',  taxon_id: AMPHIBIA_TAXON_ID,      count: 40 },
+  { name: 'Top Fish',        taxon_id: ACTINOPTERYGII_TAXON_ID, count: 40 },
+];
+
 const REGIONS = [
   { name: 'North America', place_id: 97394, target: 2500 },
   { name: 'Europe',        place_id: 97391, target: 1750 },
@@ -288,7 +313,7 @@ function enrichObservations(observations, taxa) {
         genus: genus?.name || '',
         family: family?.name || '',
         order: order?.name || '',
-        class: cls?.name || 'Insecta',
+        class: cls?.name || '',
         genus_common: genus?.common_name || '',
         family_common: family?.common_name || '',
         order_common: order?.common_name || '',
@@ -644,6 +669,103 @@ function buildSets(observations, taxa) {
     }),
   };
 
+  // --- Wildlife sets ---
+  sets.birds_all = {
+    name: 'All Birds',
+    description: "Identify birds by genus from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Aves'),
+  };
+  sets.raptors = {
+    name: 'Raptors',
+    description: "Eagles, hawks, falcons, and owls — birds of prey.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.order === 'Accipitriformes' ||
+      o.taxon.order === 'Falconiformes' ||
+      o.taxon.order === 'Strigiformes'
+    ),
+  };
+  sets.songbirds = {
+    name: 'Songbirds',
+    description: "Perching birds and passerines — the largest order of birds.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Passeriformes'),
+  };
+  sets.waterfowl = {
+    name: 'Waterfowl & Shorebirds',
+    description: "Ducks, geese, gulls, herons, and other water birds.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.order === 'Anseriformes' ||
+      o.taxon.order === 'Charadriiformes' ||
+      o.taxon.order === 'Pelecaniformes' ||
+      o.taxon.order === 'Suliformes'
+    ),
+  };
+  sets.mammals_all = {
+    name: 'All Mammals',
+    description: "Identify mammals by genus from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Mammalia'),
+  };
+  sets.carnivores = {
+    name: 'Carnivores',
+    description: "Cats, dogs, bears, weasels, and other carnivorous mammals.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Carnivora'),
+  };
+  sets.primates = {
+    name: 'Primates',
+    description: "Monkeys, apes, lemurs, and our closest relatives.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Primates'),
+  };
+  sets.reptiles_all = {
+    name: 'Reptiles',
+    description: "Lizards, snakes, turtles, and crocodilians.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Reptilia'),
+  };
+  sets.amphibians_all = {
+    name: 'Amphibians',
+    description: "Frogs, salamanders, and caecilians.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Amphibia'),
+  };
+  sets.fish_all = {
+    name: 'Fish',
+    description: "Identify fish from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.class === 'Actinopterygii' ||
+      o.taxon.class === 'Chondrichthyes'
+    ),
+  };
+
+  // Assign hunt field for the Pick Your Hunt lobby UI
+  const HUNT_BY_SET = {
+    bugs_101: 'bugs', insects_easy: 'bugs', all_bugs: 'bugs', insects_hard: 'bugs',
+    backyard_basics: 'bugs', beetles: 'bugs', butterflies_moths: 'bugs',
+    spiders: 'bugs', eye_candy: 'bugs', tiny_terrors: 'bugs',
+    birds_all: 'birds', raptors: 'birds', songbirds: 'birds', waterfowl: 'birds',
+    mammals_all: 'mammals', carnivores: 'mammals', primates: 'mammals',
+    reptiles_all: 'reptiles', amphibians_all: 'amphibians', fish_all: 'fish',
+  };
+  for (const [key, set] of Object.entries(sets)) {
+    if (HUNT_BY_SET[key]) set.hunt = HUNT_BY_SET[key];
+  }
+
   for (const [key, set] of Object.entries(sets)) {
     console.log(`  Set "${set.name}": ${set.observation_ids.length} observations`);
   }
@@ -683,6 +805,30 @@ async function main() {
     const featObs = await fetchObservations(taxon_id, null, count, 'votes');
     for (const obs of featObs) obs.featured = true;
     console.log(`  ${name}: got ${featObs.length} top-faved observations`);
+    allObservations = allObservations.concat(featObs);
+  }
+
+  // Wildlife observations — birds, mammals, reptiles, amphibians, fish
+  // Distributed regionally using the same proportions as bug sampling.
+  const REGION_TOTAL = REGIONS.reduce((sum, r) => sum + r.target, 0);
+  console.log('\nFetching wildlife observations...');
+  for (const group of WILDLIFE_GROUPS) {
+    console.log(`\n  ${group.name} (target: ${group.target})...`);
+    for (const region of REGIONS) {
+      const regionTarget = Math.round(group.target * region.target / REGION_TOTAL);
+      if (regionTarget === 0) continue;
+      const regionObs = await fetchObservations(group.taxon_id, region.place_id, regionTarget);
+      console.log(`    ${region.name}: got ${regionObs.length} observations`);
+      allObservations = allObservations.concat(regionObs);
+    }
+  }
+
+  // Top-voted wildlife photos for visual quality
+  console.log(`\nFetching featured wildlife (${FEATURED_WILDLIFE_TAXA.length} groups)...`);
+  for (const { name, taxon_id, count } of FEATURED_WILDLIFE_TAXA) {
+    const featObs = await fetchObservations(taxon_id, null, count, 'votes');
+    for (const obs of featObs) obs.featured = true;
+    console.log(`  ${name}: got ${featObs.length} observations`);
     allObservations = allObservations.concat(featObs);
   }
 

@@ -4,31 +4,69 @@ import setsData from '../../public/data/sets.json';
 import observations from '../../public/data/observations.json';
 import { getCollection } from 'astro:content';
 
-
-
 const MODES = [
   { key: 'classic', icon: '🔟', label: 'Classic', detail: '10 rounds', description: 'A steady quiz with no timer.' },
   { key: 'time_trial', icon: '⏱️', label: 'Time Trial', detail: '60 seconds', description: 'Race the clock for max points.' },
   { key: 'streak', icon: '🎯', label: 'Streaks', detail: 'One miss ends', description: 'Keep going until you miss.' },
 ];
 
-const THEMED_SETS = [
-  { key: 'backyard_basics', icon: '🏡' },
-  { key: 'tiny_terrors', icon: '😱' },
-  { key: 'beetles', icon: '🪲' },
-  { key: 'butterflies_moths', icon: '🦋' },
-  { key: 'spiders', icon: '🕷️' },
-  { key: 'eye_candy', icon: '📸' },
+const HUNT_DEFS = [
+  { key: 'bugs',       label: 'Bugs',       icon: '🪲', description: 'Insects & arachnids' },
+  { key: 'birds',      label: 'Birds',       icon: '🐦', description: 'All bird orders' },
+  { key: 'mammals',    label: 'Mammals',     icon: '🦁', description: 'From bats to whales' },
+  { key: 'reptiles',   label: 'Reptiles',    icon: '🦎', description: 'Scales & cold blood' },
+  { key: 'amphibians', label: 'Amphibians',  icon: '🐸', description: 'Frogs & salamanders' },
+  { key: 'fish',       label: 'Fish',        icon: '🐟', description: 'Underwater ID' },
 ];
 
-const themedGroup = THEMED_SETS.map(({ key, icon }) => {
-  const set = setsData[key];
-  const uniqueGenera = new Set(
-    set.observation_ids.map((i: number) => observations[i]?.taxon?.genus)
-  ).size;
-  return { key, name: set.name, icon, countLabel: `${uniqueGenera} genera` };
-});
+// Which sets belong to each hunt, in display order.
+// nameOverride / metaOverride allow per-card customisation without touching set definitions.
+const HUNT_SET_KEYS: Record<string, Array<{ key: string; icon: string; nameOverride?: string; metaOverride?: string }>> = {
+  bugs: [
+    { key: 'insects_easy', icon: '🦟', nameOverride: 'Insects — Easy', metaOverride: 'identify by type' },
+    { key: 'insects_hard', icon: '🦟', nameOverride: 'Insects — Hard', metaOverride: 'identify by genus' },
+    { key: 'backyard_basics', icon: '🏡' },
+    { key: 'tiny_terrors',   icon: '😱' },
+    { key: 'beetles',        icon: '🪲' },
+    { key: 'butterflies_moths', icon: '🦋' },
+    { key: 'spiders',        icon: '🕷️' },
+    { key: 'eye_candy',      icon: '📸' },
+  ],
+  birds: [
+    { key: 'birds_all',  icon: '🐦' },
+    { key: 'raptors',    icon: '🦅' },
+    { key: 'songbirds',  icon: '🎵' },
+    { key: 'waterfowl',  icon: '🦆' },
+  ],
+  mammals: [
+    { key: 'mammals_all', icon: '🦁' },
+    { key: 'carnivores',  icon: '🐺' },
+    { key: 'primates',    icon: '🐒' },
+  ],
+  reptiles:   [{ key: 'reptiles_all',   icon: '🦎' }],
+  amphibians: [{ key: 'amphibians_all', icon: '🐸' }],
+  fish:       [{ key: 'fish_all',       icon: '🐟' }],
+};
 
+// Build computed hunt data, filtering to sets that already exist in setsData
+const hunts = HUNT_DEFS.map((hunt, i) => {
+  const sets = (HUNT_SET_KEYS[hunt.key] || [])
+    .filter(s => s.key in setsData)
+    .map(s => {
+      const def = setsData[s.key as keyof typeof setsData];
+      const uniqueGenera = new Set(
+        def.observation_ids.map((idx: number) => observations[idx]?.taxon?.genus)
+      ).size;
+      return {
+        key: s.key,
+        icon: s.icon,
+        name: s.nameOverride ?? def.name,
+        meta: s.metaOverride ?? `${uniqueGenera} genera`,
+        difficulty: def.difficulty,
+      };
+    });
+  return { ...hunt, sets, available: sets.length > 0, isDefault: i === 0 };
+});
 
 const latestChangelog = (await getCollection('changelog'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -38,89 +76,85 @@ const fmtChangelogDate = (d: Date) =>
   d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 ---
 <Base
-  title="What's That Bug? — Free Insect Identification Game & Quiz"
-  description="Free insect identification game with 1,000+ species. Identify bugs from real research-grade photos in this online quiz. Play daily challenges, chase personal bests, and test your bug ID skills."
+  title="Pick Your Hunt — Free Nature ID Game & Quiz"
+  description="Choose your hunt — bugs, birds, mammals, and more. Identify wildlife from real research-grade photos in this free nature quiz. Play daily challenges and test your ID skills."
   canonicalPath="/"
 >
   <div class="container">
     <div style="text-align: center; padding: 28px 0 12px;">
-      <h1 style="font-size: 1.8rem; letter-spacing: -0.5px;">What's That Bug?</h1>
-      <p class="subtitle">1,000+ species. How many can you name?</p>
+      <h1 style="font-size: 1.8rem; letter-spacing: -0.5px;">Pick Your Hunt</h1>
+      <p class="subtitle">Research-grade photos. How many species can you name?</p>
     </div>
 
     <!-- Daily Challenge — subtle banner strip -->
     <div class="daily-banner">
-      <span class="daily-banner-text"><strong>Daily Challenge</strong> — a new mystery bug every day</span>
+      <span class="daily-banner-text"><strong>Daily Challenge</strong> — a new mystery creature every day</span>
       <span class="daily-banner-status">
         <a href="/daily/play?mode=bugs101" class="daily-banner-link" id="daily-link-bugs101">Play →</a>
       </span>
     </div>
 
-    <!-- Play section — primary CTA -->
+    <!-- Hunt picker -->
     <div class="homepage-section">
-      <h2 class="homepage-section-title">Play</h2>
-      <p class="homepage-section-subtitle">Choose a set, then pick a mode to start right away.</p>
-      <div class="insects-card">
-        <span class="insects-card-icon">🦟</span>
-        <span class="insects-card-title">Insects</span>
-        <div class="insects-diff-row">
-          <button type="button" class="insects-diff-btn"
-            data-set-card
-            data-set-key="insects_easy"
-            data-set-name="Insects"
-            data-set-icon="🦟"
-            data-set-subtitle="Identify by type"
-            data-set-detail="Easy"
-            aria-haspopup="dialog">
-            Easy
-            <small>by type</small>
-          </button>
-          <button type="button" class="insects-diff-btn"
-            data-set-card
-            data-set-key="insects_hard"
-            data-set-name="Insects"
-            data-set-icon="🦟"
-            data-set-subtitle="Identify the genus"
-            data-set-detail="Hard"
-            aria-haspopup="dialog">
-            Hard
-            <small>by genus</small>
-          </button>
-        </div>
-      </div>
-    </div>
+      <h2 class="homepage-section-title">Choose a Hunt</h2>
+      <p class="homepage-section-subtitle">Pick a category, then select a set to play.</p>
 
-    <!-- Explore section -->
-    <div class="homepage-section">
-      <h2 class="homepage-section-title">More Sets</h2>
-      <p class="homepage-section-subtitle">Pick a themed set, then choose a mode to start.</p>
-      <div class="themed-buttons">
-        {themedGroup.map(set => (
-          <div class="themed-set-wrap">
-            <button
-              type="button"
-              class="themed-btn set-choice-card"
-              data-set-card
-              data-set-key={set.key}
-              data-set-name={set.name}
-              data-set-icon={set.icon}
-              data-set-subtitle={set.countLabel}
-              data-set-detail="Themed deep dive"
-              aria-haspopup="dialog"
-            >
-              <span class="themed-btn-icon">{set.icon}</span>
-              <span class="themed-btn-label">{set.name}</span>
-              <span class="themed-btn-meta">{set.countLabel}</span>
-            </button>
-          </div>
+      <div class="hunt-grid">
+        {hunts.map((hunt) => (
+          <button
+            type="button"
+            class={`hunt-card${hunt.isDefault ? ' active' : ''}${!hunt.available ? ' unavailable' : ''}`}
+            data-hunt-btn={hunt.key}
+            title={hunt.description}
+          >
+            <span class="hunt-card-icon">{hunt.icon}</span>
+            <span class="hunt-card-label">{hunt.label}</span>
+            <span class="hunt-card-count">
+              {hunt.available
+                ? `${hunt.sets.length} set${hunt.sets.length !== 1 ? 's' : ''}`
+                : 'coming soon'}
+            </span>
+          </button>
         ))}
       </div>
-    </div>
 
-    <!-- What You'll Learn -->
-    <div class="homepage-section">
-      <h2 class="homepage-section-title">What You'll Learn</h2>
-      <p class="homepage-learn-text">What's That Bug? features over 1,000 insect species photographed in the wild by citizen scientists. From common backyard beetles to rare tropical butterflies, every photo is research-grade verified. Whether you're a curious beginner or a seasoned entomologist, there's always a new bug to discover.</p>
+      <!-- One set panel per hunt; only the default one is visible on load -->
+      {hunts.map((hunt) => (
+        <div
+          class="hunt-sets-panel"
+          data-hunt-panel={hunt.key}
+          hidden={!hunt.isDefault}
+        >
+          {hunt.available ? (
+            <div class="themed-buttons">
+              {hunt.sets.map(set => (
+                <div class="themed-set-wrap">
+                  <button
+                    type="button"
+                    class="themed-btn set-choice-card"
+                    data-set-card
+                    data-set-key={set.key}
+                    data-set-name={set.name}
+                    data-set-icon={set.icon}
+                    data-set-subtitle={set.meta}
+                    data-set-detail={set.difficulty}
+                    aria-haspopup="dialog"
+                  >
+                    <span class="themed-btn-icon">{set.icon}</span>
+                    <span class="themed-btn-label">{set.name}</span>
+                    <span class="themed-btn-meta">{set.meta}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div class="hunt-coming-soon">
+              <p>{hunt.icon} <strong>{hunt.label}</strong> sets are on the way.</p>
+              <p>Run <code>npm run fetch-data</code> to generate wildlife data.</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
 
     <!-- What's New -->
@@ -166,8 +200,8 @@ const fmtChangelogDate = (d: Date) =>
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "What's That Bug?",
-    "description": "A free guess-the-bug game with 1,000+ species. Identify insects from real research-grade photos in this GeoGuessr-style quiz.",
+    "name": "Pick Your Hunt",
+    "description": "A free nature ID game with thousands of research-grade photos. Identify bugs, birds, mammals, and more.",
     "url": "https://dewanggogte.com/games/bugs",
     "applicationCategory": "GameApplication",
     "genre": "Trivia",
@@ -187,6 +221,25 @@ const fmtChangelogDate = (d: Date) =>
   </script>
 
 <script>
+  // Hunt card switching
+  const huntBtns = document.querySelectorAll('[data-hunt-btn]');
+  const huntPanels = document.querySelectorAll('[data-hunt-panel]');
+
+  huntBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const huntKey = (btn as HTMLElement).dataset.huntBtn;
+      if ((btn as HTMLElement).classList.contains('unavailable')) return;
+
+      huntBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      huntPanels.forEach(p => { (p as HTMLElement).hidden = true; });
+      const panel = document.querySelector(`[data-hunt-panel="${huntKey}"]`) as HTMLElement;
+      if (panel) panel.hidden = false;
+    });
+  });
+
+  // Mode overlay
   const overlay = document.getElementById('mode-overlay');
   const panel = document.getElementById('mode-overlay-panel');
   const closeBtn = document.getElementById('mode-overlay-close');
@@ -373,6 +426,11 @@ const fmtChangelogDate = (d: Date) =>
           { setKey: 'butterflies_moths', mode: 'classic', label: 'Butterflies & Moths' },
           { setKey: 'spiders', mode: 'classic', label: 'Spiders' },
           { setKey: 'eye_candy', mode: 'classic', label: 'Eye Candy' },
+          { setKey: 'birds_all', mode: 'classic', label: 'Birds' },
+          { setKey: 'mammals_all', mode: 'classic', label: 'Mammals' },
+          { setKey: 'reptiles_all', mode: 'classic', label: 'Reptiles' },
+          { setKey: 'amphibians_all', mode: 'classic', label: 'Amphibians' },
+          { setKey: 'fish_all', mode: 'classic', label: 'Fish' },
         ];
 
         const scores = scoreKeys
@@ -462,7 +520,7 @@ const fmtChangelogDate = (d: Date) =>
         const rarityLabel = { common: '', uncommon: '', rare: 'Rare ', very_rare: 'Very Rare ', epic: 'Epic ', legendary: 'Legendary ' };
         const prefix = rarityLabel[def.rarity] || '';
         return [
-          `I just earned the ${prefix}"${def.name}" badge on What's That Bug!`,
+          `I just earned the ${prefix}"${def.name}" badge on Pick Your Hunt!`,
           '',
           `${def.icon} ${def.name} — ${def.description}`,
           '',
@@ -856,64 +914,63 @@ const fmtChangelogDate = (d: Date) =>
     flex-shrink: 0;
   }
 
-  /* Insects card */
-  .insects-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 20px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  /* --- Hunt grid --- */
+  .hunt-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-  .insects-card-icon { font-size: 2.4rem; line-height: 1; }
-  .insects-card-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text);
-  }
-  .insects-diff-row {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-    margin-top: 2px;
-  }
-  .insects-diff-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 10px 8px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text);
-    transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-  }
-  .insects-diff-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-  .insects-diff-btn small {
-    font-size: 0.7rem;
-    font-weight: 400;
-    opacity: 0.75;
+    margin-bottom: 16px;
   }
 
-  /* What You'll Learn */
-  .homepage-learn-text {
+  .hunt-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 8px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  }
+  .hunt-card:hover:not(.unavailable) {
+    border-color: var(--accent);
+  }
+  .hunt-card.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+  }
+  .hunt-card.unavailable {
+    opacity: 0.45;
+    cursor: default;
+  }
+  .hunt-card-icon { font-size: 1.6rem; line-height: 1; }
+  .hunt-card-label { font-size: 0.85rem; font-weight: 700; }
+  .hunt-card-count { font-size: 0.68rem; opacity: 0.75; }
+
+  .hunt-sets-panel {
+    margin-top: 4px;
+  }
+
+  .hunt-coming-soon {
+    text-align: center;
+    padding: 28px 16px;
     color: var(--text-secondary);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
     line-height: 1.6;
-    font-size: var(--text-sm);
+  }
+  .hunt-coming-soon code {
+    font-size: 0.8rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
   }
 
   /* What's New */
@@ -966,6 +1023,12 @@ const fmtChangelogDate = (d: Date) =>
   }
   .whats-new-more:hover {
     text-decoration: underline;
+  }
+
+  @media (max-width: 480px) {
+    .hunt-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 </style>
 </Base>

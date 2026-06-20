@@ -289,6 +289,103 @@ function main() {
     }),
   };
 
+  // --- Wildlife sets ---
+  sets.birds_all = {
+    name: 'All Birds',
+    description: "Identify birds by genus from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Aves'),
+  };
+  sets.raptors = {
+    name: 'Raptors',
+    description: "Eagles, hawks, falcons, and owls — birds of prey.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.order === 'Accipitriformes' ||
+      o.taxon.order === 'Falconiformes' ||
+      o.taxon.order === 'Strigiformes'
+    ),
+  };
+  sets.songbirds = {
+    name: 'Songbirds',
+    description: "Perching birds and passerines — the largest order of birds.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Passeriformes'),
+  };
+  sets.waterfowl = {
+    name: 'Waterfowl & Shorebirds',
+    description: "Ducks, geese, gulls, herons, and other water birds.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.order === 'Anseriformes' ||
+      o.taxon.order === 'Charadriiformes' ||
+      o.taxon.order === 'Pelecaniformes' ||
+      o.taxon.order === 'Suliformes'
+    ),
+  };
+  sets.mammals_all = {
+    name: 'All Mammals',
+    description: "Identify mammals by genus from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Mammalia'),
+  };
+  sets.carnivores = {
+    name: 'Carnivores',
+    description: "Cats, dogs, bears, weasels, and other carnivorous mammals.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Carnivora'),
+  };
+  sets.primates = {
+    name: 'Primates',
+    description: "Monkeys, apes, lemurs, and our closest relatives.",
+    difficulty: 'themed',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.order === 'Primates'),
+  };
+  sets.reptiles_all = {
+    name: 'Reptiles',
+    description: "Lizards, snakes, turtles, and crocodilians.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Reptilia'),
+  };
+  sets.amphibians_all = {
+    name: 'Amphibians',
+    description: "Frogs, salamanders, and caecilians.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o => o.taxon.class === 'Amphibia'),
+  };
+  sets.fish_all = {
+    name: 'Fish',
+    description: "Identify fish from research-grade photos.",
+    difficulty: 'expert',
+    scoring: 'genus',
+    observation_ids: indicesWhere(o =>
+      o.taxon.class === 'Actinopterygii' ||
+      o.taxon.class === 'Chondrichthyes'
+    ),
+  };
+
+  // Assign hunt field for the Pick Your Hunt lobby UI
+  const HUNT_BY_SET = {
+    bugs_101: 'bugs', insects_easy: 'bugs', all_bugs: 'bugs', insects_hard: 'bugs',
+    backyard_basics: 'bugs', beetles: 'bugs', butterflies_moths: 'bugs',
+    spiders: 'bugs', eye_candy: 'bugs', tiny_terrors: 'bugs',
+    birds_all: 'birds', raptors: 'birds', songbirds: 'birds', waterfowl: 'birds',
+    mammals_all: 'mammals', carnivores: 'mammals', primates: 'mammals',
+    reptiles_all: 'reptiles', amphibians_all: 'amphibians', fish_all: 'fish',
+  };
+  for (const [key, set] of Object.entries(sets)) {
+    if (HUNT_BY_SET[key]) set.hunt = HUNT_BY_SET[key];
+  }
+
   // Game mode variants
   sets.time_trial = {
     name: 'Time Trial', description: '60 seconds. How many can you identify?',

@@ -3,7 +3,7 @@
  * Supports three modes: classic (10 rounds), time_trial (60s), streak (until wrong).
  */
 
-import { SessionState, calculateTimedScore, getBugs101Name, migrateBestStorageKey } from './game-engine.js';
+import { SessionState, calculateTimedScore, getBugs101Name, migrateBestStorageKey, BUG_CLASSES } from './game-engine.js';
 import { buildLearningCard } from './learning-card.js';
 import { generateShareText, generateTimeTrialShareText, generateStreakShareText, getClassicFlavor, getTimeTrialFlavor, getStreakFlavor, copyToClipboard, openWhatsApp, openIMessage, openTweetIntent, canNativeShare, nativeShare } from './share.js';
 import { logSessionStart, logSessionEnd, logRoundComplete, logRoundReaction, logSessionFeedback, logBadPhoto, logRoundDisplayed } from './feedback.js';
@@ -68,6 +68,7 @@ const CATEGORY_SYNONYMS = {
 // already contains the noun as a substring (handles "Corncricket", "Blowfly",
 // etc.) or a known synonym (handles "Katydid" → Cricket).
 function withGroupNoun(taxon) {
+  if (!BUG_CLASSES.has(taxon.class)) return taxon.common_name;
   const categoryLabel = getBugs101Name(taxon);
   const lastWord = categoryLabel.split(' ').pop();
   const name = taxon.common_name.toLowerCase();
