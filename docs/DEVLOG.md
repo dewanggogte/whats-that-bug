@@ -274,6 +274,46 @@ Auto-generated comparative sentences require data that was authored *for compari
 
 ---
 
+## 2026-06-20: Wildlife observations contaminated bug sets because the exclusion filter was a denylist, not an allowlist
+
+### The problem
+
+After adding birds, mammals, reptiles, amphibians, and fish to `observations.json`, the `all_bugs` set ballooned from ~4,800 to 8,285 entries and `bugs_101` from ~2,500 to 7,864. Wildlife taxa were appearing in "All Bugs" and "Bugs 101."
+
+### Why it happened
+
+`mainPool` (the source for all bug sets) filtered with `!isIcky(obs) && obs.taxon.order !== 'Isopoda'`. `isIcky()` was a **denylist** of orders/classes that are unpleasant to look at — cockroaches, ticks, centipedes, aphids. Wildlife taxa like `Aves` and `Mammalia` are not on that denylist, so they passed straight through. The filter was never designed to exclude non-arthropods; it was designed to exclude unpleasant arthropods. When the observation pool grew to include vertebrates, the assumption that "anything not icky is a bug" silently broke.
+
+### The fix
+
+Added `BUG_POOL_CLASSES = new Set(['Insecta', 'Arachnida', 'Chilopoda', 'Diplopoda', 'Malacostraca'])` as an explicit positive allowlist and applied it as the first filter in `mainPool`, `withCounts` (backyard_basics), and `featuredIndices` (eye_candy) in both `fetch-data.mjs` and `rebuild-sets.mjs`. After `npm run rebuild-sets`, class distribution in `all_bugs` was exactly `Insecta: 3918, Arachnida: 955` — no vertebrates.
+
+### Key insight
+
+Exclusion filters on a known-bad set become incorrect the moment new categories are added that aren't on the list. For "only include bugs," the correct primitive is an **inclusion filter on a known-good set**, not an exclusion filter on known-bad members. If you find yourself writing `!isUnwanted(x)`, ask whether the real constraint is better expressed as `isWanted(x)` — especially when the domain can expand.
+
+---
+
+## 2026-06-20: Vercel free plan's 5000-file upload limit hit after expanding to multi-kingdom datasets
+
+### The problem
+
+CI deploy failed mid-upload with `Error: Too many requests — more than 5000 (code: "api-upload-free")`. Build had grown from ~1000 pages (bugs only) to 3835 pages (six kingdoms × sets × modes × species pages), pushing the file count past Vercel's free-plan threshold.
+
+### Why it happened
+
+`vercel deploy --prebuilt --prod` uploads each file in `dist/` individually. Vercel's free plan caps this at 5000 files per deployment. With one HTML file per static page and a large `/species/` section, the build crossed the limit on first push of the wildlife expansion. The error is silent during the upload — it only appears at the cap, after ~50 MB has already uploaded, and the partial upload is discarded (Vercel deployments are atomic, so nothing goes live).
+
+### The fix
+
+One flag: `--archive=tgz`. This tarballs the entire `dist/` output and uploads it as a single file, bypassing the per-file count limit. Added to `deploy.yml`: `npx vercel deploy --prebuilt --prod --archive=tgz --token=...`
+
+### Key insight
+
+Vercel's 5000-file limit is a deployment-level constraint, not a storage limit — it applies per deploy, not in aggregate. If your Astro site has static paths that multiply (sets × modes × species), you can hit it faster than expected. `--archive=tgz` is the standard fix and should be added proactively when building large SSG sites on Vercel's free plan.
+
+---
+
 ## 2026-06-03: Disjoint files are not enough to run subagents in parallel
 
 **The problem:** Executing an implementation plan with parallel subagents, I wanted to run the last few tasks concurrently. The obvious safety check — "do these tasks edit different files?" — passed: each task touched a separate source file. But dispatching them as-is would have corrupted the workspace.
