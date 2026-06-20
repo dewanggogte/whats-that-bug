@@ -632,11 +632,13 @@ function handleStreakPostAnswer(score, picked, correct) {
 function renderLearningCardBody(card) {
   const tell = String(card.tell || '').trim();
   const tellText = tell && /[.!?]$/.test(tell) ? tell : `${tell}.`;
+  const pickedTell = String(card.pickedTell || '').trim();
+  const pickedTellText = pickedTell && /[.!?]$/.test(pickedTell) ? pickedTell : `${pickedTell}.`;
 
   return `
     <div>This is a <strong>${escapeHTML(card.answerName)}</strong>${card.answerSci ? ` <span class="learning-answer-sci">${escapeHTML(card.answerSci)}</span>` : ''}.</div>
     ${tell ? `<p class="learning-tell"><span class="learning-tell-lead">Why it is ${escapeHTML(card.answerName)}:</span> ${escapeHTML(tellText)}</p>` : ''}
-    ${tell && card.isPairTell && card.pickedName ? `<p class="learning-tell"><span class="learning-tell-lead">Why it isn't ${escapeHTML(card.pickedName)}:</span> ${escapeHTML(tellText)}</p>` : ''}
+    ${pickedTell && card.pickedName ? `<p class="learning-tell"><span class="learning-tell-lead">Why it isn't ${escapeHTML(card.pickedName)}:</span> ${escapeHTML(pickedTellText)}</p>` : ''}
     ${card.funFact ? `<p class="learning-funfact">${escapeHTML(card.funFact)}</p>` : ''}
   `;
 }

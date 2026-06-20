@@ -24,11 +24,14 @@ function quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells
     const pickedLabel = safeBugs101Name(pickedTaxon);
     const correctLabel = safeBugs101Name(correctTaxon);
     const pairTell = bugs101Tells[pairKey(pickedLabel, correctLabel)];
-    if (pairTell) return { tell: pairTell, isPairTell: true };
-    return { tell: traits[correctLabel]?.key_mark || '', isPairTell: false };
+    if (pairTell) return { tell: pairTell, pickedTell: pairTell };
+    return { tell: traits[correctLabel]?.key_mark || '', pickedTell: '' };
   }
 
-  return { tell: traits[correctTaxon?.genus]?.key_mark || '', isPairTell: false };
+  const correctTell = traits[correctTaxon?.genus]?.key_mark || '';
+  const isDifferentGenus = pickedTaxon?.genus && pickedTaxon.genus !== correctTaxon?.genus;
+  const pickedTell = isDifferentGenus ? (traits[pickedTaxon.genus]?.key_mark || '') : '';
+  return { tell: correctTell, pickedTell };
 }
 
 export function buildLearningCard({ picked, correct, scoring, traits = {}, bugs101Tells = {}, speciesContent = {} } = {}) {
@@ -36,14 +39,14 @@ export function buildLearningCard({ picked, correct, scoring, traits = {}, bugs1
   const correctTaxon = correct?.taxon || {};
   const speciesEntry = speciesContent[correctTaxon.species] || {};
   const funFact = firstSentence(speciesEntry.summary || correct?.wikipedia_summary || '');
-  const { tell, isPairTell } = quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells });
+  const { tell, pickedTell } = quickestTell({ scoring, pickedTaxon, correctTaxon, traits, bugs101Tells });
 
   return {
     title: 'Close one!',
     answerName: correctTaxon.common_name || correctTaxon.genus || correctTaxon.species || 'Unknown',
     answerSci: correctTaxon.species || correctTaxon.genus || correctTaxon.order || '',
     tell,
-    isPairTell,
+    pickedTell,
     pickedName: pickedTaxon.common_name || pickedTaxon.genus || pickedTaxon.species || '',
     funFact,
     learnMoreUrl: correct?.inat_url || '',
