@@ -33,6 +33,7 @@ const ICK_CLASSES = new Set(['Chilopoda', 'Diplopoda']);
 const ICK_FAMILIES = new Set([
   'Culicidae', 'Cimicidae', 'Aphididae', 'Dermestidae',
 ]);
+const BUG_POOL_CLASSES = new Set(['Insecta', 'Arachnida', 'Chilopoda', 'Diplopoda', 'Malacostraca']);
 function isIcky(obs) {
   const t = obs.taxon;
   return ICK_ORDERS.has(t.order) || ICK_CLASSES.has(t.class) || ICK_FAMILIES.has(t.family);
@@ -74,7 +75,7 @@ function main() {
 
   const mainPool = observations
     .map((obs, i) => ({ obs, i }))
-    .filter(({ obs }) => !isIcky(obs) && obs.taxon.order !== 'Isopoda')
+    .filter(({ obs }) => BUG_POOL_CLASSES.has(obs.taxon.class) && !isIcky(obs) && obs.taxon.order !== 'Isopoda')
     .filter(({ obs }) => !blockedIds.has(obs.id))
     .map(({ i }) => i);
 
@@ -181,7 +182,7 @@ function main() {
       count: taxa.get(obs.taxon.id)?.observations_count || 0,
       blocked: blockedIds.has(obs.id),
     }))
-    .filter(e => !e.blocked);
+    .filter(e => !e.blocked && BUG_POOL_CLASSES.has(observations[e.index].taxon.class));
   withCounts.sort((a, b) => b.count - a.count);
   const backyardSpeciesSeen = new Set();
   const backyardTopSpecies = [];
@@ -235,7 +236,7 @@ function main() {
   // Eye Candy: cap icky taxa so the set stays beautiful
   const EYE_CANDY_ORDER_CAPS = { 'Araneae': 4, 'Scorpiones': 3 };
   const EYE_CANDY_FAMILY_CAPS = { 'Formicidae': 2, 'Acrididae': 3 };
-  const featuredIndices = indicesWhere(o => o.featured === true);
+  const featuredIndices = indicesWhere(o => o.featured === true && BUG_POOL_CLASSES.has(o.taxon.class));
   const ecOrderCounts = {};
   const ecFamilyCounts = {};
   const eyeCandyIds = [];
